@@ -58,12 +58,12 @@ const CATEGORY_ICONS: Record<BuildingCategory, string> = {
   civic: "🏛️",
   landmark: "🏰",
   // Crypto categories
+  plasma: "💎",
   defi: "🏦",
   exchange: "📈",
   chain: "⛓️",
   ct: "🐦",
   meme: "🐸",
-  plasma: "💎",
 };
 
 // Tier badge colors for crypto buildings

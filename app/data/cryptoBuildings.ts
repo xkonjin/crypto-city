@@ -1636,7 +1636,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "massive",
-      description: "The Aave Credit Tower brings decentralized lending to Plasma. Earn yield on USDT deposits.",
+      description: "The Aave Credit Tower brings decentralized lending to Plasma.",
       effects: {
         yieldRate: 15,
         stakingBonus: 1.15,
@@ -1670,7 +1670,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "massive",
-      description: "The world's largest exchange establishes presence in Plasma City. Major trading volume hub.",
+      description: "The world's largest exchange on Plasma. Major trading volume hub.",
       effects: {
         yieldRate: 20,
         tradingFees: 25,
@@ -1704,7 +1704,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "massive",
-      description: "The iconic USDT Tower - headquarters of the world's largest stablecoin on Plasma.",
+      description: "The iconic USDT Tower - world's largest stablecoin HQ.",
       effects: {
         yieldRate: 10,
         stakingBonus: 1.2,
@@ -1739,7 +1739,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "large",
-      description: "Non-custodial staking protocol bringing liquid staking to Plasma.",
+      description: "Non-custodial staking protocol on Plasma.",
       effects: {
         yieldRate: 12,
         stakingBonus: 1.18,
@@ -1773,7 +1773,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "large",
-      description: "Synthetic dollar protocol headquarters. USDe brings stability to Plasma.",
+      description: "Synthetic dollar protocol headquarters.",
       effects: {
         yieldRate: 14,
         stakingBonus: 1.12,
@@ -1841,7 +1841,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "massive",
-      description: "Commission-free trading comes to Plasma. Retail traders welcome.",
+      description: "Commission-free trading on Plasma.",
       effects: {
         yieldRate: 8,
         tradingFees: 15,
@@ -1875,7 +1875,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "medium",
-      description: "Multi-chain crypto wallet headquarters. Secure your assets on Plasma.",
+      description: "Multi-chain crypto wallet headquarters.",
       effects: {
         yieldRate: 5,
         volatility: 0.05,
@@ -1909,7 +1909,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "medium",
-      description: "Stablecoin infrastructure gateway. Connects Plasma to the world.",
+      description: "Stablecoin infrastructure gateway.",
       effects: {
         yieldRate: 8,
         volatility: 0.03,
@@ -1943,7 +1943,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "medium",
-      description: "Middle East & North Africa's premier crypto exchange on Plasma.",
+      description: "Middle East & North Africa's premier crypto exchange.",
       effects: {
         yieldRate: 10,
         tradingFees: 12,
@@ -1977,7 +1977,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "large",
-      description: "Institutional lending protocol. Under-collateralized loans for institutions.",
+      description: "Institutional lending protocol.",
       effects: {
         yieldRate: 15,
         stakingBonus: 1.12,
@@ -2011,7 +2011,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "medium",
-      description: "Africa's largest crypto exchange expands to Plasma.",
+      description: "Africa's largest crypto exchange.",
       effects: {
         yieldRate: 8,
         tradingFees: 10,
@@ -2045,7 +2045,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "medium",
-      description: "B2B crypto infrastructure powering fintech on Plasma.",
+      description: "B2B crypto infrastructure powering fintech.",
       effects: {
         yieldRate: 6,
         volatility: 0.04,
@@ -2079,7 +2079,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "small",
-      description: "Turkish Lira stablecoin TRYB headquarters on Plasma.",
+      description: "Turkish Lira stablecoin TRYB headquarters.",
       effects: {
         yieldRate: 8,
         volatility: 0.08,
@@ -2146,7 +2146,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "small",
-      description: "AI-powered stablecoin research and development center.",
+      description: "AI-powered stablecoin R&D center.",
       effects: {
         yieldRate: 10,
         volatility: 0.1,
@@ -2179,7 +2179,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "small",
-      description: "Crypto payment solutions for merchants on Plasma.",
+      description: "Crypto payment solutions for merchants.",
       effects: {
         yieldRate: 5,
         tradingFees: 8,
@@ -2213,7 +2213,7 @@ export const PLASMA_PARTNER_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: "plasma",
       launchYear: 2024,
       tvlTier: "small",
-      description: "Global mass payment infrastructure on Plasma.",
+      description: "Global mass payment infrastructure.",
       effects: {
         yieldRate: 6,
         tradingFees: 10,

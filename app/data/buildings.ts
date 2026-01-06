@@ -1449,6 +1449,7 @@ const CATEGORY_ORDER: BuildingCategory[] = [
   "civic",
   "landmark",
   // Crypto categories - grouped together for easy access
+  "plasma",  // Plasma partners featured first
   "defi",
   "exchange",
   "chain",
@@ -1474,10 +1475,10 @@ export const CATEGORY_NAMES: Record<BuildingCategory, string> = {
   props: "Props",
   christmas: "🎄 Christmas",
   // Crypto city category names
+  plasma: "💎 Plasma Partners",
   defi: "🏦 DeFi",
   exchange: "📈 Exchanges",
   chain: "⛓️ Chains",
   ct: "🐦 CT Culture",
   meme: "🐸 Meme Props",
-  plasma: "💎 Plasma Partners",
 };
