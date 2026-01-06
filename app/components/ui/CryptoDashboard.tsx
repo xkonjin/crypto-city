@@ -9,16 +9,13 @@
 // This component is designed to be displayed as a floating panel or
 // integrated into the main game UI.
 
-import { useState, useEffect, useCallback, useRef, MouseEvent } from "react";
+import { useState, useCallback, useRef, MouseEvent } from "react";
 import {
   CryptoEconomyState,
   CryptoEvent,
   CryptoTier,
 } from "../game/types";
 import {
-  formatTokenAmount,
-  getSentimentLabel,
-  getSentimentColor,
   getDashboardStats,
 } from "@/app/simulation/CryptoEconomy";
 import {
@@ -59,18 +56,24 @@ interface CryptoDashboardProps {
 // TIER COLORS AND LABELS
 // =============================================================================
 
+// Color mapping for each crypto tier (for UI display)
 const TIER_COLORS: Record<CryptoTier, string> = {
-  degen: "#FF00FF",
-  retail: "#00BFFF",
-  whale: "#FFD700",
-  institution: "#50C878",
+  degen: "#FF00FF",      // Magenta - high risk, meme-tier
+  retail: "#00BFFF",     // Deep sky blue - entry level
+  whale: "#FFD700",      // Gold - high value
+  institution: "#50C878", // Emerald - blue chip
+  shark: "#FF6B35",      // Orange-red - aggressive medium tier
+  fish: "#87CEEB",       // Sky blue - small players
 };
 
+// Display labels for each crypto tier
 const TIER_LABELS: Record<CryptoTier, string> = {
   degen: "Degen",
   retail: "Retail",
   whale: "Whale",
   institution: "Institution",
+  shark: "Shark",
+  fish: "Fish",
 };
 
 // =============================================================================

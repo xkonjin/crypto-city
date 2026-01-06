@@ -3,7 +3,7 @@
 
 import Phaser from 'phaser';
 import { BuildingGenerator, ProceduralBuildingConfig, PROCEDURAL_BUILDINGS, getBuildingGenerator } from './BuildingGenerator';
-import { TileRenderer, TileRenderConfig, getTileRenderer, preloadTiles } from './TileRenderer';
+import { TileRenderer, TileRenderConfig, getTileRenderer } from './TileRenderer';
 import { AnimationSystem, createAnimationSystem } from './AnimationSystem';
 import { TileType } from '../types';
 
@@ -107,7 +107,7 @@ export class ProceduralManager {
    * Generate all pre-defined procedural buildings
    */
   private generateProceduralBuildings(): void {
-    for (const [id, config] of Object.entries(PROCEDURAL_BUILDINGS)) {
+    for (const config of Object.values(PROCEDURAL_BUILDINGS)) {
       this.generateProceduralBuilding(config);
     }
   }

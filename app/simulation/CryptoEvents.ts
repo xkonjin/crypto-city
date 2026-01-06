@@ -18,7 +18,7 @@ import {
   CryptoEffects,
   GridCell,
 } from '../components/game/types';
-import { CryptoBuildingDefinition, ALL_CRYPTO_BUILDINGS } from '../data/cryptoBuildings';
+import { CryptoBuildingDefinition } from '../data/cryptoBuildings';
 import { analyzeCryptoBuildings } from './CryptoEconomy';
 
 // =============================================================================

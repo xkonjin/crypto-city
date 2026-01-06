@@ -150,7 +150,8 @@ export function useCryptoEconomy(): UseCryptoEconomyReturn {
     });
     
     // Set up economy manager callbacks
-    economyManager.onTreasuryChanged((newBalance, delta) => {
+    // Parameters unused here - just trigger state update
+    economyManager.onTreasuryChanged(() => {
       setEconomyState(economyManager.getState());
     });
     
@@ -187,8 +188,8 @@ export function useCryptoEconomy(): UseCryptoEconomyReturn {
       // Run economy tick
       const tickResult = economyManagerRef.current.tick();
       
-      // Run event tick
-      const eventResult = eventManagerRef.current.tick();
+      // Run event tick (result not needed, events are tracked internally)
+      eventManagerRef.current.tick();
       
       // Update state
       setEconomyState(economyManagerRef.current.getState());
@@ -231,8 +232,8 @@ export function useCryptoEconomy(): UseCryptoEconomyReturn {
   const manualTick = useCallback(() => {
     if (!economyManagerRef.current || !eventManagerRef.current) return;
     
-    const tickResult = economyManagerRef.current.tick();
-    const eventResult = eventManagerRef.current.tick();
+    economyManagerRef.current.tick();
+    eventManagerRef.current.tick();
     
     setEconomyState(economyManagerRef.current.getState());
     setCurrentTick(economyManagerRef.current.getCurrentTick());

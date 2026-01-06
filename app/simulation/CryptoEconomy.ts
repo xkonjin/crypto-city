@@ -10,7 +10,6 @@
 import {
   CryptoEconomyState,
   CryptoTier,
-  CryptoEffects,
   GridCell,
 } from '../components/game/types';
 import { CryptoBuildingDefinition, ALL_CRYPTO_BUILDINGS } from '../data/cryptoBuildings';
@@ -35,6 +34,8 @@ export const DEFAULT_CRYPTO_ECONOMY: CryptoEconomyState = {
     retail: 0,
     whale: 0,
     institution: 0,
+    shark: 0,       // Aggressive medium tier
+    fish: 0,        // Small players tier
   },
   buildingsByChain: {},
   treasuryHistory: [1000],
@@ -43,12 +44,15 @@ export const DEFAULT_CRYPTO_ECONOMY: CryptoEconomyState = {
 
 /**
  * Tier-based TVL values (how much "value" each tier represents)
+ * Higher tiers represent larger total value locked
  */
 const TIER_TVL_VALUES: Record<CryptoTier, number> = {
-  degen: 100,
-  retail: 500,
-  whale: 2000,
-  institution: 10000,
+  fish: 50,          // Small players - minimal TVL
+  degen: 100,        // High risk, low value
+  retail: 500,       // Entry level
+  shark: 1000,       // Aggressive medium players
+  whale: 2000,       // High value
+  institution: 10000, // Blue chip, massive TVL
 };
 
 /**
@@ -301,7 +305,15 @@ export function analyzeCryptoBuildings(grid: GridCell[][]): {
   totalTVL: number;
 } {
   const buildings: CryptoBuildingDefinition[] = [];
-  const byTier: Record<CryptoTier, number> = { degen: 0, retail: 0, whale: 0, institution: 0 };
+  // Initialize tier counts for all crypto tiers
+  const byTier: Record<CryptoTier, number> = { 
+    degen: 0, 
+    retail: 0, 
+    whale: 0, 
+    institution: 0,
+    shark: 0,
+    fish: 0,
+  };
   const byChain: Record<string, number> = {};
   const byCategory: Record<string, number> = {};
   let totalTVL = 0;
@@ -432,12 +444,14 @@ export function calculatePortfolioRisk(buildings: CryptoBuildingDefinition[]): n
     const effects = building.crypto.effects;
     const tier = building.crypto.tier;
     
-    // Base risk by tier
+    // Base risk by tier - higher values mean more risk
     const tierRisk: Record<CryptoTier, number> = {
-      degen: 80,
-      retail: 40,
-      whale: 25,
-      institution: 10,
+      degen: 80,        // Highest risk - meme tier
+      fish: 50,         // Small players, moderate-high risk
+      retail: 40,       // Entry level, moderate risk
+      shark: 35,        // Aggressive but calculated
+      whale: 25,        // High value, lower risk
+      institution: 10,  // Blue chip, lowest risk
     };
     
     let buildingRisk = tierRisk[tier];

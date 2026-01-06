@@ -18,7 +18,6 @@ import {
   ToolType,
   GridCell,
   Direction,
-  LightingType,
   VisualSettings,
   CryptoEconomyState,
   CryptoEvent,
@@ -81,7 +80,7 @@ import MusicPlayer from "../ui/MusicPlayer";
 import LoadWindow from "../ui/LoadWindow";
 import Modal from "../ui/Modal";
 import PromptModal from "../ui/PromptModal";
-import TreasuryPanel, { MiniTreasury } from "../ui/TreasuryPanel";
+import TreasuryPanel from "../ui/TreasuryPanel";
 import NewsTicker, { EventBadge, EventDetail } from "../ui/NewsTicker";
 
 // =============================================================================
@@ -122,7 +121,6 @@ const SHOW_CRYPTO_UI = true;
 
 // Discrete zoom levels matching the button zoom levels
 const ZOOM_LEVELS = [0.25, 0.5, 1, 2, 4];
-const SCROLL_THRESHOLD = 100; // Amount of scroll needed to change zoom level
 
 // Helper function to find closest zoom level index
 const findClosestZoomIndex = (zoomValue: number): number => {
@@ -145,13 +143,18 @@ export default function GameBoard() {
   // UI state
   const [selectedTool, setSelectedTool] = useState<ToolType>(ToolType.None);
   const [zoom, setZoom] = useState(1);
-  const [debugPaths, setDebugPaths] = useState(false);
-  const [showStats, setShowStats] = useState(false);
+  // Debug flags - setters intentionally unused, for future debug UI
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [debugPaths, _setDebugPaths] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [showStats, _setShowStats] = useState(false);
   const [isToolWindowVisible, setIsToolWindowVisible] = useState(false);
   const [buildingOrientation, setBuildingOrientation] = useState<Direction>(
     Direction.Down
   );
-  const [isPlayerDriving, setIsPlayerDriving] = useState(false);
+  // Player driving state - setter unused, triggered by game logic
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isPlayerDriving, _setIsPlayerDriving] = useState(false);
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(
     null
   );
@@ -205,6 +208,12 @@ export default function GameBoard() {
   const [economyState, setEconomyState] = useState<CryptoEconomyState>(
     createInitialEconomyState
   );
+  
+  /**
+   * Current simulation tick number
+   * Stored in state to avoid accessing refs during render
+   */
+  const [currentTick, setCurrentTick] = useState(0);
   
   /**
    * Active crypto events (bull runs, airdrops, hacks, etc.)
@@ -313,13 +322,15 @@ export default function GameBoard() {
       if (!economyManagerRef.current || !eventManagerRef.current) return;
       
       // Run economy tick (calculates yields, updates sentiment)
-      const economyResult = economyManagerRef.current.tick();
+      economyManagerRef.current.tick();
       
       // Run event tick (checks for new events, ends expired events)
-      const eventResult = eventManagerRef.current.tick();
+      eventManagerRef.current.tick();
       
-      // Update React state with new economy state
+      // Update React state with new economy state and current tick
+      // This avoids accessing refs during render (React anti-pattern)
       setEconomyState(economyManagerRef.current.getState());
+      setCurrentTick(economyManagerRef.current.getCurrentTick());
     };
     
     // Initial tick
@@ -344,13 +355,15 @@ export default function GameBoard() {
 
   // Ref to track accumulated scroll delta for zoom
   const scrollAccumulatorRef = useRef(0);
-  const scrollDirectionRef = useRef<number | null>(null); // Track scroll direction: positive = down, negative = up
 
   // Reset building orientation to south when switching buildings
+  // This effect synchronizes building orientation with the selected building's rotation support
+  // and is intentional UI behavior to provide consistent UX when switching buildings
   useEffect(() => {
     if (selectedBuildingId) {
       const building = getBuilding(selectedBuildingId);
       if (building?.supportsRotation) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setBuildingOrientation(Direction.Down);
       }
     }
@@ -2028,7 +2041,7 @@ export default function GameBoard() {
       {selectedEvent && (
         <EventDetail
           event={selectedEvent}
-          currentTick={economyManagerRef.current?.getCurrentTick() || 0}
+          currentTick={currentTick}
           onClose={() => setSelectedEvent(null)}
         />
       )}

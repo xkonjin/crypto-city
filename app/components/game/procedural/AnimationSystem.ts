@@ -282,9 +282,9 @@ export class AnimationSystem {
       const vx = Math.cos(angle) * spd;
       const vy = Math.sin(angle) * spd - 50; // Initial upward velocity
       
-      let velocityX = vx;
-      let velocityY = vy;
-      let age = 0;
+      const velocityX = vx;  // Fixed: velocityX never reassigned, use const
+      let velocityY = vy;   // Mutable: gravity affects Y velocity
+      let age = 0;          // Mutable: incremented each frame
       
       // Manual particle update
       const updateEvent = this.scene.time.addEvent({

@@ -1,9 +1,9 @@
 // Procedural Building Generator for Plasma-style isometric buildings
 // Generates clean vector-style buildings as Canvas textures
 
-import { TILE_WIDTH, TILE_HEIGHT } from '../types';
-import { ColorPalette, getPalette, PLASMA_COLORS, varyPalette, BUILDING_PALETTES } from './ColorPalette';
-import { CRYPTO_BUILDING_PALETTES, getCryptoPalette } from './CryptoPalettes';
+import { TILE_WIDTH } from '../types';
+import { ColorPalette, PLASMA_COLORS, varyPalette, BUILDING_PALETTES } from './ColorPalette';
+import { CRYPTO_BUILDING_PALETTES } from './CryptoPalettes';
 
 // Building style types - includes crypto-specific styles
 export type BuildingStyle = 
@@ -46,10 +46,8 @@ export interface ProceduralBuildingConfig {
 }
 
 // Isometric projection constants
-const ISO_ANGLE = Math.atan(0.5); // ~26.57 degrees
 const FLOOR_HEIGHT_PX = 24;      // Pixels per floor
 const CELL_WIDTH_PX = TILE_WIDTH;  // 44px per grid cell
-const CELL_HEIGHT_PX = TILE_HEIGHT; // 22px per grid cell (isometric)
 
 export class BuildingGenerator {
   private canvas: HTMLCanvasElement;
@@ -64,15 +62,7 @@ export class BuildingGenerator {
    * Generate a building texture as a data URL
    */
   generate(config: ProceduralBuildingConfig): string {
-    const { floors, footprint, style, roofStyle = 'flat' } = config;
-    
-    // Calculate canvas dimensions
-    // Width: footprint width + height in isometric projection
-    const baseWidth = (footprint.width + footprint.height) * (CELL_WIDTH_PX / 2);
-    // Height: building height + isometric base depth
-    const buildingHeight = floors * FLOOR_HEIGHT_PX;
-    const baseDepth = footprint.height * (CELL_HEIGHT_PX / 2);
-    const roofExtra = roofStyle === 'peaked' ? FLOOR_HEIGHT_PX : (roofStyle === 'dome' ? FLOOR_HEIGHT_PX * 0.7 : 0);
+    const { style } = config;
     
     // Standard 512x512 canvas with building centered at bottom
     this.canvas.width = 512;
@@ -158,16 +148,7 @@ export class BuildingGenerator {
     baseX: number,
     baseY: number
   ): void {
-    const { floors, footprint, roofStyle = 'flat', features = [] } = config;
-    
-    const buildingWidth = footprint.width * (CELL_WIDTH_PX / 2);
-    const buildingDepth = footprint.height * (CELL_WIDTH_PX / 2);
-    const buildingHeight = floors * FLOOR_HEIGHT_PX;
-    
-    // Isometric offsets
-    const isoLeft = -buildingWidth;
-    const isoRight = buildingDepth;
-    const isoTopOffset = buildingHeight;
+    const { floors, footprint, features = [] } = config;
     
     // Draw main building body (3D box)
     this.drawIsometricBox(
@@ -382,7 +363,6 @@ export class BuildingGenerator {
   ): void {
     const { footprint } = config;
     const w = footprint.width * (CELL_WIDTH_PX / 2);
-    const d = footprint.height * (CELL_WIDTH_PX / 2);
     
     // Large storefront window on left face
     const windowWidth = w * 0.7;

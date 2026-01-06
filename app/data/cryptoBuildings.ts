@@ -12,7 +12,7 @@
 // NanoBanana API generates custom sprites for landmarks.
 
 import { BuildingDefinition } from './buildings';
-import { CryptoBuildingMeta, CryptoTier, CryptoEffects } from '../components/game/types';
+import { CryptoBuildingMeta, CryptoTier } from '../components/game/types';
 
 // =============================================================================
 // EXTENDED BUILDING TYPE WITH CRYPTO METADATA

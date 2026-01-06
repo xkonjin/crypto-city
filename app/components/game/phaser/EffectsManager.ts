@@ -15,7 +15,7 @@
 
 import Phaser from 'phaser';
 import { CryptoEventType } from '../types';
-import { gridToIso, TILE_WIDTH, TILE_HEIGHT } from '../types';
+import { gridToIso } from '../types';
 
 // =============================================================================
 // TYPES

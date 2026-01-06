@@ -19,7 +19,6 @@ import { GRID_OFFSET_X, GRID_OFFSET_Y } from "./gameConfig";
 import {
   ROAD_SEGMENT_SIZE,
   getRoadSegmentOrigin,
-  hasRoadSegment,
   getRoadConnections,
   getSegmentType,
   generateRoadPattern,
@@ -40,7 +39,6 @@ import { loadGifAsAnimation, playGifAnimation } from "./GifLoader";
 import { 
   ProceduralManager, 
   getProceduralManager,
-  PROCEDURAL_BUILDINGS 
 } from "../procedural";
 
 // Event types for React communication
@@ -1299,6 +1297,7 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   handlePointerUp(_pointer: Phaser.Input.Pointer): void {
     if (!this.isReady) return;
 
@@ -1357,6 +1356,7 @@ export class MainScene extends Phaser.Scene {
     _gameObjects: Phaser.GameObjects.GameObject[],
     _deltaX: number,
     deltaY: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _deltaZ: number
   ): void {
     if (!this.isReady) return;

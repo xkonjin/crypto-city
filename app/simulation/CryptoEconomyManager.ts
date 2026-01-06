@@ -17,10 +17,7 @@
 import { 
   CryptoEconomyState, 
   CryptoTier, 
-  CryptoEffects,
   ZoneEffect,
-  GridCell,
-  TileType,
 } from '../components/game/types';
 import { 
   ALL_CRYPTO_BUILDINGS, 
@@ -102,13 +99,15 @@ export function createInitialEconomyState(): CryptoEconomyState {
     globalYieldMultiplier: 1.0,
     globalVolatilityMultiplier: 1.0,
     
-    // Building tracking
+    // Building tracking - initialized for all tier types
     cryptoBuildingCount: 0,
     buildingsByTier: {
-      degen: 0,
-      retail: 0,
-      whale: 0,
-      institution: 0,
+      degen: 0,       // High risk, meme-tier buildings
+      retail: 0,      // Entry level buildings
+      whale: 0,       // High value buildings
+      institution: 0, // Blue chip buildings
+      shark: 0,       // Aggressive medium tier
+      fish: 0,        // Small player buildings
     },
     buildingsByChain: {},
     
@@ -330,13 +329,16 @@ export class CryptoEconomyManager {
 
   /**
    * Get TVL contribution based on building tier
+   * Higher tiers contribute more to the city's total value locked
    */
   private getTVLContribution(tier: CryptoTier): number {
     const tvlByTier: Record<CryptoTier, number> = {
-      degen: 100000,      // $100K
-      retail: 500000,     // $500K
-      whale: 5000000,     // $5M
-      institution: 50000000, // $50M
+      fish: 50000,        // $50K - small players
+      degen: 100000,      // $100K - high risk
+      retail: 500000,     // $500K - entry level
+      shark: 2000000,     // $2M - aggressive medium
+      whale: 5000000,     // $5M - high value
+      institution: 50000000, // $50M - blue chip
     };
     return tvlByTier[tier];
   }
@@ -497,7 +499,6 @@ export class CryptoEconomyManager {
    * Calculate category synergy bonus for a building
    */
   private calculateCategorySynergyBonus(building: PlacedCryptoBuilding): number {
-    const buildingCategory = building.definition.category;
     const synergiesWithCategories = building.definition.crypto.effects.categorySynergy || [];
     
     if (synergiesWithCategories.length === 0) {
@@ -635,7 +636,6 @@ export class CryptoEconomyManager {
    * Force a sentiment shift (for events)
    */
   shiftSentiment(delta: number): void {
-    const previousSentiment = this.state.marketSentiment;
     this.state.marketSentiment = Math.max(-100, 
       Math.min(100, this.state.marketSentiment + delta));
 
@@ -663,8 +663,9 @@ export class CryptoEconomyManager {
   /**
    * Add tokens to treasury (from yield, airdrops, etc.)
    */
-  addToTreasury(amount: number, reason?: string): void {
-    const previousBalance = this.state.treasury;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  addToTreasury(amount: number, _reason?: string): void {
+    // _reason available for future logging/analytics
     this.state.treasury += amount;
     
     if (this.onTreasuryChange) {
@@ -676,7 +677,8 @@ export class CryptoEconomyManager {
    * Remove tokens from treasury (from events, purchases, etc.)
    * Returns false if insufficient funds
    */
-  removeFromTreasury(amount: number, reason?: string): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  removeFromTreasury(amount: number, _reason?: string): boolean {
     if (this.state.treasury < amount) {
       return false;
     }
@@ -706,7 +708,6 @@ export class CryptoEconomyManager {
     newTreasury: number;
   } {
     const previousSentiment = this.state.marketSentiment;
-    const previousTreasury = this.state.treasury;
 
     // Increment tick counter
     this.currentTick++;

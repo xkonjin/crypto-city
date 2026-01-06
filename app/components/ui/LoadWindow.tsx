@@ -1,16 +1,20 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, MouseEvent } from "react";
+import { useState, useRef, useCallback, MouseEvent, useMemo } from "react";
 import { playClickSound, playDoubleClickSound } from "@/app/utils/sounds";
 import Modal from "./Modal";
+import { GridCell, VisualSettings } from "@/app/components/game/types";
 
+/**
+ * Structure of saved game data stored in localStorage
+ */
 interface GameSaveData {
-  grid: any[][];
-  characterCount: number;
-  carCount: number;
-  zoom?: number;
-  visualSettings?: any;
-  timestamp: number;
+  grid: GridCell[][];         // The game grid with all tiles/buildings
+  characterCount: number;     // Number of NPCs to spawn on load
+  carCount: number;           // Number of cars to spawn on load
+  zoom?: number;              // Camera zoom level
+  visualSettings?: VisualSettings;  // Visual settings (brightness, contrast, etc.)
+  timestamp: number;          // When the save was created
 }
 
 interface LoadWindowProps {
@@ -24,7 +28,6 @@ export default function LoadWindow({
   onClose,
   onLoad,
 }: LoadWindowProps) {
-  const [saves, setSaves] = useState<Array<{ name: string; data: GameSaveData }>>([]);
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [isDragging, setIsDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -36,10 +39,13 @@ export default function LoadWindow({
     saveName: "",
   });
   const saveNameToDeleteRef = useRef<string>("");
+  // Track counter to force re-computation when saves change
+  const [saveVersion, setSaveVersion] = useState(0);
 
-  // Load saves from localStorage
-  useEffect(() => {
-    if (!isVisible) return;
+  // Load saves from localStorage using useMemo (no setState in effect)
+  // Re-computes when isVisible changes or when saveVersion changes (after delete)
+  const computedSaves = useMemo(() => {
+    if (!isVisible) return [];
     
     const allSaves: Array<{ name: string; data: GameSaveData }> = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -49,15 +55,16 @@ export default function LoadWindow({
           const saveName = key.replace('pogicity_save_', '');
           const saveData = JSON.parse(localStorage.getItem(key) || '{}');
           allSaves.push({ name: saveName, data: saveData });
-        } catch (e) {
-          console.error('Failed to parse save:', key);
+        } catch {
+          // Failed to parse save - skip it
         }
       }
     }
     // Sort by timestamp (newest first)
     allSaves.sort((a, b) => (b.data.timestamp || 0) - (a.data.timestamp || 0));
-    setSaves(allSaves);
-  }, [isVisible]);
+    return allSaves;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVisible, saveVersion]);
 
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
@@ -106,7 +113,8 @@ export default function LoadWindow({
     if (!saveNameToDelete) return;
     
     localStorage.removeItem(`pogicity_save_${saveNameToDelete}`);
-    setSaves(prevSaves => prevSaves.filter(s => s.name !== saveNameToDelete));
+    // Trigger re-computation of saves by incrementing version
+    setSaveVersion(v => v + 1);
     setDeleteModalState({ isVisible: false, saveName: "" });
     saveNameToDeleteRef.current = "";
     playClickSound();
@@ -165,7 +173,7 @@ export default function LoadWindow({
           minHeight: 0,
         }}
       >
-        {saves.length === 0 ? (
+        {computedSaves.length === 0 ? (
           <div
             style={{
               padding: "20px",
@@ -178,7 +186,7 @@ export default function LoadWindow({
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {saves.map((save) => (
+            {computedSaves.map((save) => (
               <div
                 key={save.name}
                 style={{
