@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, MouseEvent } from "react";
-import { playClickSound, playDoubleClickSound } from "@/app/utils/sounds";
+import { playDoubleClickSound } from "@/app/utils/sounds";
 
 interface ModalProps {
   isVisible: boolean;

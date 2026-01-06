@@ -117,7 +117,15 @@ export function getCombinedEffectsAtTile(
   let yieldMultiplier = 1.0;
   let happinessModifier = 0;
   let volatilityModifier = 0;
-  const tierCounts: Record<CryptoTier, number> = { degen: 0, retail: 0, whale: 0, institution: 0 };
+  // Track counts for all crypto tiers in this zone
+  const tierCounts: Record<CryptoTier, number> = { 
+    degen: 0, 
+    retail: 0, 
+    whale: 0, 
+    institution: 0,
+    shark: 0,
+    fish: 0,
+  };
   const chainBonuses = new Set<string>();
   
   for (const effect of effectsAtTile) {

@@ -19,10 +19,8 @@ import { CryptoBuildingDefinition } from '../data/cryptoBuildings';
 import { 
   getGeminiImageService, 
   isGeminiImageAvailable,
-  BASE_STYLE_PROMPT,
   NEGATIVE_PROMPT,
   PROTOCOL_COLORS,
-  TIER_DESCRIPTIONS,
 } from './geminiImage';
 
 // =============================================================================

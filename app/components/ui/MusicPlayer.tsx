@@ -32,6 +32,74 @@ const GRAY_COLORS = {
   shadow: "#2a2a2a",
 };
 
+/**
+ * MenuButton - A styled button component for the music player
+ * Moved outside MusicPlayer to avoid re-creating during each render
+ */
+function MenuButton({
+  onClick,
+  title,
+  imgSrc,
+  active = false,
+}: {
+  onClick: () => void;
+  title: string;
+  imgSrc: string;
+  active?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{
+        background: active ? GRAY_COLORS.bgActive : GRAY_COLORS.bg,
+        border: "2px solid",
+        borderColor: active
+          ? `${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderDark}` // Inverted for active
+          : `${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderLight}`, // Normal
+        padding: 0,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 0,
+        borderTop: "none",
+        boxShadow: active ? `inset 1px 1px 0px ${GRAY_COLORS.shadow}` : `1px 1px 0px ${GRAY_COLORS.shadow}`,
+        imageRendering: "pixelated",
+        transition: "filter 0.1s",
+        transform: active ? "translate(1px, 1px)" : "none",
+      }}
+      onMouseEnter={(e) => !active && (e.currentTarget.style.filter = "brightness(1.1)")}
+      onMouseLeave={(e) => !active && (e.currentTarget.style.filter = "none")}
+      onMouseDown={(e) => {
+        if (active) return;
+        e.currentTarget.style.filter = "brightness(0.9)";
+        e.currentTarget.style.borderColor = `${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderDark}`;
+        e.currentTarget.style.transform = "translate(1px, 1px)";
+        e.currentTarget.style.boxShadow = `inset 1px 1px 0px ${GRAY_COLORS.shadow}`;
+      }}
+      onMouseUp={(e) => {
+        if (active) return;
+        e.currentTarget.style.filter = "brightness(1.1)";
+        e.currentTarget.style.borderColor = `${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderLight}`;
+        e.currentTarget.style.transform = "none";
+        e.currentTarget.style.boxShadow = `1px 1px 0px ${GRAY_COLORS.shadow}`;
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imgSrc}
+        alt={title}
+        style={{
+          width: 48,
+          height: 48,
+          display: "block",
+        }}
+      />
+    </button>
+  );
+}
+
 // Music player component styled like top menu buttons
 export default function MusicPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -102,71 +170,10 @@ export default function MusicPlayer() {
   };
 
   // Get the icon path for current genre
+  // Helper to get genre icon path
   const getGenreIcon = (genre: MusicGenre) => {
     return genre === "chill" ? "/UI/ambient.png" : "/UI/jazz.png";
   };
-
-  // Button component matching top menu style
-  const MenuButton = ({
-    onClick,
-    title,
-    imgSrc,
-    active = false,
-  }: {
-    onClick: () => void;
-    title: string;
-    imgSrc: string;
-    active?: boolean;
-  }) => (
-    <button
-      onClick={onClick}
-      title={title}
-      style={{
-        background: active ? GRAY_COLORS.bgActive : GRAY_COLORS.bg,
-        border: "2px solid",
-        borderColor: active
-          ? `${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderDark}` // Inverted for active
-          : `${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderLight}`, // Normal
-        padding: 0,
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: 0,
-        borderTop: "none",
-        boxShadow: active ? `inset 1px 1px 0px ${GRAY_COLORS.shadow}` : `1px 1px 0px ${GRAY_COLORS.shadow}`,
-        imageRendering: "pixelated",
-        transition: "filter 0.1s",
-        transform: active ? "translate(1px, 1px)" : "none",
-      }}
-      onMouseEnter={(e) => !active && (e.currentTarget.style.filter = "brightness(1.1)")}
-      onMouseLeave={(e) => !active && (e.currentTarget.style.filter = "none")}
-      onMouseDown={(e) => {
-        if (active) return;
-        e.currentTarget.style.filter = "brightness(0.9)";
-        e.currentTarget.style.borderColor = `${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderDark}`;
-        e.currentTarget.style.transform = "translate(1px, 1px)";
-        e.currentTarget.style.boxShadow = `inset 1px 1px 0px ${GRAY_COLORS.shadow}`;
-      }}
-      onMouseUp={(e) => {
-        if (active) return;
-        e.currentTarget.style.filter = "brightness(1.1)";
-        e.currentTarget.style.borderColor = `${GRAY_COLORS.borderLight} ${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderDark} ${GRAY_COLORS.borderLight}`;
-        e.currentTarget.style.transform = "none";
-        e.currentTarget.style.boxShadow = `1px 1px 0px ${GRAY_COLORS.shadow}`;
-      }}
-    >
-      <img
-        src={imgSrc}
-        alt={title}
-        style={{
-          width: 48,
-          height: 48,
-          display: "block",
-        }}
-      />
-    </button>
-  );
 
   return (
     <div 

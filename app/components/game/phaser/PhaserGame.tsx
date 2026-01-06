@@ -3,7 +3,6 @@
 import {
   useEffect,
   useRef,
-  useCallback,
   useImperativeHandle,
   forwardRef,
 } from "react";
@@ -172,7 +171,8 @@ const PhaserGame = forwardRef<PhaserGameHandle, PhaserGameProps>(
         gameRef.current = null;
         sceneRef.current = null;
       };
-    }, []); // Only run once on mount
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Only run once on mount - callbacks are stored in refs to avoid recreating the game
 
     // Update grid when it changes (differential update in scene)
     useEffect(() => {

@@ -49,7 +49,9 @@ function getBuildingPreviewZoom(building: BuildingDefinition): number {
 }
 
 // Tab icons for each category (including crypto categories)
-const CATEGORY_ICONS: Record<BuildingCategory, string> = {
+// Currently unused but kept for future category tab implementation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _CATEGORY_ICONS: Record<BuildingCategory, string> = {
   procedural: "✨",
   residential: "🏠",
   commercial: "🏪",
@@ -88,8 +90,10 @@ const TIER_LABELS: Record<CryptoTier, string> = {
 
 /**
  * Check if a building is a crypto building
+ * Currently unused but kept for future crypto-specific building UI
  */
-function isCryptoBuilding(buildingId: string): boolean {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _isCryptoBuilding(buildingId: string): boolean {
   return buildingId in ALL_CRYPTO_BUILDINGS;
 }
 

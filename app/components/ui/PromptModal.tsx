@@ -33,11 +33,14 @@ export default function PromptModal({
   const dragOffset = useRef({ x: 0, y: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset input when modal opens/closes
+  // Reset input value and focus when modal opens
+  // This effect syncs external state (defaultValue) with internal state (inputValue)
+  // when the modal becomes visible - this is intentional synchronization behavior
   useEffect(() => {
     if (isVisible) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInputValue(defaultValue);
-      // Focus input after a short delay
+      // Focus input after a short delay (after render)
       setTimeout(() => {
         inputRef.current?.focus();
         inputRef.current?.select();

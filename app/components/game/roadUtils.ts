@@ -207,8 +207,7 @@ export function generateRoadPattern(
 
   for (let dy = 0; dy < ROAD_SEGMENT_SIZE; dy++) {
     for (let dx = 0; dx < ROAD_SEGMENT_SIZE; dx++) {
-      const isEdgeX = dx === 0 || dx === ROAD_SEGMENT_SIZE - 1;
-      const isEdgeY = dy === 0 || dy === ROAD_SEGMENT_SIZE - 1;
+      // Check if current position is in center lanes (for road/asphalt placement)
       const isCenterX = dx === 1 || dx === 2;
       const isCenterY = dy === 1 || dy === 2;
 

@@ -19,6 +19,8 @@ interface GifFrame {
   disposalType: number;
 }
 
+// ParsedGif interface - used internally by parseGif but not exported
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface ParsedGif {
   width: number;
   height: number;
