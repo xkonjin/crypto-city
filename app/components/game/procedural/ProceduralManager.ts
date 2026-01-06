@@ -1,11 +1,25 @@
-// Procedural Manager - Handles generation and caching of procedural textures
-// Bridges the procedural generators with Phaser's texture system
+// =============================================================================
+// PROCEDURAL MANAGER
+// =============================================================================
+// Handles generation and caching of procedural textures.
+// Bridges the procedural generators with Phaser's texture system.
+// 
+// This manager is responsible for:
+// - Generating procedural building textures from configs
+// - Caching textures in Phaser's texture manager
+// - Providing texture keys for buildings based on their IDs
+// - Supporting both standard procedural buildings AND crypto buildings
+//
+// The key insight: Crypto buildings defined in cryptoBuildings.ts have
+// isProcedural: true, so we need to generate configs for them dynamically
+// using the CRYPTO_BUILDING_PROCEDURAL_CONFIGS registry.
 
 import Phaser from 'phaser';
-import { BuildingGenerator, ProceduralBuildingConfig, PROCEDURAL_BUILDINGS, getBuildingGenerator } from './BuildingGenerator';
+import { BuildingGenerator, ProceduralBuildingConfig, ALL_PROCEDURAL_BUILDINGS, getBuildingGenerator } from './BuildingGenerator';
 import { TileRenderer, TileRenderConfig, getTileRenderer, preloadTiles } from './TileRenderer';
 import { AnimationSystem, createAnimationSystem } from './AnimationSystem';
 import { TileType } from '../types';
+import { ALL_CRYPTO_BUILDINGS } from '../../../data/cryptoBuildings';
 
 export class ProceduralManager {
   private scene: Phaser.Scene;
@@ -105,11 +119,17 @@ export class ProceduralManager {
   
   /**
    * Generate all pre-defined procedural buildings
+   * This includes both standard procedural buildings and crypto buildings
+   * that are marked with isProcedural: true
    */
   private generateProceduralBuildings(): void {
-    for (const [id, config] of Object.entries(PROCEDURAL_BUILDINGS)) {
+    // Generate all procedural buildings from the combined registry
+    // This includes standard proc-* buildings AND crypto buildings
+    for (const [id, config] of Object.entries(ALL_PROCEDURAL_BUILDINGS)) {
       this.generateProceduralBuilding(config);
     }
+    
+    console.log(`[ProceduralManager] Generated ${Object.keys(ALL_PROCEDURAL_BUILDINGS).length} procedural building textures`);
   }
   
   /**
@@ -131,10 +151,18 @@ export class ProceduralManager {
   
   /**
    * Get texture key for a procedural building
+   * Works with both standard proc-* buildings and crypto buildings
+   * that are marked with isProcedural: true
    */
   getProceduralBuildingKey(buildingId: string): string | null {
-    const config = PROCEDURAL_BUILDINGS[buildingId];
-    if (!config) return null;
+    // First check the combined procedural buildings registry
+    const config = ALL_PROCEDURAL_BUILDINGS[buildingId];
+    if (!config) {
+      // Building not found in procedural configs
+      // This could be a crypto building that wasn't added to the configs yet
+      console.warn(`[ProceduralManager] No procedural config found for: ${buildingId}`);
+      return null;
+    }
     
     const key = `proc_building_${buildingId}`;
     
@@ -148,16 +176,36 @@ export class ProceduralManager {
   
   /**
    * Check if a building ID is a procedural building
+   * A building is procedural if:
+   * 1. It starts with 'proc-' (standard procedural buildings)
+   * 2. It exists in the ALL_PROCEDURAL_BUILDINGS registry
+   * 3. It's a crypto building with isProcedural: true
    */
   isProceduralBuilding(buildingId: string): boolean {
-    return buildingId.startsWith('proc-') || PROCEDURAL_BUILDINGS[buildingId] !== undefined;
+    // Check standard procedural prefix
+    if (buildingId.startsWith('proc-')) {
+      return true;
+    }
+    
+    // Check if in procedural buildings registry
+    if (ALL_PROCEDURAL_BUILDINGS[buildingId] !== undefined) {
+      return true;
+    }
+    
+    // Check if it's a crypto building marked as procedural
+    const cryptoBuilding = ALL_CRYPTO_BUILDINGS[buildingId];
+    if (cryptoBuilding && cryptoBuilding.isProcedural) {
+      return true;
+    }
+    
+    return false;
   }
   
   /**
    * Get the procedural building configuration
    */
   getProceduralBuildingConfig(buildingId: string): ProceduralBuildingConfig | null {
-    return PROCEDURAL_BUILDINGS[buildingId] || null;
+    return ALL_PROCEDURAL_BUILDINGS[buildingId] || null;
   }
   
   /**
