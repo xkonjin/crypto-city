@@ -54,11 +54,10 @@ interface NanoBananaConfig {
 const DEFAULT_CONFIG: NanoBananaConfig = {
   apiKey: process.env.NEXT_PUBLIC_NANOBANANA_API_KEY || '',
   baseUrl: 'https://api.nanobnana.com/v2',
-  defaultSize: '1K',
+  defaultSize: '2K',
   defaultAspectRatio: '1:1',
   maxRetries: 3,
   retryDelayMs: 1000,
-  // Always prefer Gemini when available
   preferGemini: true,
 };
 
@@ -124,16 +123,17 @@ interface CachedSprite {
  * - Modern geometric architecture
  */
 const BASE_PROMPT_TEMPLATE = `
-Clean vector isometric building illustration for a city builder game.
-Flat design style with bold saturated colors.
+High-quality clean vector isometric building illustration for a city builder game.
+Flat design style with bold saturated colors and crisp edges.
 Transparent PNG background.
 South-facing isometric view at approximately 30 degree angle.
 Building sits on a dark slate gray hexagonal or rectangular base platform.
 Soft drop shadow underneath the base platform.
 Modern geometric architecture with clean black outlines.
 Minimal but impactful details, no complex textures or gradients.
-Building centered in frame, filling most of the 512x512 canvas.
-Professional game asset quality, suitable for a crypto/DeFi themed city.
+Building centered in frame, filling most of the 1024x1024 canvas.
+Maximum quality professional game asset, suitable for a crypto/DeFi themed city.
+Sharp details and precise linework.
 `.trim();
 
 /**

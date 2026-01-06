@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Jersey_10, Pixelify_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -17,13 +17,14 @@ const pixelifySans = Pixelify_Sans({
 export const metadata: Metadata = {
   title: "Pogicity",
   description: "A retro city builder game",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: "cover",
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

@@ -104,16 +104,17 @@ const DEFAULT_CONFIG: GeminiImageConfig = {
  * This is prepended to all generation requests to ensure consistency.
  */
 export const BASE_STYLE_PROMPT = `
-Clean vector isometric building illustration for a city builder game.
-Flat design style with bold saturated colors.
+High-quality clean vector isometric building illustration for a city builder game.
+Flat design style with bold saturated colors and crisp edges.
 Transparent PNG background.
 South-facing isometric view at approximately 30 degree angle.
 Building sits on a dark slate gray hexagonal or rectangular base platform.
 Soft drop shadow underneath the base platform.
 Modern geometric architecture with clean black outlines.
 Minimal but impactful details, no complex textures.
-Building centered in frame, filling most of the canvas.
-Professional game asset quality.
+Building centered in frame, filling most of the 1024x1024 canvas.
+Maximum quality professional game asset.
+Sharp details and precise linework.
 `.trim();
 
 /**

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, MouseEvent } from "react";
+import Image from "next/image";
 import { ToolType, CryptoTier } from "../game/types";
 import {
   CATEGORY_NAMES,
@@ -341,6 +342,7 @@ export default function ToolWindow({
                 }}
               >
                 {/* Render at half size then scale up 2x for chunky pixel effect */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewSprite}
                   alt={CATEGORY_NAMES[category]}
@@ -401,15 +403,13 @@ export default function ToolWindow({
                   minHeight: 60,
                 }}
               >
-                <img
+                <Image
                   src="/Tiles/1x1asphalt.png"
                   alt="Road"
-                  style={{
-                    width: 40,
-                    height: 40,
-                    objectFit: "contain",
-                    imageRendering: "pixelated",
-                  }}
+                  width={40}
+                  height={40}
+                  unoptimized
+                  style={{ objectFit: "contain" }}
                 />
                 <span style={{ fontSize: 13, marginTop: 4 }}>Road</span>
               </button>
@@ -431,15 +431,13 @@ export default function ToolWindow({
                   minHeight: 60,
                 }}
               >
-                <img
+                <Image
                   src="/Tiles/1x1asphalt_tile.png"
                   alt="Asphalt"
-                  style={{
-                    width: 40,
-                    height: 40,
-                    objectFit: "contain",
-                    imageRendering: "pixelated",
-                  }}
+                  width={40}
+                  height={40}
+                  unoptimized
+                  style={{ objectFit: "contain" }}
                 />
                 <span style={{ fontSize: 13, marginTop: 4 }}>Asphalt</span>
               </button>
@@ -461,15 +459,13 @@ export default function ToolWindow({
                   minHeight: 60,
                 }}
               >
-                <img
+                <Image
                   src="/Tiles/1x1square_tile.png"
                   alt="Tile"
-                  style={{
-                    width: 40,
-                    height: 40,
-                    objectFit: "contain",
-                    imageRendering: "pixelated",
-                  }}
+                  width={40}
+                  height={40}
+                  unoptimized
+                  style={{ objectFit: "contain" }}
                 />
                 <span style={{ fontSize: 13, marginTop: 4 }}>Tile</span>
               </button>
@@ -491,15 +487,13 @@ export default function ToolWindow({
                   minHeight: 60,
                 }}
               >
-                <img
+                <Image
                   src="/Tiles/1x1snow_tile_1.png"
                   alt="Snow"
-                  style={{
-                    width: 40,
-                    height: 40,
-                    objectFit: "contain",
-                    imageRendering: "pixelated",
-                  }}
+                  width={40}
+                  height={40}
+                  unoptimized
+                  style={{ objectFit: "contain" }}
                 />
                 <span style={{ fontSize: 13, marginTop: 4 }}>Snow</span>
               </button>
@@ -657,6 +651,7 @@ export default function ToolWindow({
                         <span style={{ fontSize: 32 }}>{building.icon}</span>
                       ) : (
                         /* Render at half size then scale up 2x for chunky pixel effect */
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={previewSprite}
                           alt={building.name}
@@ -724,14 +719,12 @@ export default function ToolWindow({
                   }}
                   title="Rotate building"
                 >
-                  <img
+                  <Image
                     src="/UI/r20x20rotate.png"
                     alt="Rotate"
-                    style={{
-                      width: 28,
-                      height: 28,
-                      imageRendering: "pixelated",
-                    }}
+                    width={28}
+                    height={28}
+                    unoptimized
                   />
                 </button>
               </span>

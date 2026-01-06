@@ -13,6 +13,7 @@
 // - Treasury tracking and news ticker
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import {
   TileType,
   ToolType,
@@ -1492,14 +1493,13 @@ export default function GameBoard() {
             e.currentTarget.style.boxShadow = "1px 1px 0px #505050";
           }}
         >
-          <img
+          <Image
             src="/UI/save.png"
             alt="Save"
-            style={{
-              width: 48,
-              height: 48,
-              display: "block",
-            }}
+            width={48}
+            height={48}
+            unoptimized
+            style={{ display: "block" }}
           />
         </button>
         {/* Load button */}
@@ -1546,14 +1546,13 @@ export default function GameBoard() {
             e.currentTarget.style.boxShadow = "1px 1px 0px #505050";
           }}
         >
-          <img
+          <Image
             src="/UI/load.png"
             alt="Load"
-            style={{
-              width: 48,
-              height: 48,
-              display: "block",
-            }}
+            width={48}
+            height={48}
+            unoptimized
+            style={{ display: "block" }}
           />
         </button>
         <button
@@ -1599,14 +1598,13 @@ export default function GameBoard() {
             e.currentTarget.style.boxShadow = "1px 1px 0px #244B7A";
           }}
         >
-          <img
+          <Image
             src="/UI/zoomout.png"
             alt="Zoom Out"
-            style={{
-              width: 48,
-              height: 48,
-              display: "block",
-            }}
+            width={48}
+            height={48}
+            unoptimized
+            style={{ display: "block" }}
           />
         </button>
         <button
@@ -1652,14 +1650,13 @@ export default function GameBoard() {
             e.currentTarget.style.boxShadow = "1px 1px 0px #244B7A";
           }}
         >
-          <img
+          <Image
             src="/UI/zoomin.png"
             alt="Zoom In"
-            style={{
-              width: 48,
-              height: 48,
-              display: "block",
-            }}
+            width={48}
+            height={48}
+            unoptimized
+            style={{ display: "block" }}
           />
         </button>
       </div>
@@ -1743,14 +1740,13 @@ export default function GameBoard() {
             e.currentTarget.style.boxShadow = "1px 1px 0px #2a0a0a";
           }}
         >
-          <img
+          <Image
             src="/UI/build.png"
             alt="Build"
-            style={{
-              width: 48,
-              height: 48,
-              display: "block",
-            }}
+            width={48}
+            height={48}
+            unoptimized
+            style={{ display: "block" }}
           />
         </button>
         <button
@@ -1819,14 +1815,13 @@ export default function GameBoard() {
             e.currentTarget.style.boxShadow = "1px 1px 0px #2a0a0a";
           }}
         >
-          <img
+          <Image
             src="/UI/bulldozer.png"
             alt="Bulldozer"
-            style={{
-              width: 48,
-              height: 48,
-              display: "block",
-            }}
+            width={48}
+            height={48}
+            unoptimized
+            style={{ display: "block" }}
           />
         </button>
       </div>
