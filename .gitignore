@@ -47,3 +47,8 @@ _Animations/
 *.mov
 *.aep
 *.aepx
+
+# Large files excluded from git
+public/example-states/
+_backup_crypto/
+_crypto_backup/
