@@ -77,7 +77,7 @@ export function CoopModal({
           setAutoJoinError(errorMessage);
         });
     }
-  }, [open, pendingRoomCode, autoJoinAttempted, joinRoom]);
+  }, [open, pendingRoomCode, autoJoinAttempted, joinRoom, gt]);
 
   // Reset state when modal closes - cleanup any pending connection
   useEffect(() => {

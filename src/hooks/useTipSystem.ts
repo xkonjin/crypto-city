@@ -173,7 +173,11 @@ export function useTipSystem(state: GameState): UseTipSystemReturn {
   
   // Use a ref to always have the latest state without causing effect re-runs
   const stateRef = useRef(state);
-  stateRef.current = state;
+  
+  // Sync ref with state in effect (not during render)
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Load preferences from localStorage
   useEffect(() => {
@@ -182,6 +186,7 @@ export function useTipSystem(state: GameState): UseTipSystemReturn {
     try {
       const disabled = localStorage.getItem(STORAGE_KEY);
       if (disabled === 'true') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: hydrating state from localStorage on mount
         setTipsEnabledState(false);
       }
       

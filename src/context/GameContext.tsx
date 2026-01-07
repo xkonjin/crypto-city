@@ -672,6 +672,7 @@ export function GameProvider({ children, startFresh = false }: { children: React
     // Load sprite pack preference
     const savedPackId = loadSpritePackId();
     const pack = getSpritePack(savedPackId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: hydrating state from localStorage on mount
     setCurrentSpritePack(pack);
     setActiveSpritePack(pack);
     
@@ -710,7 +711,11 @@ export function GameProvider({ children, startFresh = false }: { children: React
   // PERF: Just mark that state has changed - defer expensive deep copy to actual save time
   const stateChangedRef = useRef(false);
   const latestStateRef = useRef(state);
-  latestStateRef.current = state;
+  
+  // Sync ref with state in effect (not during render)
+  useEffect(() => {
+    latestStateRef.current = state;
+  }, [state]);
   
   useEffect(() => {
     if (!hasLoadedRef.current) {

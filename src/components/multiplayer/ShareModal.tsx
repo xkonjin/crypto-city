@@ -29,6 +29,7 @@ export function ShareModal({ open, onOpenChange }: ShareModalProps) {
   // IMPORTANT: Wait for isStateReady to ensure we have the loaded state, not the default empty state
   useEffect(() => {
     if (open && !roomCode && !isCreating && isStateReady) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: sync loading state when starting async room creation
       setIsCreating(true);
       createRoom(state.cityName, state)
         .then((code) => {
@@ -47,6 +48,7 @@ export function ShareModal({ open, onOpenChange }: ShareModalProps) {
   // Reset copied state when modal closes
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: reset UI state when modal closes
       setCopied(false);
     }
   }, [open]);

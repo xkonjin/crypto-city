@@ -93,7 +93,7 @@ export function useMultiplayerSync() {
       initialStateLoadedRef.current = true;
       lastInitialStateRef.current = stateKey;
     }
-  }, [multiplayer?.initialState, game]);
+  }, [multiplayer, game]);
 
   // Apply a remote action to the local game state
   const applyRemoteAction = useCallback((action: GameAction) => {

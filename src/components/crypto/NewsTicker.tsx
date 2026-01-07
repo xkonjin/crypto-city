@@ -289,8 +289,18 @@ export function EventDetail({ event, onClose }: EventDetailProps) {
     : 'from-red-500/10 via-transparent to-red-500/10';
   const textColor = isPositive ? 'text-green-400' : 'text-red-400';
   
-  const isActive = event.active && Date.now() < event.endTime;
-  const timeRemaining = Math.max(0, Math.floor((event.endTime - Date.now()) / 1000));
+  // Use state + effect to track current time (avoid Date.now() during render)
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  const isActive = event.active && currentTime < event.endTime;
+  const timeRemaining = Math.max(0, Math.floor((event.endTime - currentTime) / 1000));
 
   return (
     <div 

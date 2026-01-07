@@ -4,6 +4,11 @@
  * Central manager for the crypto economy simulation in Crypto City.
  * Handles treasury, yield calculations, market sentiment, and building effects.
  * 
+ * Now enhanced with real-world data integration:
+ * - Blends real Fear & Greed index with simulated sentiment
+ * - Adjusts yields based on real DeFi APYs
+ * - Triggers events from real price movements and news
+ * 
  * Adapted for IsoCity's architecture.
  */
 
@@ -17,6 +22,11 @@ import {
   MarketSentiment,
 } from './types';
 import { ALL_CRYPTO_BUILDINGS, getCryptoBuilding } from './buildings';
+import type { 
+  RealWorldCryptoData, 
+  BlendedGameData,
+  YieldAdjustment,
+} from '../../../lib/crypto/types';
 
 // =============================================================================
 // CONFIGURATION CONSTANTS
@@ -81,6 +91,22 @@ export class CryptoEconomyManager {
   private placedBuildings: Map<string, PlacedCryptoBuilding> = new Map();
   private tickInterval: ReturnType<typeof setInterval> | null = null;
   private listeners: Set<(state: CryptoEconomyState) => void> = new Set();
+  
+  // ---------------------------------------------------------------------------
+  // REAL WORLD DATA INTEGRATION
+  // ---------------------------------------------------------------------------
+  
+  /** Current real-world crypto data (null if not yet loaded) */
+  private realWorldData: RealWorldCryptoData | null = null;
+  
+  /** Current blended game data (sentiment, yields, events) */
+  private blendedData: BlendedGameData | null = null;
+  
+  /** Whether real data integration is enabled */
+  private realDataEnabled: boolean = true;
+  
+  /** Base simulated sentiment (before blending) */
+  private simulatedSentiment: number = 50;
   
   constructor(initialState?: Partial<CryptoEconomyState>) {
     this.state = {
@@ -158,6 +184,137 @@ export class CryptoEconomyManager {
   }
   
   // ---------------------------------------------------------------------------
+  // REAL WORLD DATA INTEGRATION
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Set real-world crypto data from the data sync layer
+   * This data will be blended with simulated values
+   * 
+   * @param data - Real-world data from APIs
+   * @param blended - Blended game data from Reality Blender
+   */
+  setRealWorldData(data: RealWorldCryptoData, blended: BlendedGameData): void {
+    this.realWorldData = data;
+    this.blendedData = blended;
+    
+    // If blending is enabled and we have sentiment data, update market sentiment
+    if (this.realDataEnabled && blended.sentiment.hasRealData) {
+      // Convert from -100/+100 scale to 0-100 scale
+      const blendedSentiment = (blended.sentiment.value + 100) / 2;
+      this.state.marketSentiment = blendedSentiment;
+    }
+    
+    // Recalculate economy with new real data
+    this.recalculateEconomy();
+    this.notifyListeners();
+  }
+  
+  /**
+   * Get current real-world data (null if not available)
+   */
+  getRealWorldData(): RealWorldCryptoData | null {
+    return this.realWorldData;
+  }
+  
+  /**
+   * Get current blended game data (null if not available)
+   */
+  getBlendedData(): BlendedGameData | null {
+    return this.blendedData;
+  }
+  
+  /**
+   * Check if real data is available and fresh
+   */
+  hasRealData(): boolean {
+    return !!(this.realWorldData && this.blendedData?.dataStatus.hasAnyData);
+  }
+  
+  /**
+   * Check if we're currently online
+   */
+  isOnline(): boolean {
+    return this.realWorldData?.isOnline ?? true;
+  }
+  
+  /**
+   * Enable or disable real data integration
+   */
+  setRealDataEnabled(enabled: boolean): void {
+    this.realDataEnabled = enabled;
+    this.recalculateEconomy();
+  }
+  
+  /**
+   * Check if real data integration is enabled
+   */
+  isRealDataEnabled(): boolean {
+    return this.realDataEnabled;
+  }
+  
+  /**
+   * Get real yield adjustment for a specific chain
+   * Returns multiplier (1.0 = no adjustment)
+   */
+  getRealYieldMultiplier(chain?: CryptoChain): number {
+    if (!this.realDataEnabled || !this.blendedData?.yields.hasRealData) {
+      return 1.0;
+    }
+    
+    const yields = this.blendedData.yields;
+    
+    // If specific chain requested, check for chain-specific multiplier
+    if (chain && yields.chainMultipliers[chain]) {
+      return yields.chainMultipliers[chain]!;
+    }
+    
+    // Otherwise return global multiplier
+    return yields.globalMultiplier;
+  }
+  
+  /**
+   * Get real yield adjustment for a specific protocol
+   * Returns multiplier (1.0 = no adjustment)
+   */
+  getProtocolYieldMultiplier(protocolName: string): number {
+    if (!this.realDataEnabled || !this.blendedData?.yields.hasRealData) {
+      return 1.0;
+    }
+    
+    const lowerName = protocolName.toLowerCase();
+    return this.blendedData.yields.protocolMultipliers[lowerName] ?? 1.0;
+  }
+  
+  /**
+   * Get data freshness status for UI display
+   */
+  getDataStatus(): {
+    isOnline: boolean;
+    lastSync: number | null;
+    staleness: number;
+    hasAnyData: boolean;
+    sentimentSource: 'real' | 'simulated' | 'blended';
+  } {
+    if (!this.blendedData) {
+      return {
+        isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+        lastSync: null,
+        staleness: Infinity,
+        hasAnyData: false,
+        sentimentSource: 'simulated',
+      };
+    }
+    
+    return {
+      ...this.blendedData.dataStatus,
+      sentimentSource: this.realDataEnabled && this.blendedData.sentiment.hasRealData 
+        ? 'blended' 
+        : 'simulated',
+    };
+  }
+  
+  // ---------------------------------------------------------------------------
   // BUILDING MANAGEMENT
   // ---------------------------------------------------------------------------
   
@@ -230,6 +387,7 @@ export class CryptoEconomyManager {
   
   /**
    * Recalculate all economy values based on placed buildings
+   * Now includes real-world data adjustments when available
    */
   private recalculateEconomy(): void {
     let totalYieldRate = 0;
@@ -258,6 +416,23 @@ export class CryptoEconomyManager {
       const synergyBonus = this.calculateSynergyBonus(placed, def);
       buildingYield *= (1 + synergyBonus);
       
+      // ==== REAL WORLD DATA ADJUSTMENT ====
+      // Apply real-world yield multipliers if available
+      if (this.realDataEnabled && this.blendedData?.yields.hasRealData) {
+        // Try protocol-specific multiplier first (e.g., "Uniswap", "Aave")
+        const protocol = def.crypto.protocol;
+        if (protocol) {
+          const protocolMultiplier = this.getProtocolYieldMultiplier(protocol);
+          buildingYield *= protocolMultiplier;
+        } else {
+          // Fall back to chain multiplier
+          const chain = def.crypto.chain;
+          const chainMultiplier = this.getRealYieldMultiplier(chain);
+          buildingYield *= chainMultiplier;
+        }
+      }
+      // ==== END REAL WORLD DATA ADJUSTMENT ====
+      
       totalYieldRate += buildingYield;
       
       // TVL contribution based on tier
@@ -267,7 +442,14 @@ export class CryptoEconomyManager {
     
     // Apply sentiment modifier to yield
     const sentimentMultiplier = this.getSentimentMultiplier();
-    const adjustedYield = totalYieldRate * sentimentMultiplier;
+    let adjustedYield = totalYieldRate * sentimentMultiplier;
+    
+    // ==== GLOBAL REAL YIELD ADJUSTMENT ====
+    // Apply global yield multiplier from real DeFi data
+    if (this.realDataEnabled && this.blendedData?.yields.hasRealData) {
+      adjustedYield *= this.blendedData.yields.globalMultiplier;
+    }
+    // ==== END GLOBAL REAL YIELD ADJUSTMENT ====
     
     // Update state
     this.state = {
@@ -413,16 +595,34 @@ export class CryptoEconomyManager {
   
   /**
    * Apply random sentiment fluctuation
+   * When real data is enabled, we fluctuate the simulated base and blend
+   * When disabled, we fluctuate the actual sentiment directly
    */
   private fluctuateSentiment(): void {
     // Small random walk with mean reversion to 50
-    const current = this.state.marketSentiment;
+    const current = this.realDataEnabled ? this.simulatedSentiment : this.state.marketSentiment;
     const meanReversion = (50 - current) * 0.01;
     const randomWalk = (Math.random() - 0.5) * 4;
     
-    const newSentiment = Math.max(0, Math.min(100, current + meanReversion + randomWalk));
+    const newSimulatedSentiment = Math.max(0, Math.min(100, current + meanReversion + randomWalk));
     
-    this.state.marketSentiment = newSentiment;
+    // Update simulated base
+    this.simulatedSentiment = newSimulatedSentiment;
+    
+    // If real data is available and enabled, the sentiment is set by setRealWorldData
+    // Otherwise, use the simulated value directly
+    if (!this.realDataEnabled || !this.blendedData?.sentiment.hasRealData) {
+      this.state.marketSentiment = newSimulatedSentiment;
+    }
+    // When real data is enabled, sentiment is updated in setRealWorldData()
+  }
+  
+  /**
+   * Get the current simulated sentiment (before blending)
+   * Useful for the Reality Blender
+   */
+  getSimulatedSentiment(): number {
+    return this.simulatedSentiment;
   }
   
   /**

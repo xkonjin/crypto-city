@@ -16,6 +16,7 @@ function TwitterCard({ og }: { og: OGData }) {
     <div className="max-w-[504px] rounded-2xl overflow-hidden border border-gray-700 bg-black">
       {og.image && (
         <div className="relative aspect-[1.91/1] bg-gray-900">
+          {/* eslint-disable-next-line @next/next/no-img-element -- Dynamic external OG images */}
           <img 
             src={og.image} 
             alt="" 
@@ -37,6 +38,7 @@ function IMessageCard({ og }: { og: OGData }) {
     <div className="max-w-[300px] rounded-2xl overflow-hidden bg-[#1c1c1e] border border-[#38383a]">
       {og.image && (
         <div className="relative aspect-[1.91/1] bg-gray-900">
+          {/* eslint-disable-next-line @next/next/no-img-element -- Dynamic external OG images */}
           <img 
             src={og.image} 
             alt="" 
@@ -60,6 +62,7 @@ function SlackCard({ og }: { og: OGData }) {
       <div className="text-[#616061] text-sm mt-1 line-clamp-2">{og.description}</div>
       {og.image && (
         <div className="mt-2 rounded overflow-hidden max-w-[360px]">
+          {/* eslint-disable-next-line @next/next/no-img-element -- Dynamic external OG images */}
           <img 
             src={og.image} 
             alt="" 
@@ -81,6 +84,7 @@ function DiscordCard({ og }: { og: OGData }) {
       </div>
       {og.image && (
         <div className="px-4 pb-4">
+          {/* eslint-disable-next-line @next/next/no-img-element -- Dynamic external OG images */}
           <img 
             src={og.image} 
             alt="" 

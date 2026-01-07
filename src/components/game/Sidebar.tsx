@@ -477,6 +477,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
     const isHost = multiplayer?.connectionState === 'connected' && multiplayer?.roomCode && !multiplayer?.initialState;
     if (isHost && !hasShownShareModalRef.current) {
       hasShownShareModalRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: show share modal when host first connects
       setShowShareModal(true);
     }
   }, [multiplayer?.connectionState, multiplayer?.roomCode, multiplayer?.initialState]);

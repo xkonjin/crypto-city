@@ -22,8 +22,8 @@ function TipToastContent({ message, isVisible, onContinue, onSkipAll }: TipToast
 
   useEffect(() => {
     if (isVisible) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: animation state must sync with visibility
       setShouldRender(true);
-      // Small delay to trigger animation
       const frame = requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setIsAnimating(true);
@@ -32,7 +32,6 @@ function TipToastContent({ message, isVisible, onContinue, onSkipAll }: TipToast
       return () => cancelAnimationFrame(frame);
     } else {
       setIsAnimating(false);
-      // Wait for exit animation before unmounting
       const timer = setTimeout(() => {
         setShouldRender(false);
       }, 300);
@@ -123,6 +122,7 @@ export function TipToast(props: TipToastProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: client-side portal mounting detection
     setMounted(true);
   }, []);
 

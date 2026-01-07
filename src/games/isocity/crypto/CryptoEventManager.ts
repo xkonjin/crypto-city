@@ -4,11 +4,17 @@
  * Manages random crypto events that affect the city economy.
  * Events include bull runs, bear markets, airdrops, rug pulls, hacks, etc.
  * 
+ * Now enhanced with real-world data integration:
+ * - Triggers events from real price movements
+ * - Triggers events from real news (via Perplexity AI)
+ * - Integrates CT tweets for news ticker
+ * 
  * Adapted for IsoCity's architecture.
  */
 
 import { CryptoEventType, CryptoEvent, CryptoEventDefinition } from './types';
 import { CryptoEconomyManager } from './CryptoEconomyManager';
+import type { EventTrigger, TickerItem } from '../../../lib/crypto/types';
 
 // =============================================================================
 // EVENT DEFINITIONS
@@ -193,6 +199,22 @@ export class CryptoEventManager {
   private maxActiveEvents = 2;
   private maxHistoryLength = 50;
   
+  // ---------------------------------------------------------------------------
+  // REAL WORLD DATA INTEGRATION
+  // ---------------------------------------------------------------------------
+  
+  /** Pending event triggers from real-world data */
+  private pendingRealTriggers: EventTrigger[] = [];
+  
+  /** Real ticker items from news/tweets */
+  private realTickerItems: TickerItem[] = [];
+  
+  /** Recently triggered real event types (to prevent spam) */
+  private recentRealEventTypes: Set<CryptoEventType> = new Set();
+  
+  /** Cooldown for real event types (ms) */
+  private realEventCooldown = 5 * 60 * 1000; // 5 minutes
+  
   constructor(economyManager?: CryptoEconomyManager) {
     if (economyManager) {
       this.economyManager = economyManager;
@@ -208,6 +230,135 @@ export class CryptoEventManager {
    */
   setEconomyManager(manager: CryptoEconomyManager): void {
     this.economyManager = manager;
+  }
+  
+  // ---------------------------------------------------------------------------
+  // REAL WORLD DATA INTEGRATION
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Set event triggers from real-world data
+   * These will be processed on the next event check
+   * 
+   * @param triggers - Array of potential events from Reality Blender
+   */
+  setRealEventTriggers(triggers: EventTrigger[]): void {
+    this.pendingRealTriggers = triggers;
+  }
+  
+  /**
+   * Set ticker items from real news and tweets
+   * 
+   * @param items - Array of ticker items from Reality Blender
+   */
+  setRealTickerItems(items: TickerItem[]): void {
+    this.realTickerItems = items;
+  }
+  
+  /**
+   * Get real ticker items for news display
+   */
+  getRealTickerItems(): TickerItem[] {
+    return this.realTickerItems;
+  }
+  
+  /**
+   * Process pending real-world event triggers
+   * Called during the regular event check cycle
+   */
+  private processRealTriggers(): void {
+    if (this.pendingRealTriggers.length === 0) return;
+    if (this.activeEvents.size >= this.maxActiveEvents) return;
+    
+    for (const trigger of this.pendingRealTriggers) {
+      // Skip if this event type was recently triggered from real data
+      if (this.recentRealEventTypes.has(trigger.type)) {
+        continue;
+      }
+      
+      // Skip if event type is already active
+      if (this.isEventActive(trigger.type)) {
+        continue;
+      }
+      
+      // Check exclusive conflicts
+      if (this.isExclusiveConflict(trigger.type)) {
+        continue;
+      }
+      
+      // Roll against probability
+      if (Math.random() < trigger.probability) {
+        // Trigger the event with custom name/description if provided
+        const event = this.triggerEvent(trigger.type, 1.0);
+        
+        // Override name/description with real-world sourced ones
+        if (trigger.customName) {
+          event.name = trigger.customName;
+        }
+        if (trigger.customDescription) {
+          event.description = trigger.customDescription;
+        }
+        
+        // Mark as recently triggered to prevent spam
+        this.recentRealEventTypes.add(trigger.type);
+        setTimeout(() => {
+          this.recentRealEventTypes.delete(trigger.type);
+        }, this.realEventCooldown);
+        
+        console.log(`[CryptoEventManager] Triggered real-world event: ${event.name}`);
+        
+        // Only one real event per check
+        break;
+      }
+    }
+    
+    // Clear processed triggers
+    this.pendingRealTriggers = [];
+  }
+  
+  /**
+   * Manually trigger an event from real-world data
+   * Bypasses probability check
+   * 
+   * @param type - Event type to trigger
+   * @param customName - Optional custom name
+   * @param customDescription - Optional custom description
+   */
+  triggerFromRealData(
+    type: CryptoEventType,
+    customName?: string,
+    customDescription?: string
+  ): CryptoEvent | null {
+    // Skip if this event type was recently triggered
+    if (this.recentRealEventTypes.has(type)) {
+      console.log(`[CryptoEventManager] Skipping ${type} - recently triggered`);
+      return null;
+    }
+    
+    // Skip if already at max events
+    if (this.activeEvents.size >= this.maxActiveEvents) {
+      console.log(`[CryptoEventManager] Skipping ${type} - max events active`);
+      return null;
+    }
+    
+    // Skip if exclusive conflict
+    if (this.isExclusiveConflict(type)) {
+      console.log(`[CryptoEventManager] Skipping ${type} - exclusive conflict`);
+      return null;
+    }
+    
+    const event = this.triggerEvent(type, 1.0);
+    
+    if (customName) event.name = customName;
+    if (customDescription) event.description = customDescription;
+    
+    // Mark as recently triggered
+    this.recentRealEventTypes.add(type);
+    setTimeout(() => {
+      this.recentRealEventTypes.delete(type);
+    }, this.realEventCooldown);
+    
+    return event;
   }
   
   // ---------------------------------------------------------------------------
@@ -238,11 +389,18 @@ export class CryptoEventManager {
   
   /**
    * Check if a new event should trigger
+   * Now also processes real-world triggers
    */
   private checkForNewEvent(): void {
     if (this.activeEvents.size >= this.maxActiveEvents) return;
     
-    // Roll for each event type
+    // FIRST: Process any pending real-world triggers (priority)
+    this.processRealTriggers();
+    
+    // If we triggered a real event, skip random events this cycle
+    if (this.activeEvents.size >= this.maxActiveEvents) return;
+    
+    // THEN: Roll for random events
     for (const [type, definition] of Object.entries(CRYPTO_EVENTS)) {
       // Check if event is exclusive with any active event
       if (this.isExclusiveConflict(type as CryptoEventType)) {
