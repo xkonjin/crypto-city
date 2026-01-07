@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- game sprites require native img for canvas/sprite rendering */
+
 // =============================================================================
 // GAME BOARD - MAIN COMPONENT
 // =============================================================================
