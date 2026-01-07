@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- building preview icons require native img for dynamic src */
+
 import { useState, useRef, useCallback, useEffect, MouseEvent } from "react";
 import { ToolType, CryptoTier } from "../game/types";
 import {
