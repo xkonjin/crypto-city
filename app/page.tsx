@@ -1,5 +1,10 @@
 import GameBoard from "./components/game/GameBoard";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 export default function Home() {
-  return <GameBoard />;
+  return (
+    <ErrorBoundary>
+      <GameBoard />
+    </ErrorBoundary>
+  );
 }

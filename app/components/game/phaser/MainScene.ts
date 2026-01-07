@@ -30,10 +30,13 @@ import {
 } from "../roadUtils";
 import {
   BUILDINGS,
-  getBuilding,
-  getBuildingFootprint,
   BuildingDefinition,
+  getBuildingFootprint,
 } from "@/app/data/buildings";
+import {
+  getBuilding,
+  ALL_BUILDINGS,
+} from "@/app/data/buildingRegistry";
 import { loadGifAsAnimation, playGifAnimation } from "./GifLoader";
 // Procedural generation system for Plasma-style visuals
 import { 
@@ -184,6 +187,14 @@ export class MainScene extends Phaser.Scene {
   private proceduralManager: ProceduralManager | null = null;
   // Flag for whether procedural system is ready
   private proceduralReady: boolean = false;
+  
+  // Buildings waiting for procedural system to be ready
+  private pendingProceduralBuildings: Array<{
+    originX: number;
+    originY: number;
+    buildingId: string;
+    orientation?: Direction;
+  }> = [];
 
   constructor() {
     super({ key: "MainScene" });
@@ -284,6 +295,9 @@ export class MainScene extends Phaser.Scene {
     // Mouse wheel zoom - handled directly in Phaser for correct coordinates
     // Based on: https://phaser.io/examples/v3.85.0/tilemap/view/mouse-wheel-zoom
     this.input.on("wheel", this.handleWheel, this);
+
+    // Create fallback textures for missing/loading assets
+    this.createFallbackTextures();
 
     // Initial render
     this.renderGrid();
@@ -393,6 +407,9 @@ export class MainScene extends Phaser.Scene {
       if (this.gridDirtyTiles.size > 0) {
         this.applyGridUpdates();
       }
+      
+      // Process any buildings that were placed before procedural was ready
+      this.processPendingBuildings();
       
       // Start ambient particle effects for atmosphere
       // this.proceduralManager.startAmbientParticles();
@@ -1984,27 +2001,45 @@ export class MainScene extends Phaser.Scene {
   ): void {
     const building = getBuilding(buildingId);
     if (!building) {
-      console.warn(`Building not found in registry: ${buildingId}`);
+      console.warn(`[MainScene] Building not found in registry: ${buildingId}`);
+      // Use error texture for unknown buildings - don't silently fail
+      this.renderFallbackBuilding(originX, originY, "__ERROR_TEXTURE__", buildingId);
       return;
     }
 
     const key = `building_${originX},${originY}`;
+    
+    // Track if we're using a fallback texture
+    let usingFallback = false;
     
     // Check if this is a procedural building
     let textureKey: string;
     if (this.isProceduralBuilding(buildingId)) {
       const procTextureKey = this.getProceduralBuildingTextureKey(buildingId);
       if (!procTextureKey || !this.textures.exists(procTextureKey)) {
-        console.warn(`Procedural texture not ready for: ${buildingId}`);
-        return;
+        console.warn(`[MainScene] Procedural texture not ready for: ${buildingId}`);
+        textureKey = this.getFallbackTextureKey(buildingId);
+        usingFallback = true;
+        
+        // Queue a re-render when procedural system is ready
+        if (!this.proceduralReady) {
+          this.queuePendingBuilding(originX, originY, buildingId, orientation);
+        }
+      } else {
+        textureKey = procTextureKey;
       }
-      textureKey = procTextureKey;
     } else {
       textureKey = this.getBuildingTextureKey(building, orientation);
-    if (!this.textures.exists(textureKey)) {
-      console.warn(`Texture not found: ${textureKey}`);
-      return;
+      if (!this.textures.exists(textureKey)) {
+        console.warn(`[MainScene] Texture not found: ${textureKey}`);
+        textureKey = this.getFallbackTextureKey(buildingId);
+        usingFallback = true;
       }
+    }
+    
+    // Log fallback usage for debugging
+    if (usingFallback) {
+      console.log(`[MainScene] Using fallback texture for ${buildingId} at (${originX}, ${originY})`);
     }
 
     // Get footprint based on orientation (for positioning)
@@ -2315,6 +2350,173 @@ export class MainScene extends Phaser.Scene {
     // Generate texture from graphics
     graphics.generateTexture("lamp_glow", size, size);
     graphics.destroy();
+  }
+
+  /**
+   * Create fallback textures for missing or loading assets
+   * Called during scene creation to ensure fallbacks are always available
+   */
+  private createFallbackTextures(): void {
+    // Create "MISSING" texture (pink/magenta checkerboard pattern)
+    if (!this.textures.exists("__MISSING_TEXTURE__")) {
+      const size = 512;
+      const graphics = this.make.graphics({ x: 0, y: 0 });
+      const squareSize = 32;
+      
+      for (let y = 0; y < size; y += squareSize) {
+        for (let x = 0; x < size; x += squareSize) {
+          const isEven = ((x / squareSize) + (y / squareSize)) % 2 === 0;
+          graphics.fillStyle(isEven ? 0xff00ff : 0x000000, 1);
+          graphics.fillRect(x, y, squareSize, squareSize);
+        }
+      }
+      
+      // Add "?" text in center
+      graphics.generateTexture("__MISSING_TEXTURE__", size, size);
+      graphics.destroy();
+      
+      console.log("[MainScene] Created missing texture fallback");
+    }
+    
+    // Create "LOADING" texture (animated-looking placeholder)
+    if (!this.textures.exists("__LOADING_TEXTURE__")) {
+      const size = 512;
+      const graphics = this.make.graphics({ x: 0, y: 0 });
+      
+      // Dark background
+      graphics.fillStyle(0x1a1a2e, 1);
+      graphics.fillRect(0, 0, size, size);
+      
+      // Add loading indicator (spinning circle segments)
+      const centerX = size / 2;
+      const centerY = size / 2;
+      const radius = 60;
+      
+      graphics.lineStyle(8, 0x4ade80, 0.8);
+      graphics.beginPath();
+      graphics.arc(centerX, centerY, radius, 0, Math.PI * 1.5, false);
+      graphics.strokePath();
+      
+      // Inner circle
+      graphics.lineStyle(4, 0x4ade80, 0.4);
+      graphics.beginPath();
+      graphics.arc(centerX, centerY, radius - 20, 0, Math.PI * 2, false);
+      graphics.strokePath();
+      
+      graphics.generateTexture("__LOADING_TEXTURE__", size, size);
+      graphics.destroy();
+      
+      console.log("[MainScene] Created loading texture fallback");
+    }
+    
+    // Create "ERROR" texture for buildings that failed to generate
+    if (!this.textures.exists("__ERROR_TEXTURE__")) {
+      const size = 512;
+      const graphics = this.make.graphics({ x: 0, y: 0 });
+      
+      // Red-tinted background
+      graphics.fillStyle(0x2a1a1a, 1);
+      graphics.fillRect(0, 0, size, size);
+      
+      // Draw X pattern
+      graphics.lineStyle(8, 0xff4444, 1);
+      graphics.beginPath();
+      graphics.moveTo(100, 100);
+      graphics.lineTo(size - 100, size - 100);
+      graphics.moveTo(size - 100, 100);
+      graphics.lineTo(100, size - 100);
+      graphics.strokePath();
+      
+      // Draw circle around X
+      graphics.lineStyle(6, 0xff4444, 0.8);
+      graphics.beginPath();
+      graphics.arc(size / 2, size / 2, 120, 0, Math.PI * 2, false);
+      graphics.strokePath();
+      
+      graphics.generateTexture("__ERROR_TEXTURE__", size, size);
+      graphics.destroy();
+      
+      console.log("[MainScene] Created error texture fallback");
+    }
+  }
+
+  /**
+   * Get the appropriate fallback texture key for a building
+   */
+  private getFallbackTextureKey(buildingId: string): string {
+    if (this.isProceduralBuilding(buildingId)) {
+      // Procedural building not ready yet
+      return this.proceduralReady ? "__ERROR_TEXTURE__" : "__LOADING_TEXTURE__";
+    }
+    // Regular building with missing asset
+    return "__MISSING_TEXTURE__";
+  }
+
+  /**
+   * Render a simple fallback building when the real texture is unavailable
+   */
+  private renderFallbackBuilding(
+    originX: number,
+    originY: number,
+    textureKey: string,
+    buildingId: string
+  ): void {
+    const key = `building_${originX},${originY}`;
+    
+    // Remove existing sprite if any
+    this.removeBuildingSprites(key);
+    
+    // Calculate screen position (assume 1x1 footprint for fallback)
+    const screenPos = this.gridToScreen(originX, originY);
+    const bottomY = screenPos.y + TILE_HEIGHT;
+    
+    // Create a simple sprite with the fallback texture
+    const sprite = this.add.image(screenPos.x, bottomY, textureKey);
+    sprite.setOrigin(0.5, 1);
+    sprite.setScale(0.1); // Scale down the 512x512 texture to fit a tile
+    sprite.setDepth(this.depthFromSortPoint(screenPos.x, screenPos.y + TILE_HEIGHT / 2, 0.05));
+    
+    // Add a subtle tint to indicate it's a fallback
+    if (textureKey === "__LOADING_TEXTURE__") {
+      sprite.setAlpha(0.7);
+    }
+    
+    this.buildingSprites.set(key, sprite);
+    console.log(`[MainScene] Rendered fallback for ${buildingId} at (${originX}, ${originY})`);
+  }
+
+  /**
+   * Queue a building for re-rendering when procedural system becomes ready
+   */
+  private queuePendingBuilding(
+    originX: number,
+    originY: number,
+    buildingId: string,
+    orientation?: Direction
+  ): void {
+    // Avoid duplicate entries
+    const exists = this.pendingProceduralBuildings.some(
+      (b) => b.originX === originX && b.originY === originY
+    );
+    if (!exists) {
+      this.pendingProceduralBuildings.push({ originX, originY, buildingId, orientation });
+      console.log(`[MainScene] Queued ${buildingId} for re-render when procedural ready`);
+    }
+  }
+
+  /**
+   * Process all pending procedural buildings (called when procedural system is ready)
+   */
+  private processPendingBuildings(): void {
+    if (this.pendingProceduralBuildings.length === 0) return;
+    
+    console.log(`[MainScene] Processing ${this.pendingProceduralBuildings.length} pending buildings`);
+    
+    for (const pending of this.pendingProceduralBuildings) {
+      this.renderBuilding(pending.originX, pending.originY, pending.buildingId, pending.orientation);
+    }
+    
+    this.pendingProceduralBuildings = [];
   }
 
   private getBuildingTextureKey(

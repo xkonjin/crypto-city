@@ -52,10 +52,16 @@ export function calculateZoneEffects(grid: GridCell[][]): ZoneEffect[] {
       if (radius === 0) continue;
       
       // Create zone effect for this building
+      // Includes both new and legacy properties for compatibility
       const zoneEffect: ZoneEffect = {
         sourceBuilding: building.id,
-        sourceTile: { x, y },
         radius,
+        // New properties
+        yieldBonus: (cryptoEffects.stakingBonus ?? 1) - 1, // Convert multiplier to bonus
+        happinessBonus: cryptoEffects.happinessEffect ?? 0,
+        volatilityModifier: cryptoEffects.volatility ?? 0,
+        // Legacy properties
+        sourceTile: { x, y },
         effects: {
           yieldMultiplier: cryptoEffects.stakingBonus || 1.0,
           happinessModifier: cryptoEffects.happinessEffect || 0,
@@ -86,6 +92,9 @@ export function getZoneEffectsAtTile(
   allEffects: ZoneEffect[]
 ): ZoneEffect[] {
   return allEffects.filter(effect => {
+    // Skip effects without sourceTile (shouldn't happen but be safe)
+    if (!effect.sourceTile) return false;
+    
     const dx = x - effect.sourceTile.x;
     const dy = y - effect.sourceTile.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
@@ -129,6 +138,9 @@ export function getCombinedEffectsAtTile(
   const chainBonuses = new Set<string>();
   
   for (const effect of effectsAtTile) {
+    // Skip effects without sourceTile
+    if (!effect.sourceTile) continue;
+    
     // Calculate distance-based falloff
     const dx = x - effect.sourceTile.x;
     const dy = y - effect.sourceTile.y;
@@ -136,25 +148,25 @@ export function getCombinedEffectsAtTile(
     const falloff = 1 - (distance / effect.radius);  // 1 at center, 0 at edge
     
     // Apply effects with falloff
-    if (effect.effects.yieldMultiplier) {
+    if (effect.effects?.yieldMultiplier) {
       // Yield multipliers stack multiplicatively
       const bonus = (effect.effects.yieldMultiplier - 1) * falloff;
       yieldMultiplier *= (1 + bonus);
     }
     
-    if (effect.effects.happinessModifier) {
+    if (effect.effects?.happinessModifier) {
       happinessModifier += effect.effects.happinessModifier * falloff;
     }
     
-    if (effect.effects.volatilityModifier) {
+    if (effect.effects?.volatilityModifier) {
       volatilityModifier += effect.effects.volatilityModifier * falloff;
     }
     
-    if (effect.effects.populationType) {
+    if (effect.effects?.populationType) {
       tierCounts[effect.effects.populationType]++;
     }
     
-    if (effect.effects.chainBonus) {
+    if (effect.effects?.chainBonus) {
       chainBonuses.add(effect.effects.chainBonus);
     }
   }

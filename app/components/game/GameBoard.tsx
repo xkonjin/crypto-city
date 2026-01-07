@@ -15,6 +15,8 @@
 // - Treasury tracking and news ticker
 
 import { useState, useEffect, useCallback, useRef } from "react";
+// Note: Zustand store exists in @/app/store/gameStore for future migration
+// Currently using local useState for game state management
 import {
   TileType,
   ToolType,
@@ -36,7 +38,8 @@ import {
   getAffectedSegments,
   canPlaceRoadSegment,
 } from "./roadUtils";
-import { getBuilding, getBuildingFootprint } from "@/app/data/buildings";
+import { getBuildingFootprint } from "@/app/data/buildings";
+import { getBuilding } from "@/app/data/buildingRegistry";
 import { ALL_CRYPTO_BUILDINGS } from "@/app/data/cryptoBuildings";
 import dynamic from "next/dynamic";
 import type { PhaserGameHandle } from "./phaser/PhaserGame";
@@ -57,6 +60,16 @@ import {
   createInitialEconomyState,
 } from "@/app/simulation/CryptoEconomyManager";
 import { CryptoEventManager } from "@/app/simulation/CryptoEventManager";
+
+// =============================================================================
+// ASSET VALIDATION
+// =============================================================================
+// Import dynamically to avoid SSR issues (BuildingGenerator uses canvas)
+
+// =============================================================================
+// CENTRALIZED CONFIG
+// =============================================================================
+import { SIMULATION_CONFIG, UI_CONFIG } from "@/app/config/gameConfig";
 
 // Dynamically import PhaserGame (no SSR - Phaser needs browser APIs)
 const PhaserGame = dynamic(() => import("./phaser/PhaserGame"), {
@@ -113,7 +126,8 @@ const createEmptyGrid = (): GridCell[][] => {
  * Lower = faster economy simulation
  * Default: 2000ms (2 seconds per "game day")
  */
-const SIMULATION_TICK_INTERVAL = 2000;
+// Use centralized config for simulation tick interval
+const SIMULATION_TICK_INTERVAL = SIMULATION_CONFIG.TICK_INTERVAL_MS;
 
 /**
  * Whether to show the crypto economy UI
@@ -122,7 +136,8 @@ const SIMULATION_TICK_INTERVAL = 2000;
 const SHOW_CRYPTO_UI = true;
 
 // Discrete zoom levels matching the button zoom levels
-const ZOOM_LEVELS = [0.25, 0.5, 1, 2, 4];
+// Use centralized config for zoom levels (spread to avoid readonly issues)
+const ZOOM_LEVELS: number[] = [...UI_CONFIG.ZOOM_LEVELS];
 
 // Helper function to find closest zoom level index
 const findClosestZoomIndex = (zoomValue: number): number => {
@@ -145,18 +160,10 @@ export default function GameBoard() {
   // UI state
   const [selectedTool, setSelectedTool] = useState<ToolType>(ToolType.None);
   const [zoom, setZoom] = useState(1);
-  // Debug flags - setters intentionally unused, for future debug UI
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [debugPaths, _setDebugPaths] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [showStats, _setShowStats] = useState(false);
   const [isToolWindowVisible, setIsToolWindowVisible] = useState(false);
   const [buildingOrientation, setBuildingOrientation] = useState<Direction>(
     Direction.Down
   );
-  // Player driving state - setter unused, triggered by game logic
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [isPlayerDriving, _setIsPlayerDriving] = useState(false);
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(
     null
   );
@@ -268,6 +275,14 @@ export default function GameBoard() {
   // Initialize the crypto economy and event managers on mount
   
   useEffect(() => {
+    // Run asset validation on startup (development only logs warnings)
+    // Dynamic import to avoid SSR issues with BuildingGenerator canvas usage
+    if (process.env.NODE_ENV === 'development') {
+      import("@/app/utils/assetValidation").then(({ runAssetValidation }) => {
+        runAssetValidation();
+      });
+    }
+    
     // Create economy manager if not exists
     if (!economyManagerRef.current) {
       economyManagerRef.current = new CryptoEconomyManager(
@@ -441,13 +456,6 @@ export default function GameBoard() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedTool, isToolWindowVisible]);
-
-  // Sync driving state with Phaser
-  useEffect(() => {
-    if (phaserGameRef.current) {
-      phaserGameRef.current.setDrivingState(isPlayerDriving);
-    }
-  }, [isPlayerDriving]);
 
   // Handle tile click (grid modifications)
   const handleTileClick = useCallback(
@@ -1314,14 +1322,22 @@ export default function GameBoard() {
       }
 
       // Wait for grid to update, then spawn characters and cars
-      setTimeout(() => {
-        for (let i = 0; i < (saveData.characterCount ?? 0); i++) {
-          phaserGameRef.current?.spawnCharacter();
-        }
-        for (let i = 0; i < (saveData.carCount ?? 0); i++) {
-          phaserGameRef.current?.spawnCar();
-        }
-      }, 100);
+      // Use requestAnimationFrame to ensure React has flushed state updates
+      // and Phaser has had a chance to process the grid change
+      const characterCount = saveData.characterCount ?? 0;
+      const carCount = saveData.carCount ?? 0;
+      
+      requestAnimationFrame(() => {
+        // Double rAF ensures we're past the paint cycle
+        requestAnimationFrame(() => {
+          for (let i = 0; i < characterCount; i++) {
+            phaserGameRef.current?.spawnCharacter();
+          }
+          for (let i = 0; i < carCount; i++) {
+            phaserGameRef.current?.spawnCar();
+          }
+        });
+      });
 
       setModalState({
         isVisible: true,
@@ -1910,8 +1926,8 @@ export default function GameBoard() {
             onEraserDrag={handleEraserDrag}
             onRoadDrag={handleRoadDrag}
             onZoomChange={handleZoomChange}
-            showPaths={debugPaths}
-            showStats={showStats}
+            showPaths={false}
+            showStats={false}
           />
         </div>
 

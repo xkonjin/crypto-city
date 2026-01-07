@@ -15,7 +15,8 @@
     "phaser": "^3.90.0",
     "phaser3-rex-plugins": "^1.80.17",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

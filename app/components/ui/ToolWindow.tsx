@@ -7,11 +7,13 @@ import { ToolType, CryptoTier } from "../game/types";
 import {
   CATEGORY_NAMES,
   BuildingCategory,
-  getBuildingsByCategory,
   getCategories,
-  getBuilding,
   BuildingDefinition,
 } from "@/app/data/buildings";
+import {
+  getBuilding,
+  getBuildingsByCategory,
+} from "@/app/data/buildingRegistry";
 import {
   ALL_CRYPTO_BUILDINGS,
   CryptoBuildingDefinition,

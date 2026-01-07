@@ -1400,44 +1400,11 @@ export const BUILDINGS: Record<string, BuildingDefinition> = {
   },
 };
 
-// Import crypto buildings for combined access
-import { ALL_CRYPTO_BUILDINGS } from './cryptoBuildings';
-
-// Combined registry of all buildings (standard + crypto)
-// Crypto buildings are added to make them available in the game
-export const ALL_BUILDINGS: Record<string, BuildingDefinition> = {
-  ...BUILDINGS,
-  // Cast crypto buildings to standard building definitions for compatibility
-  // (they have extra crypto metadata that isn't needed for basic operations)
-  ...Object.fromEntries(
-    Object.entries(ALL_CRYPTO_BUILDINGS).map(([id, building]) => [
-      id,
-      {
-        id: building.id,
-        name: building.name,
-        category: building.category,
-        footprint: building.footprint,
-        sprites: building.sprites,
-        icon: building.icon,
-        isProcedural: building.isProcedural,
-        isDecoration: building.isDecoration,
-        supportsRotation: building.supportsRotation,
-      } as BuildingDefinition,
-    ])
-  ),
-};
-
-// Helper to get building by ID (checks both registries)
-export function getBuilding(id: string): BuildingDefinition | undefined {
-  return BUILDINGS[id] || ALL_BUILDINGS[id];
-}
-
-// Helper to get all buildings in a category (including crypto buildings)
-export function getBuildingsByCategory(
-  category: BuildingCategory
-): BuildingDefinition[] {
-  return Object.values(ALL_BUILDINGS).filter((b) => b.category === category);
-}
+// =============================================================================
+// CATEGORY HELPERS - Note: For ALL_BUILDINGS, use buildingRegistry.ts
+// =============================================================================
+// The combined ALL_BUILDINGS registry (BUILDINGS + crypto) is in buildingRegistry.ts
+// to avoid circular dependencies with cryptoBuildings.ts
 
 // Helper to get all categories that have buildings (in display order)
 const CATEGORY_ORDER: BuildingCategory[] = [
@@ -1454,12 +1421,13 @@ const CATEGORY_ORDER: BuildingCategory[] = [
   "chain",
   "ct",
   "meme",
+  "plasma",
 ];
 
 export function getCategories(): BuildingCategory[] {
-  // Use ALL_BUILDINGS to include crypto categories
+  // For standard buildings only - use buildingRegistry for all buildings
   const usedCategories = new Set(
-    Object.values(ALL_BUILDINGS).map((b) => b.category)
+    Object.values(BUILDINGS).map((b) => b.category)
   );
   return CATEGORY_ORDER.filter((cat) => usedCategories.has(cat));
 }

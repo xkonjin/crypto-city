@@ -23,6 +23,7 @@ import {
   CryptoEconomyManager, 
   PlacedCryptoBuilding 
 } from './CryptoEconomyManager';
+import { EVENT_CONFIG } from '../config/gameConfig';
 
 // =============================================================================
 // EVENT DEFINITIONS
@@ -440,6 +441,43 @@ const EVENT_TEMPLATES: Record<CryptoEventType, EventTemplate> = {
 // CRYPTO EVENT MANAGER CLASS
 // =============================================================================
 
+// =============================================================================
+// EVENT MUTUAL EXCLUSIVITY RULES
+// =============================================================================
+// Some events cannot be active at the same time
+const MUTUALLY_EXCLUSIVE_EVENTS: CryptoEventType[][] = [
+  ['bullRun', 'bearMarket'],           // Can't have bull and bear at same time
+  ['memeRally', 'bearMarket'],         // Meme rallies don't happen in bear markets
+  ['airdropSeason', 'rugPull'],        // Conflicting vibes
+];
+
+// =============================================================================
+// EVENT PRIORITY (for display and processing order)
+// =============================================================================
+const EVENT_PRIORITY: Record<CryptoEventType, number> = {
+  // Critical events (show first, process first)
+  rugPull: EVENT_CONFIG.PRIORITY.CRITICAL,
+  hack: EVENT_CONFIG.PRIORITY.HIGH,
+  liquidation: EVENT_CONFIG.PRIORITY.HIGH,
+  
+  // Market events
+  bullRun: EVENT_CONFIG.PRIORITY.MEDIUM,
+  bearMarket: EVENT_CONFIG.PRIORITY.MEDIUM,
+  memeRally: EVENT_CONFIG.PRIORITY.MEDIUM,
+  
+  // Protocol events
+  airdrop: EVENT_CONFIG.PRIORITY.MEDIUM,
+  protocolUpgrade: EVENT_CONFIG.PRIORITY.MEDIUM,
+  merge: EVENT_CONFIG.PRIORITY.MEDIUM,
+  halving: EVENT_CONFIG.PRIORITY.MEDIUM,
+  airdropSeason: EVENT_CONFIG.PRIORITY.MEDIUM,
+  
+  // Culture events
+  whaleEntry: EVENT_CONFIG.PRIORITY.LOW,
+  ctDrama: EVENT_CONFIG.PRIORITY.LOW,
+  regulatoryFUD: EVENT_CONFIG.PRIORITY.MEDIUM,
+};
+
 export class CryptoEventManager {
   // Reference to economy manager (for checking state)
   private economyManager: CryptoEconomyManager;
@@ -451,10 +489,22 @@ export class CryptoEventManager {
   private eventHistory: CryptoEvent[] = [];
   
   // Maximum history to keep
-  private maxHistoryLength: number = 50;
+  private maxHistoryLength: number = EVENT_CONFIG.MAX_EVENT_HISTORY;
+  
+  // Maximum simultaneous events
+  private maxSimultaneousEvents: number = EVENT_CONFIG.MAX_SIMULTANEOUS_EVENTS;
   
   // Event ID counter
   private eventIdCounter: number = 0;
+  
+  // Event cooldowns (prevent same event type from triggering too soon)
+  private eventCooldowns: Map<CryptoEventType, number> = new Map();
+  
+  // Track which buildings are affected by which events (prevent double-disabling)
+  private affectedBuildingsMap: Map<string, Set<string>> = new Map();
+  
+  // Queued events (for when max is reached)
+  private eventQueue: Array<{ template: EventTemplate; buildings: string[]; chains: string[] }> = [];
   
   // Callbacks for UI updates
   private onEventStart?: (event: CryptoEvent) => void;
@@ -518,6 +568,90 @@ export class CryptoEventManager {
   isEventActive(type: CryptoEventType): boolean {
     return Array.from(this.activeEvents.values())
       .some(e => e.type === type);
+  }
+
+  /**
+   * Get active events sorted by priority (highest first)
+   */
+  getActiveEventsSorted(): CryptoEvent[] {
+    return this.getActiveEvents().sort((a, b) => 
+      (EVENT_PRIORITY[b.type] ?? 0) - (EVENT_PRIORITY[a.type] ?? 0)
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // EVENT CONSTRAINTS
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Check if an event type can be triggered right now
+   * Enforces mutual exclusivity, max event cap, and cooldowns
+   */
+  canTriggerEvent(type: CryptoEventType): boolean {
+    // Check max simultaneous events
+    if (this.activeEvents.size >= this.maxSimultaneousEvents) {
+      return false;
+    }
+
+    // Check if this event type is already active
+    if (this.isEventActive(type)) {
+      return false;
+    }
+
+    // Check cooldown
+    const cooldown = this.eventCooldowns.get(type);
+    if (cooldown !== undefined && cooldown > 0) {
+      return false;
+    }
+
+    // Check mutual exclusivity
+    for (const exclusiveGroup of MUTUALLY_EXCLUSIVE_EVENTS) {
+      if (exclusiveGroup.includes(type)) {
+        // Check if any other event in this group is active
+        for (const otherType of exclusiveGroup) {
+          if (otherType !== type && this.isEventActive(otherType)) {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Get the priority of an event type
+   */
+  getEventPriority(type: CryptoEventType): number {
+    return EVENT_PRIORITY[type] ?? EVENT_CONFIG.PRIORITY.LOW;
+  }
+
+  /**
+   * Check if a building is currently affected by any event
+   */
+  isBuildingAffected(buildingKey: string): boolean {
+    for (const affectedBuildings of this.affectedBuildingsMap.values()) {
+      if (affectedBuildings.has(buildingKey)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Get all events affecting a specific building
+   */
+  getEventsAffectingBuilding(buildingKey: string): CryptoEvent[] {
+    const events: CryptoEvent[] = [];
+    for (const [eventId, affectedBuildings] of this.affectedBuildingsMap) {
+      if (affectedBuildings.has(buildingKey)) {
+        const event = this.activeEvents.get(eventId);
+        if (event) {
+          events.push(event);
+        }
+      }
+    }
+    return events;
   }
 
   /**
@@ -595,8 +729,22 @@ export class CryptoEventManager {
    * Start a new event
    */
   private startEvent(event: CryptoEvent): void {
+    // Final check - can we actually start this event?
+    if (!this.canTriggerEvent(event.type)) {
+      console.log(`[EventManager] Cannot start ${event.type} - constraints not met`);
+      return;
+    }
+
     this.activeEvents.set(event.id, event);
     this.eventHistory.push(event);
+    
+    // Track affected buildings
+    if (event.affectedBuildings.length > 0) {
+      this.affectedBuildingsMap.set(event.id, new Set(event.affectedBuildings));
+    }
+    
+    // Set cooldown for this event type
+    this.eventCooldowns.set(event.type, EVENT_CONFIG.EVENT_COOLDOWN_TICKS);
 
     // Trim history if needed
     if (this.eventHistory.length > this.maxHistoryLength) {
@@ -679,6 +827,9 @@ export class CryptoEventManager {
    */
   private endEvent(event: CryptoEvent): void {
     this.activeEvents.delete(event.id);
+    
+    // Clean up affected buildings tracking
+    this.affectedBuildingsMap.delete(event.id);
 
     // Notify listeners
     if (this.onEventEnd) {
@@ -687,6 +838,37 @@ export class CryptoEventManager {
 
     // Handle cleanup
     this.handleEventEnd(event);
+    
+    // Check if there are queued events that can now start
+    this.processEventQueue();
+  }
+  
+  /**
+   * Process queued events (if any can now start)
+   */
+  private processEventQueue(): void {
+    while (this.eventQueue.length > 0 && this.activeEvents.size < this.maxSimultaneousEvents) {
+      const queued = this.eventQueue.shift();
+      if (queued && this.canTriggerEvent(queued.template.type)) {
+        const event = this.createEvent(queued.template, queued.buildings, queued.chains);
+        this.startEvent(event);
+        this.handleEventStart(event);
+        console.log(`[EventManager] Started queued event: ${event.name}`);
+      }
+    }
+  }
+  
+  /**
+   * Decrease cooldowns (called each tick)
+   */
+  private tickCooldowns(): void {
+    for (const [type, cooldown] of this.eventCooldowns) {
+      if (cooldown > 0) {
+        this.eventCooldowns.set(type, cooldown - 1);
+      } else {
+        this.eventCooldowns.delete(type);
+      }
+    }
   }
 
   /**
@@ -793,6 +975,9 @@ export class CryptoEventManager {
     const newEvents: CryptoEvent[] = [];
     const endedEvents: CryptoEvent[] = [];
 
+    // Tick cooldowns first
+    this.tickCooldowns();
+
     // Check for event endings
     for (const event of this.activeEvents.values()) {
       const eventAge = currentTick - event.startTick;
@@ -802,39 +987,61 @@ export class CryptoEventManager {
       }
     }
 
-    // Check for new events
-    for (const template of Object.values(EVENT_TEMPLATES)) {
-      if (this.shouldTriggerEvent(template)) {
-        const matchingBuildings = this.getMatchingBuildings(template);
+    // Check for new events (only if we have room)
+    if (this.activeEvents.size < this.maxSimultaneousEvents) {
+      for (const template of Object.values(EVENT_TEMPLATES)) {
+        // Skip if we can't trigger this event type
+        if (!this.canTriggerEvent(template.type)) {
+          continue;
+        }
         
-        // For building-specific events, pick a random target
-        let affectedBuildings: string[] = [];
-        let affectedChains: string[] = [];
+        if (this.shouldTriggerEvent(template)) {
+          const matchingBuildings = this.getMatchingBuildings(template);
+          
+          // For building-specific events, pick a random target
+          let affectedBuildings: string[] = [];
+          let affectedChains: string[] = [];
 
-        if (matchingBuildings.length > 0) {
-          if (template.type === 'rugPull' || template.type === 'hack') {
-            // Pick one building to affect
-            const target = matchingBuildings[
-              Math.floor(Math.random() * matchingBuildings.length)
-            ];
-            affectedBuildings = [`${target.gridX},${target.gridY}`];
-            if (target.definition.crypto.chain) {
-              affectedChains = [target.definition.crypto.chain];
+          if (matchingBuildings.length > 0) {
+            if (template.type === 'rugPull' || template.type === 'hack') {
+              // Pick one building to affect - but only if not already affected
+              const availableBuildings = matchingBuildings.filter(
+                b => !this.isBuildingAffected(`${b.gridX},${b.gridY}`)
+              );
+              
+              if (availableBuildings.length === 0) {
+                continue; // No available buildings to target
+              }
+              
+              const target = availableBuildings[
+                Math.floor(Math.random() * availableBuildings.length)
+              ];
+              affectedBuildings = [`${target.gridX},${target.gridY}`];
+              if (target.definition.crypto.chain) {
+                affectedChains = [target.definition.crypto.chain];
+              }
+            } else if (template.requiredCategory) {
+              // Affect all matching buildings in category
+              affectedBuildings = matchingBuildings.map(b => `${b.gridX},${b.gridY}`);
+              affectedChains = [...new Set(
+                matchingBuildings
+                  .map(b => b.definition.crypto.chain)
+                  .filter(Boolean) as string[]
+              )];
             }
-          } else if (template.requiredCategory) {
-            // Affect all matching buildings in category
-            affectedBuildings = matchingBuildings.map(b => `${b.gridX},${b.gridY}`);
-            affectedChains = [...new Set(
-              matchingBuildings
-                .map(b => b.definition.crypto.chain)
-                .filter(Boolean) as string[]
-            )];
+          }
+
+          const event = this.createEvent(template, affectedBuildings, affectedChains);
+          this.startEvent(event);
+          if (this.activeEvents.has(event.id)) {
+            newEvents.push(event);
+          }
+          
+          // Check if we've hit the limit
+          if (this.activeEvents.size >= this.maxSimultaneousEvents) {
+            break;
           }
         }
-
-        const event = this.createEvent(template, affectedBuildings, affectedChains);
-        this.startEvent(event);
-        newEvents.push(event);
       }
     }
 

@@ -23,61 +23,28 @@ import {
   ALL_CRYPTO_BUILDINGS, 
   CryptoBuildingDefinition 
 } from '../data/cryptoBuildings';
+import {
+  ECONOMY_CONFIG,
+  SIMULATION_CONFIG,
+  BUILDING_CONFIG,
+  clampTreasury,
+  clampSentiment,
+} from '../config/gameConfig';
 
 // =============================================================================
-// CONFIGURATION CONSTANTS
+// CONFIGURATION CONSTANTS (from centralized config)
 // =============================================================================
-// Tuneable parameters for economic balance
+// These are imported from gameConfig.ts for easy tuning
 
-/**
- * Base multiplier applied to all yield generation
- * Adjust this to globally increase/decrease income
- */
-const BASE_YIELD_MULTIPLIER = 1.0;
-
-/**
- * How much market sentiment affects yield
- * At 1.0: sentiment of 100 gives 2x yield, -100 gives 0.5x yield
- */
-const SENTIMENT_YIELD_IMPACT = 0.5;
-
-/**
- * Rate at which market sentiment naturally decays toward 0
- * Higher values mean faster return to neutral
- */
-const SENTIMENT_DECAY_RATE = 0.5;
-
-/**
- * Random sentiment drift per tick (adds noise to cycles)
- */
-const SENTIMENT_NOISE = 3.0;
-
-/**
- * Period of the market cycle in ticks (days)
- * Full cycle is ~2x this value (peak to peak)
- */
-const MARKET_CYCLE_PERIOD = 50;
-
-/**
- * Amplitude of the base market cycle
- * Market naturally oscillates +/- this amount from center
- */
-const MARKET_CYCLE_AMPLITUDE = 40;
-
-/**
- * Synergy bonus when buildings share a chain
- */
-const CHAIN_SYNERGY_BONUS = 0.15; // 15% bonus
-
-/**
- * Synergy bonus when buildings share a category
- */
-const CATEGORY_SYNERGY_BONUS = 0.10; // 10% bonus
-
-/**
- * Maximum history entries to keep for graphs
- */
-const MAX_HISTORY_LENGTH = 100;
+const BASE_YIELD_MULTIPLIER = ECONOMY_CONFIG.BASE_YIELD_MULTIPLIER;
+const SENTIMENT_YIELD_IMPACT = ECONOMY_CONFIG.SENTIMENT_YIELD_IMPACT;
+const SENTIMENT_DECAY_RATE = ECONOMY_CONFIG.SENTIMENT_DECAY_RATE;
+const SENTIMENT_NOISE = ECONOMY_CONFIG.SENTIMENT_NOISE;
+const MARKET_CYCLE_PERIOD = ECONOMY_CONFIG.MARKET_CYCLE_PERIOD;
+const MARKET_CYCLE_AMPLITUDE = ECONOMY_CONFIG.MARKET_CYCLE_AMPLITUDE;
+const CHAIN_SYNERGY_BONUS = ECONOMY_CONFIG.CHAIN_SYNERGY_BONUS;
+const CATEGORY_SYNERGY_BONUS = ECONOMY_CONFIG.CATEGORY_SYNERGY_BONUS;
+const MAX_HISTORY_LENGTH = SIMULATION_CONFIG.MAX_HISTORY_LENGTH;
 
 // =============================================================================
 // ECONOMY STATE FACTORY
@@ -90,7 +57,7 @@ const MAX_HISTORY_LENGTH = 100;
 export function createInitialEconomyState(): CryptoEconomyState {
   return {
     // Core balances
-    treasury: 1000,  // Starting capital
+    treasury: SIMULATION_CONFIG.STARTING_TREASURY,  // Starting capital from config
     dailyYield: 0,
     totalTVL: 0,
     marketSentiment: 0,  // Neutral to start
@@ -392,10 +359,16 @@ export class CryptoEconomyManager {
       if (radius <= 0) continue;
 
       // Create zone effect for this building
+      // Includes both new and legacy properties for compatibility
       const zoneEffect: ZoneEffect = {
         sourceBuilding: building.buildingId,
-        sourceTile: { x: building.gridX, y: building.gridY },
         radius,
+        // New properties
+        yieldBonus: (effects.stakingBonus ?? 1) - 1, // Convert multiplier to bonus
+        happinessBonus: effects.happinessEffect ?? 0,
+        volatilityModifier: effects.volatility ?? 0,
+        // Legacy properties
+        sourceTile: { x: building.gridX, y: building.gridY },
         effects: {
           yieldMultiplier: effects.stakingBonus,
           happinessModifier: effects.happinessEffect,
@@ -423,6 +396,9 @@ export class CryptoEconomyManager {
     const chainBonuses: string[] = [];
 
     for (const zone of this.activeZoneEffects) {
+      // Skip zones without source tile (shouldn't happen but be safe)
+      if (!zone.sourceTile) continue;
+      
       // Calculate distance from zone center
       const dx = gridX - zone.sourceTile.x;
       const dy = gridY - zone.sourceTile.y;
@@ -433,16 +409,16 @@ export class CryptoEconomyManager {
         // Apply effects with falloff based on distance
         const falloff = 1 - (distance / zone.radius) * 0.5; // 50% falloff at edge
 
-        if (zone.effects.yieldMultiplier) {
+        if (zone.effects?.yieldMultiplier) {
           yieldMultiplier *= 1 + (zone.effects.yieldMultiplier - 1) * falloff;
         }
-        if (zone.effects.happinessModifier) {
+        if (zone.effects?.happinessModifier) {
           happinessModifier += zone.effects.happinessModifier * falloff;
         }
-        if (zone.effects.volatilityModifier) {
+        if (zone.effects?.volatilityModifier) {
           volatilityModifier += zone.effects.volatilityModifier * falloff;
         }
-        if (zone.effects.chainBonus) {
+        if (zone.effects?.chainBonus) {
           chainBonuses.push(zone.effects.chainBonus);
         }
       }

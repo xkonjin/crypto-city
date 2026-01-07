@@ -48,10 +48,20 @@ export enum LightingType {
 }
 
 export interface VisualSettings {
-  blueness: number; // -100 to 100 (hue shift toward blue)
-  contrast: number; // 0.5 to 2.0
-  saturation: number; // 0.5 to 2.0
-  brightness: number; // 0.5 to 2.0
+  // Color adjustments
+  blueness: number;     // -100 to 100 (hue shift toward blue)
+  contrast: number;     // 0.5 to 2.0
+  saturation: number;   // 0.5 to 2.0
+  brightness: number;   // 0.5 to 2.0
+  
+  // Optional display settings (for future use)
+  showGrid?: boolean;
+  showPaths?: boolean;
+  showStats?: boolean;
+  ambientParticles?: boolean;
+  screenShake?: boolean;
+  musicEnabled?: boolean;
+  soundEnabled?: boolean;
 }
 
 export enum CharacterType {
@@ -90,11 +100,95 @@ export interface Car {
 /**
  * Tier classification for crypto buildings
  * - degen: High risk/reward, volatile, meme-tier
+ * - fish: Smallest, new entrants
  * - retail: Entry level, accessible, moderate effects
+ * - shark: Mid-tier, semi-serious players
  * - whale: High value, significant bonuses, established protocols
  * - institution: Blue chip, stable, maximum effects
  */
 export type CryptoTier = "degen" | "retail" | "whale" | "institution" | "shark" | "fish";
+
+/**
+ * All valid crypto tier values as an array (for validation)
+ */
+export const CRYPTO_TIERS: readonly CryptoTier[] = [
+  "degen", "fish", "retail", "shark", "whale", "institution"
+] as const;
+
+/**
+ * Check if a string is a valid CryptoTier
+ */
+export function isCryptoTier(value: string): value is CryptoTier {
+  return CRYPTO_TIERS.includes(value as CryptoTier);
+}
+
+// =============================================================================
+// BRANDED TYPES FOR TYPE SAFETY
+// =============================================================================
+// Branded types prevent accidentally mixing up different numeric values
+// e.g., passing a sentiment value where a treasury value is expected
+
+/**
+ * Brand type helper
+ */
+type Brand<T, B> = T & { readonly __brand: B };
+
+/**
+ * Treasury balance (non-negative number)
+ */
+export type Treasury = Brand<number, 'Treasury'>;
+
+/**
+ * Market sentiment (-100 to 100)
+ */
+export type Sentiment = Brand<number, 'Sentiment'>;
+
+/**
+ * Game tick counter
+ */
+export type Tick = Brand<number, 'Tick'>;
+
+/**
+ * Yield rate (tokens per tick)
+ */
+export type YieldRate = Brand<number, 'YieldRate'>;
+
+/**
+ * Grid position (integer)
+ */
+export type GridPosition = Brand<number, 'GridPosition'>;
+
+// =============================================================================
+// BRANDED TYPE CONSTRUCTORS
+// =============================================================================
+
+/**
+ * Create a Treasury value (clamped to non-negative)
+ */
+export function createTreasury(value: number): Treasury {
+  return Math.max(0, value) as Treasury;
+}
+
+/**
+ * Create a Sentiment value (clamped to -100 to 100)
+ */
+export function createSentiment(value: number): Sentiment {
+  return Math.max(-100, Math.min(100, value)) as Sentiment;
+}
+
+/**
+ * Create a Tick value
+ */
+export function createTick(value: number): Tick {
+  return Math.max(0, Math.floor(value)) as Tick;
+}
+
+/**
+ * Create a GridPosition (clamped to integer)
+ */
+export function createGridPosition(value: number): GridPosition {
+  return Math.floor(value) as GridPosition;
+}
 
 /**
  * Effects that crypto buildings have on the city simulation
@@ -145,6 +239,31 @@ export interface CryptoBuildingMeta {
   launchYear?: number;          // When the protocol launched IRL
   tvlTier?: "small" | "low" | "medium" | "large" | "high" | "massive";  // Total Value Locked tier
   description?: string;         // Flavor text about the building
+}
+
+// =============================================================================
+// EXHAUSTIVE TYPE HELPERS
+// =============================================================================
+
+/**
+ * Initial building counts by tier - uses satisfies to ensure exhaustiveness
+ * If a new tier is added to CryptoTier, this will cause a compile error
+ */
+export const INITIAL_BUILDINGS_BY_TIER = {
+  degen: 0,
+  retail: 0,
+  whale: 0,
+  institution: 0,
+  shark: 0,
+  fish: 0,
+} as const satisfies Record<CryptoTier, number>;
+
+/**
+ * Create a new buildings-by-tier record with all tiers at 0
+ * Type-safe and exhaustive
+ */
+export function createEmptyBuildingsByTier(): Record<CryptoTier, number> {
+  return { ...INITIAL_BUILDINGS_BY_TIER };
 }
 
 /**
@@ -209,12 +328,20 @@ export interface CryptoEvent {
 
 /**
  * Zone effect created by a building affecting nearby tiles
+ * Supports both legacy and new economy systems
  */
 export interface ZoneEffect {
   sourceBuilding: string;       // Building ID creating the zone
-  sourceTile: { x: number; y: number };
   radius: number;               // Effect radius in grid cells
-  effects: {
+  
+  // New simplified properties (used by refactored economy modules)
+  yieldBonus: number;           // Additive yield bonus for buildings in zone
+  happinessBonus: number;       // Add/subtract happiness
+  volatilityModifier: number;   // Increase/decrease volatility
+  
+  // Legacy properties (used by original CryptoEconomyManager)
+  sourceTile?: { x: number; y: number };
+  effects?: {
     yieldMultiplier?: number;   // Multiply yield of buildings in zone
     happinessModifier?: number; // Add/subtract happiness
     volatilityModifier?: number; // Increase/decrease volatility
