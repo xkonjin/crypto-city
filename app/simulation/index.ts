@@ -17,38 +17,6 @@ export {
   CryptoEventManager,
 } from './CryptoEventManager';
 
-// Pure function economy calculations
-export {
-  DEFAULT_CRYPTO_ECONOMY,
-  calculateDailyYield,
-  calculatePopulationBoost,
-  calculateHappinessEffect,
-  calculatePrestigeBonus,
-  updateMarketSentiment,
-  getSentimentLabel,
-  getSentimentColor,
-  analyzeCryptoBuildings,
-  economyTick,
-  formatTokenAmount,
-  calculatePortfolioRisk,
-  getDashboardStats,
-} from './CryptoEconomy';
-
-// Pure function event system
-export {
-  tryTriggerEvent,
-  processActiveEvents,
-  calculateEventEffects,
-  calculateTreasuryImpact,
-  getEventIcon,
-  getEventColor,
-  formatEventDuration,
-  getEventPriority,
-  addToEventHistory,
-  getRecentEventsByType,
-  getEventStats,
-} from './CryptoEvents';
-
 // Zone effects system
 export {
   calculateZoneEffects,
@@ -62,4 +30,3 @@ export {
   generateLandValueMap,
   checkZoneConflicts,
 } from './ZoneEffects';
-

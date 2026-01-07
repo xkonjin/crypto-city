@@ -241,7 +241,7 @@ export function getPalette(name: string, addVariance: boolean = false): ColorPal
   return addVariance ? varyPalette(base, 0.05) : base;
 }
 
-// Re-export crypto palettes for unified access
-// Import at top of file when using: import { CRYPTO_BUILDING_PALETTES } from './CryptoPalettes';
-export { CRYPTO_BUILDING_PALETTES, getCryptoPalette } from './CryptoPalettes';
+// NOTE: CRYPTO_BUILDING_PALETTES and getCryptoPalette are in CryptoPalettes.ts
+// Import directly from there to avoid circular dependencies:
+// import { CRYPTO_BUILDING_PALETTES, getCryptoPalette } from './CryptoPalettes';
 
