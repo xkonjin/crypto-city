@@ -29,7 +29,7 @@ export const CRYPTO_TIER_MULTIPLIERS: Record<CryptoTier, number> = {
 export type CryptoChain = 
   | 'ethereum' | 'solana' | 'bitcoin' | 'arbitrum' | 'optimism' 
   | 'polygon' | 'base' | 'avalanche' | 'bnb' | 'sui' | 'aptos'
-  | 'zksync' | 'scroll' | 'linea' | 'blast' | 'mantle';
+  | 'zksync' | 'scroll' | 'linea' | 'blast' | 'mantle' | 'hyperliquid';
 
 // =============================================================================
 // CRYPTO BUILDING CATEGORIES

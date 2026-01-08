@@ -52,7 +52,7 @@ const CARGO_TYPE_NAMES = [msg('containers'), msg('bulk materials'), msg('oil')];
 export default function Game({ onExit }: { onExit?: () => void }) {
   const gt = useGT();
   const m = useMessages();
-  const { state, setTool, setActivePanel, addMoney, addNotification, setSpeed } = useGame();
+  const { state, setTool, setActivePanel, addMoney, addNotification, setSpeed, selectedCryptoBuilding, setSelectedCryptoBuilding } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>('none');
   const [selectedTile, setSelectedTile] = useState<{ x: number; y: number } | null>(null);
   const [navigationTarget, setNavigationTarget] = useState<{ x: number; y: number } | null>(null);
@@ -63,12 +63,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const [showShareModal, setShowShareModal] = useState(false);
   const multiplayer = useMultiplayerOptional();
   
-  // Crypto economy state
   const [economyState, setEconomyState] = useState<CryptoEconomyState>(cryptoEconomy.getState());
   const [cryptoEvents, setCryptoEvents] = useState<CryptoEvent[]>([]);
-  // Selected crypto building for placement
-  const [selectedCryptoBuilding, setSelectedCryptoBuilding] = useState<string | null>(null);
-  // Show/hide crypto building panel
   const [showCryptoBuildingPanel, setShowCryptoBuildingPanel] = useState(false);
   
   // Subscribe to crypto economy and event updates
@@ -329,6 +325,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               setSelectedTile={setSelectedTile}
               isMobile={true}
               onBargeDelivery={handleBargeDelivery}
+              selectedCryptoBuilding={selectedCryptoBuilding}
             />
             
             {/* Multiplayer Players Indicator - Mobile */}
@@ -440,6 +437,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               onNavigationComplete={() => setNavigationTarget(null)}
               onViewportChange={setViewport}
               onBargeDelivery={handleBargeDelivery}
+              selectedCryptoBuilding={selectedCryptoBuilding}
             />
             <OverlayModeToggle overlayMode={overlayMode} setOverlayMode={setOverlayMode} />
             <MiniMap onNavigate={(x, y) => setNavigationTarget({ x, y })} viewport={viewport} />
@@ -501,9 +499,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                 selectedBuilding={selectedCryptoBuilding}
                 onSelectBuilding={(buildingId) => {
                   setSelectedCryptoBuilding(buildingId);
-                  // TODO: Integrate with IsoCity's building placement system
-                  // For now, just register the building in the economy
-                  console.log(`Selected crypto building: ${buildingId}`);
+                  setTool('select');
                 }}
                 treasury={economyState.treasury}
               />

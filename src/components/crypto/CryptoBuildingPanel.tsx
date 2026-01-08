@@ -42,6 +42,8 @@ const CATEGORY_INFO = {
   ct: { name: 'CT', icon: '🐦', color: 'from-sky-500 to-sky-600' },
   meme: { name: 'Meme', icon: '🐸', color: 'from-yellow-500 to-yellow-600' },
   plasma: { name: 'Plasma', icon: '⚡', color: 'from-pink-500 to-pink-600' },
+  stablecoin: { name: 'Stablecoin', icon: '💵', color: 'from-emerald-500 to-emerald-600' },
+  infrastructure: { name: 'Infrastructure', icon: '🏗️', color: 'from-slate-500 to-slate-600' },
 };
 
 // =============================================================================
@@ -136,6 +138,7 @@ export default function CryptoBuildingPanel({
       <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-700/50">
         {CRYPTO_CATEGORIES.map(category => {
           const info = CATEGORY_INFO[category as keyof typeof CATEGORY_INFO];
+          if (!info) return null;
           const isActive = activeCategory === category;
           
           return (

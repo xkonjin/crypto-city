@@ -2,20 +2,15 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Crypto City Game', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the game
     await page.goto('/');
-    // Wait for the home page to load
     await page.waitForTimeout(2000);
     
-    // Click "New Game" to enter the game
-    const newGameButton = page.locator('button, [role="button"]').filter({ hasText: /New Game/i });
+    const startButton = page.locator('button, [role="button"]').filter({ hasText: /New Game|Continue|Load Example/i }).first();
     try {
-      await newGameButton.waitFor({ state: 'visible', timeout: 5000 });
-      await newGameButton.click();
-      // Wait for game to load
+      await startButton.waitFor({ state: 'visible', timeout: 5000 });
+      await startButton.click();
       await page.waitForTimeout(4000);
     } catch {
-      // If no new game button, we might already be in the game
       await page.waitForTimeout(2000);
     }
   });
@@ -96,10 +91,9 @@ test.describe('Crypto City Game', () => {
     await page.goto('/');
     await page.waitForTimeout(1000);
     
-    // Start new game
-    const newGameButton = page.locator('button, [role="button"]').filter({ hasText: /New Game/i });
-    if (await newGameButton.isVisible({ timeout: 5000 })) {
-      await newGameButton.click();
+    const startButton = page.locator('button, [role="button"]').filter({ hasText: /New Game|Continue|Load Example/i }).first();
+    if (await startButton.isVisible({ timeout: 5000 })) {
+      await startButton.click();
       await page.waitForTimeout(3000);
     }
 
@@ -123,14 +117,12 @@ test.describe('Crypto Economy Features', () => {
     await page.goto('/');
     await page.waitForTimeout(2000);
     
-    // Click "New Game" to enter the game
-    const newGameButton = page.locator('button, [role="button"]').filter({ hasText: /New Game/i });
+    const startButton = page.locator('button, [role="button"]').filter({ hasText: /New Game|Continue|Load Example/i }).first();
     try {
-      await newGameButton.waitFor({ state: 'visible', timeout: 5000 });
-      await newGameButton.click();
+      await startButton.waitFor({ state: 'visible', timeout: 5000 });
+      await startButton.click();
       await page.waitForTimeout(4000);
     } catch {
-      // If no new game button, we might already be in the game
       await page.waitForTimeout(2000);
     }
   });
@@ -165,14 +157,12 @@ test.describe('Building Placement', () => {
     await page.goto('/');
     await page.waitForTimeout(2000);
     
-    // Start new game
-    const newGameButton = page.locator('button, [role="button"]').filter({ hasText: /New Game/i });
+    const startButton = page.locator('button, [role="button"]').filter({ hasText: /New Game|Continue|Load Example/i }).first();
     try {
-      await newGameButton.waitFor({ state: 'visible', timeout: 5000 });
-      await newGameButton.click();
+      await startButton.waitFor({ state: 'visible', timeout: 5000 });
+      await startButton.click();
       await page.waitForTimeout(4000);
     } catch {
-      // If no new game button, we might already be in the game
       await page.waitForTimeout(2000);
     }
   });
@@ -231,8 +221,7 @@ test.describe('Responsive Design', () => {
     await page.goto('/');
     await page.waitForTimeout(2000);
 
-    // Check for IsoCity title or New Game button
-    const homeElement = page.locator('text=/IsoCity|New Game/i').first();
+    const homeElement = page.locator('text=/IsoCity|New Game|Continue/i').first();
     await expect(homeElement).toBeVisible({ timeout: 10000 });
   });
 
@@ -241,8 +230,7 @@ test.describe('Responsive Design', () => {
     await page.goto('/');
     await page.waitForTimeout(2000);
 
-    // Check for home screen elements
-    const homeElement = page.locator('text=/IsoCity|New Game/i').first();
+    const homeElement = page.locator('text=/IsoCity|New Game|Continue/i').first();
     await expect(homeElement).toBeVisible({ timeout: 10000 });
   });
 });
@@ -252,11 +240,9 @@ test.describe('Home Screen', () => {
     await page.goto('/');
     await page.waitForTimeout(2000);
     
-    // Check for New Game button
-    const newGameButton = page.locator('text=/New Game/i').first();
-    await expect(newGameButton).toBeVisible({ timeout: 5000 });
+    const startButton = page.locator('text=/New Game|Continue|Load Example/i').first();
+    await expect(startButton).toBeVisible({ timeout: 5000 });
     
-    // Check for Co-op button
     const coopButton = page.locator('text=/Co-op/i').first();
     await expect(coopButton).toBeVisible({ timeout: 5000 });
   });
@@ -267,5 +253,109 @@ test.describe('Home Screen', () => {
     
     const title = page.locator('text=/IsoCity/i').first();
     await expect(title).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe('Crypto Buildings', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.waitForTimeout(2000);
+    
+    const startButton = page.locator('button, [role="button"]').filter({ hasText: /New Game|Continue|Load Example/i }).first();
+    try {
+      await startButton.waitFor({ state: 'visible', timeout: 5000 });
+      await startButton.click();
+      await page.waitForTimeout(4000);
+    } catch {
+      await page.waitForTimeout(2000);
+    }
+  });
+
+  test('should open crypto building panel', async ({ page }) => {
+    await page.waitForTimeout(2000);
+    
+    const cryptoButton = page.locator('button').filter({ hasText: /Crypto Buildings/i }).first();
+    await expect(cryptoButton).toBeVisible({ timeout: 10000 });
+    await cryptoButton.click();
+    await page.waitForTimeout(500);
+    
+    const panelHeading = page.locator('text=/Crypto Buildings/i').first();
+    await expect(panelHeading).toBeVisible({ timeout: 5000 });
+    
+    const totalCount = page.locator('text=/99 total/i').first();
+    await expect(totalCount).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should display crypto building categories', async ({ page }) => {
+    await page.waitForTimeout(2000);
+    
+    const cryptoButton = page.locator('button').filter({ hasText: /Crypto Buildings/i }).first();
+    await cryptoButton.click();
+    await page.waitForTimeout(500);
+    
+    const defiTab = page.locator('button').filter({ hasText: /DeFi/i }).first();
+    await expect(defiTab).toBeVisible({ timeout: 5000 });
+    
+    const exchangeTab = page.locator('button').filter({ hasText: /Exchange/i }).first();
+    await expect(exchangeTab).toBeVisible({ timeout: 5000 });
+    
+    const chainTab = page.locator('button').filter({ hasText: /Chain/i }).first();
+    await expect(chainTab).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should select a crypto building', async ({ page }) => {
+    await page.waitForTimeout(2000);
+    
+    const cryptoButton = page.locator('button').filter({ hasText: /Crypto Buildings/i }).first();
+    await cryptoButton.click();
+    await page.waitForTimeout(500);
+    
+    const aaveBuilding = page.locator('button').filter({ hasText: /Aave Lending Tower/i }).first();
+    await expect(aaveBuilding).toBeVisible({ timeout: 5000 });
+    await aaveBuilding.click();
+    await page.waitForTimeout(300);
+    
+    const buildingInfo = page.locator('text=/Aave/i');
+    await expect(buildingInfo.first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should place crypto building and update jobs', async ({ page }) => {
+    await page.waitForTimeout(2000);
+    
+    const initialJobs = page.locator('text=/Jobs/i').first();
+    await expect(initialJobs).toBeVisible({ timeout: 10000 });
+    
+    const cryptoButton = page.locator('button').filter({ hasText: /Crypto Buildings/i }).first();
+    await cryptoButton.click();
+    await page.waitForTimeout(500);
+    
+    const aaveBuilding = page.locator('button').filter({ hasText: /Aave Lending Tower/i }).first();
+    await aaveBuilding.click();
+    await page.waitForTimeout(500);
+    
+    const canvas = page.locator('canvas').first();
+    const box = await canvas.boundingBox();
+    if (box) {
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await page.waitForTimeout(1000);
+    }
+    
+    const jobsValue = page.locator('text=/25/');
+    await expect(jobsValue.first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should switch between crypto building categories', async ({ page }) => {
+    await page.waitForTimeout(2000);
+    
+    const cryptoButton = page.locator('button').filter({ hasText: /Crypto Buildings/i }).first();
+    await cryptoButton.click();
+    await page.waitForTimeout(500);
+    
+    const exchangeTab = page.locator('button').filter({ hasText: /Exchange/i }).first();
+    await exchangeTab.click();
+    await page.waitForTimeout(300);
+    
+    const binanceBuilding = page.locator('text=/Binance|Coinbase|Kraken/i').first();
+    await expect(binanceBuilding).toBeVisible({ timeout: 5000 });
   });
 });

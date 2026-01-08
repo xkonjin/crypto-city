@@ -55,8 +55,6 @@ export type SavedCityInfo = {
 
 type GameContextValue = {
   state: GameState;
-  // PERF: Ref to latest state for real-time access without React re-renders
-  // Canvas should use this instead of state.grid for smooth updates
   latestStateRef: React.RefObject<GameState>;
   setTool: (tool: Tool) => void;
   setSpeed: (speed: 0 | 1 | 2 | 3) => void;
@@ -65,7 +63,7 @@ type GameContextValue = {
   setBudgetFunding: (key: keyof Budget, funding: number) => void;
   placeAtTile: (x: number, y: number, isRemote?: boolean) => void;
   setPlaceCallback: (callback: ((args: { x: number; y: number; tool: Tool }) => void) | null) => void;
-  finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote?: boolean) => void; // Create bridges after road/rail drag
+  finishTrackDrag: (pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote?: boolean) => void;
   setBridgeCallback: (callback: ((args: { pathTiles: { x: number; y: number }[]; trackType: 'road' | 'rail' }) => void) | null) => void;
   connectToCity: (cityId: string) => void;
   discoverCity: (cityId: string) => void;
@@ -78,10 +76,13 @@ type GameContextValue = {
   expandCity: () => void;
   shrinkCity: () => boolean;
   hasExistingGame: boolean;
-  isStateReady: boolean; // True when initial state loading is complete
+  isStateReady: boolean;
   isSaving: boolean;
   addMoney: (amount: number) => void;
   addNotification: (title: string, description: string, icon: string) => void;
+  selectedCryptoBuilding: string | null;
+  setSelectedCryptoBuilding: (buildingId: string | null) => void;
+  placeCryptoBuilding: (x: number, y: number, buildingId: string, isRemote?: boolean) => void;
   // Sprite pack management
   currentSpritePack: SpritePack;
   availableSpritePacks: SpritePack[];
@@ -667,6 +668,9 @@ export function GameProvider({ children, startFresh = false }: { children: React
   // Saved cities state for multi-city save system
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
   
+  // Selected crypto building for placement
+  const [selectedCryptoBuilding, setSelectedCryptoBuilding] = useState<string | null>(null);
+  
   // Load game state and sprite pack from localStorage on mount (client-side only)
   useEffect(() => {
     // Load sprite pack preference
@@ -977,14 +981,38 @@ export function GameProvider({ children, startFresh = false }: { children: React
     }
   }, []);
 
-  // Called after a road/rail drag operation to create bridges for water crossings
   const finishTrackDrag = useCallback((pathTiles: { x: number; y: number }[], trackType: 'road' | 'rail', isRemote = false) => {
     setState((prev) => createBridgesOnPath(prev, pathTiles, trackType));
     
-    // Broadcast to multiplayer if this is a local action (not remote)
     if (!isRemote && bridgeCallbackRef.current) {
       bridgeCallbackRef.current({ pathTiles, trackType });
     }
+  }, []);
+
+  const placeCryptoBuilding = useCallback((x: number, y: number, buildingId: string, isRemote = false) => {
+    setState((prev) => {
+      const tile = prev.grid[y]?.[x];
+      if (!tile) return prev;
+      if (tile.building.type !== 'grass' && tile.building.type !== 'tree') return prev;
+
+      const newGrid = prev.grid.map(row => row.map(t => ({ ...t, building: { ...t.building } })));
+      newGrid[y][x].building = {
+        type: 'crypto_building',
+        level: 1,
+        population: 0,
+        jobs: 25,
+        powered: false,
+        watered: false,
+        onFire: false,
+        fireProgress: 0,
+        age: 0,
+        constructionProgress: 100,
+        abandoned: false,
+        cryptoBuildingId: buildingId,
+      };
+
+      return { ...prev, grid: newGrid };
+    });
   }, []);
 
   const connectToCity = useCallback((cityId: string) => {
@@ -1664,6 +1692,10 @@ export function GameProvider({ children, startFresh = false }: { children: React
     loadSavedCity,
     deleteSavedCity,
     renameSavedCity,
+    // Crypto building placement
+    selectedCryptoBuilding,
+    setSelectedCryptoBuilding,
+    placeCryptoBuilding,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

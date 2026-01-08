@@ -1,13 +1,13 @@
 /**
  * Crypto Buildings Registry
  * 
- * Complete registry of all 92 crypto-themed buildings for Crypto City.
+ * Complete registry of all 99 crypto-themed buildings for Crypto City.
  * Buildings are organized by category:
- *   - DeFi (22): Lending, DEX, yield protocols
+ *   - DeFi (23): Lending, DEX, yield protocols
  *   - Exchange (7): CEX headquarters
  *   - Chain (13): L1/L2 blockchain buildings
  *   - CT (10): Crypto Twitter culture
- *   - Meme (14): Meme coin culture
+ *   - Meme (20): Meme coin culture
  *   - Plasma (18): Plasma ecosystem
  *   - Stablecoin (3): Stablecoin issuers
  *   - Infrastructure (5): Oracles, bridges, data providers
@@ -33,7 +33,7 @@ import {
 } from './types';
 
 // =============================================================================
-// DEFI BUILDINGS (22)
+// DEFI BUILDINGS (23)
 // =============================================================================
 // Major DeFi protocols represented as city landmarks.
 
@@ -657,6 +657,35 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
         zoneRadius: 5,
         chainSynergy: ['solana'],
         categorySynergy: ['defi'],
+      },
+    },
+  },
+  'hyperliquid_vault': {
+    id: 'hyperliquid_vault',
+    name: 'Hyperliquid Vault',
+    category: 'defi',
+    footprint: { width: 3, height: 3 },
+    icon: '💧',
+    isProcedural: true,
+    cost: 18000,
+    crypto: {
+      tier: 'institution',
+      protocol: 'Hyperliquid',
+      chain: 'hyperliquid',
+      launchYear: 2023,
+      tvlTier: 'massive',
+      description: 'Hyperliquid Vault powers the fastest perps DEX on its own L1.',
+      effects: {
+        yieldRate: 22,
+        tradingFees: 35,
+        volatility: 0.18,
+        rugRisk: 0.005,
+        airdropChance: 0.08,
+        populationBoost: 55,
+        happinessEffect: 15,
+        zoneRadius: 7,
+        chainSynergy: ['hyperliquid', 'ethereum'],
+        categorySynergy: ['defi', 'exchange'],
       },
     },
   },
@@ -1484,7 +1513,7 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
 };
 
 // =============================================================================
-// MEME BUILDINGS (14)
+// MEME BUILDINGS (20)
 // =============================================================================
 // Buildings celebrating meme coin culture.
 
@@ -1823,6 +1852,150 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
         happinessEffect: 30,
         zoneRadius: 3,
         chainSynergy: ['ethereum', 'solana'],
+        categorySynergy: ['meme', 'ct'],
+      },
+    },
+  },
+  'wif_temple': {
+    id: 'wif_temple',
+    name: 'WIF Temple',
+    category: 'meme',
+    footprint: { width: 2, height: 2 },
+    icon: '🐕',
+    isProcedural: true,
+    cost: 4000,
+    crypto: {
+      tier: 'degen',
+      chain: 'solana',
+      description: 'The WIF Temple celebrates the legendary dogwifhat.',
+      effects: {
+        yieldRate: 12,
+        volatility: 0.55,
+        rugRisk: 0.04,
+        populationBoost: 28,
+        happinessEffect: 22,
+        zoneRadius: 4,
+        chainSynergy: ['solana'],
+        categorySynergy: ['meme'],
+      },
+    },
+  },
+  'bonk_arena': {
+    id: 'bonk_arena',
+    name: 'BONK Arena',
+    category: 'meme',
+    footprint: { width: 2, height: 2 },
+    icon: '🦴',
+    isProcedural: true,
+    cost: 3500,
+    crypto: {
+      tier: 'degen',
+      chain: 'solana',
+      description: 'The BONK Arena where Shiba Inu memes come to play.',
+      effects: {
+        yieldRate: 10,
+        volatility: 0.5,
+        rugRisk: 0.04,
+        populationBoost: 25,
+        happinessEffect: 20,
+        zoneRadius: 4,
+        chainSynergy: ['solana'],
+        categorySynergy: ['meme'],
+      },
+    },
+  },
+  'popcat_pavilion': {
+    id: 'popcat_pavilion',
+    name: 'POPCAT Pavilion',
+    category: 'meme',
+    footprint: { width: 2, height: 2 },
+    icon: '🐱',
+    isProcedural: true,
+    cost: 3800,
+    crypto: {
+      tier: 'degen',
+      chain: 'solana',
+      description: 'The POPCAT Pavilion echoes with endless clicking sounds.',
+      effects: {
+        yieldRate: 11,
+        volatility: 0.52,
+        rugRisk: 0.045,
+        populationBoost: 26,
+        happinessEffect: 24,
+        zoneRadius: 4,
+        chainSynergy: ['solana'],
+        categorySynergy: ['meme'],
+      },
+    },
+  },
+  'brett_base': {
+    id: 'brett_base',
+    name: 'Brett Base',
+    category: 'meme',
+    footprint: { width: 2, height: 2 },
+    icon: '🔵',
+    isProcedural: true,
+    cost: 4200,
+    crypto: {
+      tier: 'degen',
+      chain: 'base',
+      description: 'Brett Base is the home of Base chain\'s favorite frog.',
+      effects: {
+        yieldRate: 13,
+        volatility: 0.48,
+        rugRisk: 0.035,
+        populationBoost: 30,
+        happinessEffect: 18,
+        zoneRadius: 4,
+        chainSynergy: ['base'],
+        categorySynergy: ['meme'],
+      },
+    },
+  },
+  'floki_fortress': {
+    id: 'floki_fortress',
+    name: 'Floki Fortress',
+    category: 'meme',
+    footprint: { width: 2, height: 3 },
+    icon: '⚔️',
+    isProcedural: true,
+    cost: 5500,
+    crypto: {
+      tier: 'whale',
+      chain: 'ethereum',
+      description: 'Floki Fortress stands as a Viking tribute to meme culture.',
+      effects: {
+        yieldRate: 9,
+        volatility: 0.42,
+        rugRisk: 0.03,
+        populationBoost: 35,
+        happinessEffect: 20,
+        zoneRadius: 5,
+        chainSynergy: ['ethereum', 'bnb'],
+        categorySynergy: ['meme'],
+      },
+    },
+  },
+  'mog_mansion': {
+    id: 'mog_mansion',
+    name: 'MOG Mansion',
+    category: 'meme',
+    footprint: { width: 2, height: 2 },
+    icon: '😎',
+    isProcedural: true,
+    cost: 4500,
+    crypto: {
+      tier: 'degen',
+      chain: 'ethereum',
+      description: 'MOG Mansion is where the cool cats hang out.',
+      effects: {
+        yieldRate: 14,
+        volatility: 0.55,
+        rugRisk: 0.05,
+        populationBoost: 28,
+        happinessEffect: 25,
+        zoneRadius: 4,
+        chainSynergy: ['ethereum'],
         categorySynergy: ['meme', 'ct'],
       },
     },
