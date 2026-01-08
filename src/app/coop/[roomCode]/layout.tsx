@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 interface Props {
   params: Promise<{ roomCode: string }>;
@@ -7,10 +7,10 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { roomCode } = await params;
   const code = roomCode.toUpperCase();
-  
+
   const title = `Join co-op ${code}`;
-  const fullTitle = `ISOCITY — ${title}`;
-  const description = `You've been invited to build a city together! Join room ${code} to start playing.`;
+  const fullTitle = `CryptoCity — ${title}`;
+  const description = `You've been invited to build a crypto city together! Join room ${code} to start playing.`;
 
   return {
     title,
@@ -18,14 +18,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: fullTitle,
       description,
-      siteName: 'IsoCity',
-      images: ['/opengraph-image.png'],
+      siteName: "CryptoCity",
+      images: ["/opengraph-image.png"],
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title: fullTitle,
       description,
-      images: ['/opengraph-image.png'],
+      images: ["/opengraph-image.png"],
     },
   };
 }

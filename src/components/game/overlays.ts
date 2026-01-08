@@ -3,8 +3,8 @@
  * Handles visualization overlays for power, water, services, etc.
  */
 
-import { Tile } from '@/types/game';
-import { OverlayMode } from './types';
+import { Tile } from "@/types/game";
+import { OverlayMode } from "./types";
 
 // ============================================================================
 // Types
@@ -37,71 +37,110 @@ export type OverlayConfig = {
 /** Configuration for each overlay mode */
 export const OVERLAY_CONFIG: Record<OverlayMode, OverlayConfig> = {
   none: {
-    label: 'None',
-    title: 'No Overlay',
-    activeColor: '',
-    hoverColor: '',
+    label: "None",
+    title: "No Overlay",
+    activeColor: "",
+    hoverColor: "",
   },
   power: {
-    label: 'Power',
-    title: 'Power Grid',
-    activeColor: 'bg-amber-500',
-    hoverColor: 'hover:bg-amber-600',
+    label: "Power",
+    title: "Power Grid",
+    activeColor: "bg-amber-500",
+    hoverColor: "hover:bg-amber-600",
   },
   water: {
-    label: 'Water',
-    title: 'Water System',
-    activeColor: 'bg-blue-500',
-    hoverColor: 'hover:bg-blue-600',
+    label: "Water",
+    title: "Water System",
+    activeColor: "bg-blue-500",
+    hoverColor: "hover:bg-blue-600",
   },
   fire: {
-    label: 'Fire',
-    title: 'Fire Coverage',
-    activeColor: 'bg-red-500',
-    hoverColor: 'hover:bg-red-600',
+    label: "Fire",
+    title: "Fire Coverage",
+    activeColor: "bg-red-500",
+    hoverColor: "hover:bg-red-600",
   },
   police: {
-    label: 'Police',
-    title: 'Police Coverage',
-    activeColor: 'bg-blue-600',
-    hoverColor: 'hover:bg-blue-700',
+    label: "Police",
+    title: "Police Coverage",
+    activeColor: "bg-blue-600",
+    hoverColor: "hover:bg-blue-700",
   },
   health: {
-    label: 'Health',
-    title: 'Health Coverage',
-    activeColor: 'bg-green-500',
-    hoverColor: 'hover:bg-green-600',
+    label: "Health",
+    title: "Health Coverage",
+    activeColor: "bg-green-500",
+    hoverColor: "hover:bg-green-600",
   },
   education: {
-    label: 'Education',
-    title: 'Education Coverage',
-    activeColor: 'bg-purple-500',
-    hoverColor: 'hover:bg-purple-600',
+    label: "Education",
+    title: "Education Coverage",
+    activeColor: "bg-purple-500",
+    hoverColor: "hover:bg-purple-600",
   },
   subway: {
-    label: 'Subway',
-    title: 'Subway Coverage',
-    activeColor: 'bg-yellow-500',
-    hoverColor: 'hover:bg-yellow-600',
+    label: "Subway",
+    title: "Subway Coverage",
+    activeColor: "bg-yellow-500",
+    hoverColor: "hover:bg-yellow-600",
+  },
+  zones: {
+    label: "Zones",
+    title: "Zoning Map (R/C/I)",
+    activeColor: "bg-emerald-500",
+    hoverColor: "hover:bg-emerald-600",
+  },
+  traffic: {
+    label: "Traffic",
+    title: "Traffic Density",
+    activeColor: "bg-orange-500",
+    hoverColor: "hover:bg-orange-600",
+  },
+  landValue: {
+    label: "Land Value",
+    title: "Property Values",
+    activeColor: "bg-cyan-500",
+    hoverColor: "hover:bg-cyan-600",
+  },
+  pollution: {
+    label: "Pollution",
+    title: "Air & Ground Pollution",
+    activeColor: "bg-gray-500",
+    hoverColor: "hover:bg-gray-600",
+  },
+  crime: {
+    label: "Crime",
+    title: "Crime Rate",
+    activeColor: "bg-rose-500",
+    hoverColor: "hover:bg-rose-600",
+  },
+  density: {
+    label: "Density",
+    title: "Population Density",
+    activeColor: "bg-indigo-500",
+    hoverColor: "hover:bg-indigo-600",
   },
 };
 
 /** Map of building tools to their corresponding overlay mode */
 export const TOOL_TO_OVERLAY_MAP: Record<string, OverlayMode> = {
-  power_plant: 'power',
-  water_tower: 'water',
-  fire_station: 'fire',
-  police_station: 'police',
-  hospital: 'health',
-  school: 'education',
-  university: 'education',
-  subway_station: 'subway',
-  subway: 'subway',
+  power_plant: "power",
+  water_tower: "water",
+  fire_station: "fire",
+  police_station: "police",
+  hospital: "health",
+  school: "education",
+  university: "education",
+  subway_station: "subway",
+  subway: "subway",
 };
 
 /** Get the button class name for an overlay button */
-export function getOverlayButtonClass(mode: OverlayMode, isActive: boolean): string {
-  if (!isActive || mode === 'none') return '';
+export function getOverlayButtonClass(
+  mode: OverlayMode,
+  isActive: boolean,
+): string {
+  if (!isActive || mode === "none") return "";
   const config = OVERLAY_CONFIG[mode];
   return `${config.activeColor} ${config.hoverColor}`;
 }
@@ -112,7 +151,12 @@ export function getOverlayButtonClass(mode: OverlayMode, isActive: boolean): str
 
 /** Tiles that don't need service coverage (natural/infrastructure) */
 const NON_BUILDING_TYPES = new Set([
-  'empty', 'grass', 'water', 'road', 'rail', 'tree'
+  "empty",
+  "grass",
+  "water",
+  "road",
+  "rail",
+  "tree",
 ]);
 
 /** Check if a tile has a building that needs service coverage */
@@ -121,19 +165,81 @@ function tileNeedsCoverage(tile: Tile): boolean {
 }
 
 /** Warning color for uncovered buildings */
-const UNCOVERED_WARNING = 'rgba(239, 68, 68, 0.45)'; // Red tint
+const UNCOVERED_WARNING = "rgba(239, 68, 68, 0.45)"; // Red tint
 
 /** No overlay needed (transparent) */
-const NO_OVERLAY = 'rgba(0, 0, 0, 0)';
+const NO_OVERLAY = "rgba(0, 0, 0, 0)";
+
+/** Zone colors for visualization */
+const ZONE_COLORS = {
+  residential: "rgba(34, 197, 94, 0.45)", // Green
+  commercial: "rgba(59, 130, 246, 0.45)", // Blue
+  industrial: "rgba(234, 179, 8, 0.45)", // Yellow
+  none: "rgba(0, 0, 0, 0)",
+};
+
+/** Get color for land value (0-100 scale) */
+function getLandValueColor(value: number): string {
+  // Low values = red/orange, high values = green/blue
+  const normalized = Math.min(100, Math.max(0, value)) / 100;
+  if (normalized < 0.25) {
+    return `rgba(239, 68, 68, ${0.3 + normalized * 0.4})`; // Red
+  } else if (normalized < 0.5) {
+    return `rgba(251, 146, 60, ${0.3 + normalized * 0.4})`; // Orange
+  } else if (normalized < 0.75) {
+    return `rgba(250, 204, 21, ${0.3 + normalized * 0.4})`; // Yellow
+  } else {
+    return `rgba(34, 197, 94, ${0.3 + normalized * 0.4})`; // Green
+  }
+}
+
+/** Get color for pollution (0-100 scale) */
+function getPollutionColor(value: number): string {
+  const normalized = Math.min(100, Math.max(0, value)) / 100;
+  if (normalized < 0.1) return NO_OVERLAY;
+  // More pollution = darker brown/gray
+  return `rgba(75, 85, 99, ${normalized * 0.6})`;
+}
+
+/** Get color for crime (0-100 scale) */
+function getCrimeColor(value: number): string {
+  const normalized = Math.min(100, Math.max(0, value)) / 100;
+  if (normalized < 0.1) return NO_OVERLAY;
+  // Higher crime = more red
+  return `rgba(220, 38, 38, ${normalized * 0.5})`;
+}
+
+/** Get color for traffic (0-100 scale) */
+function getTrafficColor(value: number): string {
+  const normalized = Math.min(100, Math.max(0, value)) / 100;
+  if (normalized < 0.1) return NO_OVERLAY;
+  // Low traffic = green, high traffic = red
+  if (normalized < 0.3) {
+    return `rgba(34, 197, 94, ${0.2 + normalized * 0.3})`; // Green
+  } else if (normalized < 0.6) {
+    return `rgba(250, 204, 21, ${0.2 + normalized * 0.3})`; // Yellow
+  } else {
+    return `rgba(239, 68, 68, ${0.2 + normalized * 0.4})`; // Red
+  }
+}
+
+/** Get color for population density */
+function getDensityColor(population: number): string {
+  if (population === 0) return NO_OVERLAY;
+  // Normalize - assume max population per tile is ~300 (high-rise apartment)
+  const normalized = Math.min(1, population / 300);
+  // Purple gradient for density
+  return `rgba(139, 92, 246, ${0.2 + normalized * 0.5})`;
+}
 
 /**
  * Calculate the fill style color for an overlay tile.
- * 
+ *
  * New simplified logic:
  * - Buildings without coverage get a red warning tint
  * - Covered buildings and non-building tiles get no tint
  * - Radius circles are drawn separately to show coverage areas
- * 
+ *
  * @param mode - The current overlay mode
  * @param tile - The tile being rendered
  * @param coverage - Service coverage values for the tile
@@ -142,49 +248,73 @@ const NO_OVERLAY = 'rgba(0, 0, 0, 0)';
 export function getOverlayFillStyle(
   mode: OverlayMode,
   tile: Tile,
-  coverage: ServiceCoverage
+  coverage: ServiceCoverage,
 ): string {
   // Only show warning on tiles that have buildings needing coverage
   const needsCoverage = tileNeedsCoverage(tile);
-  
+
   switch (mode) {
-    case 'power':
+    case "power":
       // Red warning only on unpowered buildings
       if (!needsCoverage) return NO_OVERLAY;
       return tile.building.powered ? NO_OVERLAY : UNCOVERED_WARNING;
 
-    case 'water':
+    case "water":
       // Red warning only on buildings without water
       if (!needsCoverage) return NO_OVERLAY;
       return tile.building.watered ? NO_OVERLAY : UNCOVERED_WARNING;
 
-    case 'fire':
+    case "fire":
       // Red warning only on buildings outside fire coverage
       if (!needsCoverage) return NO_OVERLAY;
       return coverage.fire > 0 ? NO_OVERLAY : UNCOVERED_WARNING;
 
-    case 'police':
+    case "police":
       // Red warning only on buildings outside police coverage
       if (!needsCoverage) return NO_OVERLAY;
       return coverage.police > 0 ? NO_OVERLAY : UNCOVERED_WARNING;
 
-    case 'health':
+    case "health":
       // Red warning only on buildings outside health coverage
       if (!needsCoverage) return NO_OVERLAY;
       return coverage.health > 0 ? NO_OVERLAY : UNCOVERED_WARNING;
 
-    case 'education':
+    case "education":
       // Red warning only on buildings outside education coverage
       if (!needsCoverage) return NO_OVERLAY;
       return coverage.education > 0 ? NO_OVERLAY : UNCOVERED_WARNING;
 
-    case 'subway':
+    case "subway":
       // Underground view overlay - keep existing behavior
       return tile.hasSubway
-        ? 'rgba(245, 158, 11, 0.7)'  // Bright amber for existing subway
-        : 'rgba(40, 30, 20, 0.4)';   // Dark brown tint for "underground" view
+        ? "rgba(245, 158, 11, 0.7)" // Bright amber for existing subway
+        : "rgba(40, 30, 20, 0.4)"; // Dark brown tint for "underground" view
 
-    case 'none':
+    case "zones":
+      // Show zone colors
+      return ZONE_COLORS[tile.zone] || NO_OVERLAY;
+
+    case "traffic":
+      // Traffic heat map based on tile traffic value
+      return getTrafficColor(tile.traffic);
+
+    case "landValue":
+      // Land value gradient
+      return getLandValueColor(tile.landValue);
+
+    case "pollution":
+      // Pollution heat map
+      return getPollutionColor(tile.pollution);
+
+    case "crime":
+      // Crime heat map
+      return getCrimeColor(tile.crime);
+
+    case "density":
+      // Population density
+      return getDensityColor(tile.building.population);
+
+    case "none":
     default:
       return NO_OVERLAY;
   }
@@ -195,12 +325,25 @@ export function getOverlayFillStyle(
  * Returns 'none' if the tool doesn't have an associated overlay.
  */
 export function getOverlayForTool(tool: string): OverlayMode {
-  return TOOL_TO_OVERLAY_MAP[tool] ?? 'none';
+  return TOOL_TO_OVERLAY_MAP[tool] ?? "none";
 }
 
 /** List of all overlay modes (for iteration) */
 export const OVERLAY_MODES: OverlayMode[] = [
-  'none', 'power', 'water', 'fire', 'police', 'health', 'education', 'subway'
+  "none",
+  "power",
+  "water",
+  "fire",
+  "police",
+  "health",
+  "education",
+  "subway",
+  "zones",
+  "traffic",
+  "landValue",
+  "pollution",
+  "crime",
+  "density",
 ];
 
 // ============================================================================
@@ -210,47 +353,71 @@ export const OVERLAY_MODES: OverlayMode[] = [
 /** Map overlay modes to their corresponding service building types */
 export const OVERLAY_TO_BUILDING_TYPES: Record<OverlayMode, string[]> = {
   none: [],
-  power: ['power_plant'],
-  water: ['water_tower'],
-  fire: ['fire_station'],
-  police: ['police_station'],
-  health: ['hospital'],
-  education: ['school', 'university'],
-  subway: ['subway_station'],
+  power: ["power_plant"],
+  water: ["water_tower"],
+  fire: ["fire_station"],
+  police: ["police_station"],
+  health: ["hospital"],
+  education: ["school", "university"],
+  subway: ["subway_station"],
+  zones: [],
+  traffic: [],
+  landValue: [],
+  pollution: [],
+  crime: [],
+  density: [],
 };
 
 /** Overlay circle stroke colors (light/visible colors) */
 export const OVERLAY_CIRCLE_COLORS: Record<OverlayMode, string> = {
-  none: 'transparent',
-  power: 'rgba(251, 191, 36, 0.8)',    // Amber
-  water: 'rgba(96, 165, 250, 0.8)',    // Blue
-  fire: 'rgba(248, 113, 113, 0.8)',    // Light red
-  police: 'rgba(147, 197, 253, 0.8)',  // Light blue
-  health: 'rgba(134, 239, 172, 0.8)',  // Light green
-  education: 'rgba(196, 181, 253, 0.8)', // Light purple
-  subway: 'rgba(253, 224, 71, 0.8)',   // Yellow
+  none: "transparent",
+  power: "rgba(251, 191, 36, 0.8)",
+  water: "rgba(96, 165, 250, 0.8)",
+  fire: "rgba(248, 113, 113, 0.8)",
+  police: "rgba(147, 197, 253, 0.8)",
+  health: "rgba(134, 239, 172, 0.8)",
+  education: "rgba(196, 181, 253, 0.8)",
+  subway: "rgba(253, 224, 71, 0.8)",
+  zones: "transparent",
+  traffic: "transparent",
+  landValue: "transparent",
+  pollution: "transparent",
+  crime: "transparent",
+  density: "transparent",
 };
 
 /** Building highlight glow colors */
 export const OVERLAY_HIGHLIGHT_COLORS: Record<OverlayMode, string> = {
-  none: 'transparent',
-  power: 'rgba(251, 191, 36, 1)',      // Amber
-  water: 'rgba(96, 165, 250, 1)',      // Blue  
-  fire: 'rgba(239, 68, 68, 1)',        // Red
-  police: 'rgba(59, 130, 246, 1)',     // Blue
-  health: 'rgba(34, 197, 94, 1)',      // Green
-  education: 'rgba(168, 85, 247, 1)',  // Purple
-  subway: 'rgba(234, 179, 8, 1)',      // Yellow
+  none: "transparent",
+  power: "rgba(251, 191, 36, 1)",
+  water: "rgba(96, 165, 250, 1)",
+  fire: "rgba(239, 68, 68, 1)",
+  police: "rgba(59, 130, 246, 1)",
+  health: "rgba(34, 197, 94, 1)",
+  education: "rgba(168, 85, 247, 1)",
+  subway: "rgba(234, 179, 8, 1)",
+  zones: "transparent",
+  traffic: "transparent",
+  landValue: "transparent",
+  pollution: "transparent",
+  crime: "transparent",
+  density: "transparent",
 };
 
 /** Overlay circle fill colors (subtle, for area visibility) */
 export const OVERLAY_CIRCLE_FILL_COLORS: Record<OverlayMode, string> = {
-  none: 'transparent',
-  power: 'rgba(251, 191, 36, 0.12)',
-  water: 'rgba(96, 165, 250, 0.12)',
-  fire: 'rgba(248, 113, 113, 0.12)',
-  police: 'rgba(147, 197, 253, 0.12)',
-  health: 'rgba(134, 239, 172, 0.12)',
-  education: 'rgba(196, 181, 253, 0.12)',
-  subway: 'rgba(253, 224, 71, 0.12)',
+  none: "transparent",
+  power: "rgba(251, 191, 36, 0.12)",
+  water: "rgba(96, 165, 250, 0.12)",
+  fire: "rgba(248, 113, 113, 0.12)",
+  police: "rgba(147, 197, 253, 0.12)",
+  health: "rgba(134, 239, 172, 0.12)",
+  education: "rgba(196, 181, 253, 0.12)",
+  subway: "rgba(253, 224, 71, 0.12)",
+  zones: "transparent",
+  traffic: "transparent",
+  landValue: "transparent",
+  pollution: "transparent",
+  crime: "transparent",
+  density: "transparent",
 };

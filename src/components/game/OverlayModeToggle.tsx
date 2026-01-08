@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { msg } from 'gt-next';
-import { useMessages } from 'gt-next';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import React from "react";
+import { msg } from "gt-next";
+import { useMessages } from "gt-next";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   CloseIcon,
   PowerIcon,
@@ -14,9 +14,15 @@ import {
   HealthIcon,
   EducationIcon,
   SubwayIcon,
-} from '@/components/ui/Icons';
-import { OverlayMode } from './types';
-import { OVERLAY_CONFIG, getOverlayButtonClass } from './overlays';
+  RoadIcon,
+  MoneyIcon,
+  EnvironmentIcon,
+  AlertIcon,
+  PopulationIcon,
+  ChartIcon,
+} from "@/components/ui/Icons";
+import { OverlayMode } from "./types";
+import { OVERLAY_CONFIG, getOverlayButtonClass } from "./overlays";
 
 // ============================================================================
 // Types
@@ -41,13 +47,19 @@ const OVERLAY_ICONS: Record<OverlayMode, React.ReactNode> = {
   health: <HealthIcon size={14} />,
   education: <EducationIcon size={14} />,
   subway: <SubwayIcon size={14} />,
+  zones: <ChartIcon size={14} />,
+  traffic: <RoadIcon size={14} />,
+  landValue: <MoneyIcon size={14} />,
+  pollution: <EnvironmentIcon size={14} />,
+  crime: <AlertIcon size={14} />,
+  density: <PopulationIcon size={14} />,
 };
 
 // ============================================================================
 // Translatable Labels
 // ============================================================================
 
-const VIEW_OVERLAY_LABEL = msg('View Overlay');
+const VIEW_OVERLAY_LABEL = msg("View Overlay");
 
 // ============================================================================
 // Component
@@ -63,7 +75,7 @@ export const OverlayModeToggle = React.memo(function OverlayModeToggle({
   setOverlayMode,
 }: OverlayModeToggleProps) {
   const m = useMessages();
-  
+
   return (
     <Card className="fixed bottom-4 left-[240px] p-2 shadow-lg bg-card/90 border-border/70 z-50">
       <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold mb-2">
@@ -73,11 +85,11 @@ export const OverlayModeToggle = React.memo(function OverlayModeToggle({
         {(Object.keys(OVERLAY_CONFIG) as OverlayMode[]).map((mode) => {
           const config = OVERLAY_CONFIG[mode];
           const isActive = overlayMode === mode;
-          
+
           return (
             <Button
               key={mode}
-              variant={isActive ? 'default' : 'ghost'}
+              variant={isActive ? "default" : "ghost"}
               size="sm"
               onClick={() => setOverlayMode(mode)}
               className={`h-8 px-3 ${getOverlayButtonClass(mode, isActive)}`}

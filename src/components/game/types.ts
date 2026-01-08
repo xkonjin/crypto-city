@@ -1,10 +1,10 @@
 // Game-specific types for rendering and animation
 
-import { CardinalDirection } from '@/core/types';
+import { CardinalDirection } from "@/core/types";
 
 // Isometric tile dimensions
 export const TILE_WIDTH = 64;
-export const HEIGHT_RATIO = 0.60;
+export const HEIGHT_RATIO = 0.6;
 export const TILE_HEIGHT = TILE_WIDTH * HEIGHT_RATIO;
 export const KEY_PAN_SPEED = 520;
 
@@ -25,10 +25,10 @@ export type Car = {
 };
 
 // Airplane types for airport animation
-export type AirplaneState = 'flying' | 'landing' | 'taking_off' | 'taxiing';
+export type AirplaneState = "flying" | "landing" | "taking_off" | "taxiing";
 
 // Plane model types from the sprite sheet
-export type PlaneType = '737' | '777' | '747' | 'a380' | 'g650' | 'seaplane';
+export type PlaneType = "737" | "777" | "747" | "a380" | "g650" | "seaplane";
 
 export type ContrailParticle = {
   x: number;
@@ -68,7 +68,14 @@ export type Airplane = {
 };
 
 // Seaplane types for bay/water operations
-export type SeaplaneState = 'taxiing_water' | 'taxiing_to_dock' | 'docked' | 'taking_off' | 'flying' | 'landing' | 'splashdown';
+export type SeaplaneState =
+  | "taxiing_water"
+  | "taxiing_to_dock"
+  | "docked"
+  | "taking_off"
+  | "flying"
+  | "landing"
+  | "splashdown";
 
 export type Seaplane = {
   id: number;
@@ -119,7 +126,7 @@ export type Seaplane = {
 };
 
 // Helicopter types for hospital/airport transport
-export type HelicopterState = 'flying' | 'hovering' | 'landing' | 'taking_off';
+export type HelicopterState = "flying" | "hovering" | "landing" | "taking_off";
 
 export type RotorWashParticle = {
   x: number;
@@ -146,11 +153,11 @@ export type Helicopter = {
   // Origin heliport (hospital, airport, police, or mall) tile coordinates
   originX: number;
   originY: number;
-  originType: 'hospital' | 'airport' | 'police' | 'mall';
+  originType: "hospital" | "airport" | "police" | "mall";
   // Destination heliport tile coordinates
   destX: number;
   destY: number;
-  destType: 'hospital' | 'airport' | 'police' | 'mall';
+  destType: "hospital" | "airport" | "police" | "mall";
   // Destination screen position
   destScreenX: number;
   destScreenY: number;
@@ -170,8 +177,8 @@ export type Helicopter = {
 };
 
 // Emergency vehicle types
-export type EmergencyVehicleType = 'fire_truck' | 'police_car';
-export type EmergencyVehicleState = 'dispatching' | 'responding' | 'returning';
+export type EmergencyVehicleType = "fire_truck" | "police_car";
+export type EmergencyVehicleState = "dispatching" | "responding" | "returning";
 
 export type EmergencyVehicle = {
   id: number;
@@ -194,52 +201,58 @@ export type EmergencyVehicle = {
 };
 
 // Pedestrian types, destinations, and behaviors
-export type PedestrianDestType = 'school' | 'commercial' | 'industrial' | 'park' | 'beach' | 'home';
+export type PedestrianDestType =
+  | "school"
+  | "commercial"
+  | "industrial"
+  | "park"
+  | "beach"
+  | "home";
 
 // Pedestrian behavioral states
 export type PedestrianState =
-  | 'walking'           // Walking along a path
-  | 'entering_building' // Entering a building (fading out animation)
-  | 'inside_building'   // Inside a building (invisible)
-  | 'exiting_building'  // Exiting a building (fading in animation)
-  | 'at_recreation'     // At a recreational area doing an activity
-  | 'at_beach'          // At the beach (swimming or on mat)
-  | 'idle'              // Standing still, waiting
-  | 'socializing';      // Chatting with other pedestrians
+  | "walking" // Walking along a path
+  | "entering_building" // Entering a building (fading out animation)
+  | "inside_building" // Inside a building (invisible)
+  | "exiting_building" // Exiting a building (fading in animation)
+  | "at_recreation" // At a recreational area doing an activity
+  | "at_beach" // At the beach (swimming or on mat)
+  | "idle" // Standing still, waiting
+  | "socializing"; // Chatting with other pedestrians
 
 // Activities pedestrians can do at recreation areas
 export type PedestrianActivity =
-  | 'none'
-  | 'playing_basketball'
-  | 'playing_tennis'
-  | 'playing_soccer'
-  | 'playing_baseball'
-  | 'swimming'
-  | 'beach_swimming'
-  | 'lying_on_mat'
-  | 'skateboarding'
-  | 'sitting_bench'
-  | 'picnicking'
-  | 'walking_dog'
-  | 'jogging'
-  | 'playground'
-  | 'watching_game'
-  | 'shopping'
-  | 'working'
-  | 'studying';
+  | "none"
+  | "playing_basketball"
+  | "playing_tennis"
+  | "playing_soccer"
+  | "playing_baseball"
+  | "swimming"
+  | "beach_swimming"
+  | "lying_on_mat"
+  | "skateboarding"
+  | "sitting_bench"
+  | "picnicking"
+  | "walking_dog"
+  | "jogging"
+  | "playground"
+  | "watching_game"
+  | "shopping"
+  | "working"
+  | "studying";
 
 // Recreation area types with their associated activities
 export type RecreationAreaType =
-  | 'basketball_court'
-  | 'tennis_court'
-  | 'soccer_field'
-  | 'baseball_field'
-  | 'swimming_pool'
-  | 'skate_park'
-  | 'park_bench'
-  | 'playground'
-  | 'stadium_seating'
-  | 'generic_park';
+  | "basketball_court"
+  | "tennis_court"
+  | "soccer_field"
+  | "baseball_field"
+  | "swimming_pool"
+  | "skate_park"
+  | "park_bench"
+  | "playground"
+  | "stadium_seating"
+  | "generic_park";
 
 export type Pedestrian = {
   id: number;
@@ -252,11 +265,11 @@ export type Pedestrian = {
   maxAge: number;
   skinColor: string;
   shirtColor: string;
-  pantsColor: string;        // NEW: pants/shorts color
-  hasHat: boolean;           // NEW: wearing a hat
-  hatColor: string;          // NEW: hat color
-  walkOffset: number;        // For walking animation
-  sidewalkSide: 'left' | 'right';
+  pantsColor: string; // NEW: pants/shorts color
+  hasHat: boolean; // NEW: wearing a hat
+  hatColor: string; // NEW: hat color
+  walkOffset: number; // For walking animation
+  sidewalkSide: "left" | "right";
   destType: PedestrianDestType;
   homeX: number;
   homeY: number;
@@ -268,29 +281,34 @@ export type Pedestrian = {
   // NEW: Dynamic behavior properties
   state: PedestrianState;
   activity: PedestrianActivity;
-  activityProgress: number;  // 0-1 progress through current activity
-  activityDuration: number;  // How long to stay at current activity (seconds)
+  activityProgress: number; // 0-1 progress through current activity
+  activityDuration: number; // How long to stay at current activity (seconds)
   buildingEntryProgress: number; // 0-1 for enter/exit animations
-  socialTarget: number | null;   // ID of pedestrian we're socializing with
+  socialTarget: number | null; // ID of pedestrian we're socializing with
   // Position offset within activity area (for varied positioning)
   activityOffsetX: number;
   activityOffsetY: number;
   // Animation state for activities
   activityAnimTimer: number;
   // Items the pedestrian might have
-  hasBall: boolean;          // Carrying a ball
-  hasDog: boolean;           // Walking a dog
-  hasBag: boolean;           // Shopping bag or briefcase
+  hasBall: boolean; // Carrying a ball
+  hasDog: boolean; // Walking a dog
+  hasBag: boolean; // Shopping bag or briefcase
   // Beach-specific properties
-  hasBeachMat: boolean;      // Has a beach mat
-  matColor: string;          // Color of the beach mat
-  beachTileX: number;        // Beach water tile X (for swimming position)
-  beachTileY: number;        // Beach water tile Y (for swimming position)
-  beachEdge: 'north' | 'east' | 'south' | 'west' | null; // Which edge of water tile is beach
+  hasBeachMat: boolean; // Has a beach mat
+  matColor: string; // Color of the beach mat
+  beachTileX: number; // Beach water tile X (for swimming position)
+  beachTileY: number; // Beach water tile Y (for swimming position)
+  beachEdge: "north" | "east" | "south" | "west" | null; // Which edge of water tile is beach
 };
 
 // Boat types for water navigation
-export type BoatState = 'sailing' | 'docked' | 'arriving' | 'departing' | 'touring';
+export type BoatState =
+  | "sailing"
+  | "docked"
+  | "arriving"
+  | "departing"
+  | "touring";
 
 export type WakeParticle = {
   x: number;
@@ -348,7 +366,12 @@ export type Boat = {
 };
 
 // Barge types for ocean cargo transport
-export type BargeState = 'approaching' | 'docking' | 'docked' | 'departing' | 'leaving';
+export type BargeState =
+  | "approaching"
+  | "docking"
+  | "docked"
+  | "departing"
+  | "leaving";
 
 export type Barge = {
   id: number;
@@ -364,7 +387,7 @@ export type Barge = {
   // Speed (pixels per second in screen space) - slower than boats
   speed: number;
   // Spawn edge of the map ('north' | 'south' | 'east' | 'west')
-  spawnEdge: 'north' | 'south' | 'east' | 'west';
+  spawnEdge: "north" | "south" | "east" | "west";
   // Spawn point (screen coordinates)
   spawnScreenX: number;
   spawnScreenY: number;
@@ -409,13 +432,13 @@ export type FactorySmog = {
   tileY: number;
   screenX: number;
   screenY: number;
-  buildingType: 'factory_medium' | 'factory_large';
+  buildingType: "factory_medium" | "factory_large";
   particles: SmogParticle[];
   spawnTimer: number;
 };
 
 // Firework types for nighttime celebrations at stadiums, amusement parks, and marinas
-export type FireworkState = 'launching' | 'exploding' | 'fading';
+export type FireworkState = "launching" | "exploding" | "fading";
 
 export type FireworkParticle = {
   x: number;
@@ -453,11 +476,11 @@ export type Firework = {
 };
 
 // Direction metadata - re-export from core
-export type { DirectionMeta } from '@/core/types/grid';
+export type { DirectionMeta } from "@/core/types/grid";
 
 // World render state
 export type WorldRenderState = {
-  grid: import('@/types/game').Tile[][];
+  grid: import("@/types/game").Tile[][];
   gridSize: number;
   offset: { x: number; y: number };
   zoom: number;
@@ -466,17 +489,37 @@ export type WorldRenderState = {
 };
 
 // Overlay modes for visualization
-export type OverlayMode = 'none' | 'power' | 'water' | 'fire' | 'police' | 'health' | 'education' | 'subway';
+export type OverlayMode =
+  | "none"
+  | "power"
+  | "water"
+  | "fire"
+  | "police"
+  | "health"
+  | "education"
+  | "subway"
+  | "zones"
+  | "traffic"
+  | "landValue"
+  | "pollution"
+  | "crime"
+  | "density";
 
 // ============================================================================
 // Train Types
 // ============================================================================
 
 /** Train carriage type */
-export type CarriageType = 'locomotive' | 'passenger' | 'freight_box' | 'freight_tank' | 'freight_flat' | 'caboose';
+export type CarriageType =
+  | "locomotive"
+  | "passenger"
+  | "freight_box"
+  | "freight_tank"
+  | "freight_flat"
+  | "caboose";
 
 /** Train type (passenger or freight) */
-export type TrainType = 'passenger' | 'freight';
+export type TrainType = "passenger" | "freight";
 
 /** Smoke particle for freight train locomotives */
 export type TrainSmokeParticle = {
