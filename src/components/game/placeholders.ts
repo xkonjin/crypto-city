@@ -4,12 +4,26 @@
 // Colors for rendering buildings before sprites are loaded
 // Based on zone/category for visual consistency
 
+import { getCryptoBuilding } from '@/games/isocity/crypto/buildings';
+import type { CryptoCategory } from '@/games/isocity/crypto/types';
+
 export interface PlaceholderColor {
   top: string;
   left: string;
   right: string;
   height: number;
 }
+
+export const CRYPTO_CATEGORY_COLORS: Record<CryptoCategory, PlaceholderColor> = {
+  defi: { top: '#3b82f6', left: '#2563eb', right: '#60a5fa', height: 1.2 },
+  exchange: { top: '#22c55e', left: '#16a34a', right: '#4ade80', height: 1.4 },
+  chain: { top: '#a855f7', left: '#9333ea', right: '#c084fc', height: 1.3 },
+  ct: { top: '#06b6d4', left: '#0891b2', right: '#22d3ee', height: 0.9 },
+  meme: { top: '#f59e0b', left: '#d97706', right: '#fbbf24', height: 0.8 },
+  plasma: { top: '#ec4899', left: '#db2777', right: '#f472b6', height: 1.5 },
+  stablecoin: { top: '#10b981', left: '#059669', right: '#34d399', height: 1.1 },
+  infrastructure: { top: '#6366f1', left: '#4f46e5', right: '#818cf8', height: 1.2 },
+};
 
 export const PLACEHOLDER_COLORS: Record<string, PlaceholderColor> = {
   // Residential - greens
@@ -55,10 +69,6 @@ export const PLACEHOLDER_COLORS: Record<string, PlaceholderColor> = {
   default: { top: '#9ca3af', left: '#6b7280', right: '#d1d5db', height: 0.6 },
 };
 
-/**
- * Draw a placeholder isometric building box when sprites aren't loaded yet.
- * Uses simple colored 3D boxes that match the zone/category.
- */
 export function drawPlaceholderBuilding(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -67,7 +77,16 @@ export function drawPlaceholderBuilding(
   tileWidth: number,
   tileHeight: number
 ): void {
-  const colors = PLACEHOLDER_COLORS[buildingType] || PLACEHOLDER_COLORS.default;
+  let colors = PLACEHOLDER_COLORS[buildingType];
+  
+  if (!colors) {
+    const cryptoBuilding = getCryptoBuilding(buildingType);
+    if (cryptoBuilding) {
+      colors = CRYPTO_CATEGORY_COLORS[cryptoBuilding.category];
+    }
+  }
+  
+  colors = colors || PLACEHOLDER_COLORS.default;
   const boxHeight = tileHeight * colors.height;
   
   const w = tileWidth;

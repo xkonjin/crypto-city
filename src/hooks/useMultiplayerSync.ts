@@ -97,9 +97,7 @@ export function useMultiplayerSync() {
 
   // Apply a remote action to the local game state
   const applyRemoteAction = useCallback((action: GameAction) => {
-    // Guard against null/undefined actions (can happen with malformed broadcasts)
     if (!action || !action.type) {
-      console.warn('[useMultiplayerSync] Received invalid action:', action);
       return;
     }
     
@@ -163,19 +161,27 @@ export function useMultiplayerSync() {
     }
   }, [game]);
 
-  // Register callback to receive remote actions
+  const applyRemoteActionRef = useRef(applyRemoteAction);
   useEffect(() => {
-    if (!multiplayer) return;
+    applyRemoteActionRef.current = applyRemoteAction;
+  }, [applyRemoteAction]);
 
-    multiplayer.setOnRemoteAction((action: GameAction) => {
-      // Apply remote actions to local game state
-      applyRemoteAction(action);
+  const setOnRemoteActionRef = useRef(multiplayer?.setOnRemoteAction);
+  useEffect(() => {
+    setOnRemoteActionRef.current = multiplayer?.setOnRemoteAction;
+  }, [multiplayer?.setOnRemoteAction]);
+
+  useEffect(() => {
+    if (!setOnRemoteActionRef.current) return;
+
+    setOnRemoteActionRef.current((action: GameAction) => {
+      applyRemoteActionRef.current(action);
     });
 
     return () => {
-      multiplayer.setOnRemoteAction(null);
+      setOnRemoteActionRef.current?.(null);
     };
-  }, [multiplayer, applyRemoteAction]);
+  }, []);
   
   // Flush batched placements - uses ref to avoid stale closure issues
   const flushPlacements = useCallback(() => {

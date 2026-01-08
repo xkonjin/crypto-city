@@ -561,14 +561,23 @@ export class CryptoEventManager {
   
   /**
    * Generate news headlines from recent events
+   * Now integrates real-world ticker items when available
    */
   generateNewsHeadlines(count: number = 5): string[] {
     const headlines: string[] = [];
     
-    // Add active events
+    // Add active events (highest priority)
     for (const event of this.activeEvents.values()) {
       headlines.push(`🔴 LIVE: ${event.name} - ${event.description}`);
     }
+    
+    // ==== REAL WORLD DATA INTEGRATION ====
+    // Add real ticker items (news, tweets, price alerts)
+    for (const item of this.realTickerItems.slice(0, count)) {
+      if (headlines.length >= count) break;
+      headlines.push(item.text);
+    }
+    // ==== END REAL WORLD DATA INTEGRATION ====
     
     // Add recent events from history
     const recentEvents = this.eventHistory
@@ -576,6 +585,7 @@ export class CryptoEventManager {
       .slice(-count);
     
     for (const event of recentEvents.reverse()) {
+      if (headlines.length >= count) break;
       headlines.push(`${event.icon} ${event.name}`);
     }
     
@@ -601,6 +611,44 @@ export class CryptoEventManager {
     }
     
     return headlines.slice(0, count);
+  }
+  
+  /**
+   * Get combined ticker items (events + real data)
+   * Returns items suitable for the news ticker component
+   */
+  getCombinedTickerItems(maxItems: number = 10): TickerItem[] {
+    const items: TickerItem[] = [];
+    
+    // Add active game events as ticker items
+    for (const event of this.activeEvents.values()) {
+      items.push({
+        id: event.id,
+        text: `🔴 LIVE: ${event.name} - ${event.description}`,
+        type: 'event',
+        sentiment: this.isPositiveEvent(event.type) ? 'positive' : 'negative',
+        timestamp: event.startTime,
+      });
+    }
+    
+    // Add real ticker items
+    items.push(...this.realTickerItems);
+    
+    // Sort by timestamp (newest first)
+    items.sort((a, b) => b.timestamp - a.timestamp);
+    
+    return items.slice(0, maxItems);
+  }
+  
+  /**
+   * Check if an event type is positive
+   */
+  private isPositiveEvent(type: CryptoEventType): boolean {
+    const positiveEvents: CryptoEventType[] = [
+      'bull_run', 'airdrop', 'protocol_upgrade', 'whale_entry', 
+      'merge', 'halving', 'airdrop_season'
+    ];
+    return positiveEvents.includes(type);
   }
   
   // ---------------------------------------------------------------------------

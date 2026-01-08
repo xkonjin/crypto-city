@@ -109,7 +109,6 @@ import {
 import { Train } from '@/components/game/types';
 import { useLightingSystem } from '@/components/game/lightingSystem';
 
-// Props interface for CanvasIsometricGrid
 export interface CanvasIsometricGridProps {
   overlayMode: OverlayMode;
   selectedTile: { x: number; y: number } | null;
@@ -119,11 +118,11 @@ export interface CanvasIsometricGridProps {
   onNavigationComplete?: () => void;
   onViewportChange?: (viewport: { offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } }) => void;
   onBargeDelivery?: (cargoValue: number, cargoType: number) => void;
+  selectedCryptoBuilding?: string | null;
 }
 
-// Canvas-based Isometric Grid - HIGH PERFORMANCE
-export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
-  const { state, latestStateRef, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour } = useGame();
+export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery, selectedCryptoBuilding }: CanvasIsometricGridProps) {
+  const { state, latestStateRef, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour, placeCryptoBuilding, setSelectedCryptoBuilding } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   
   // PERF: Use latestStateRef for real-time grid access in animation loops
@@ -1289,6 +1288,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     // Draw building sprite
     function drawBuilding(ctx: CanvasRenderingContext2D, x: number, y: number, tile: Tile) {
       const buildingType = tile.building.type;
+      // For crypto buildings, use the specific crypto building ID for placeholder colors
+      const placeholderBuildingType = buildingType === 'crypto_building' && tile.building.cryptoBuildingId 
+        ? tile.building.cryptoBuildingId 
+        : buildingType;
       const w = TILE_WIDTH;
       const h = TILE_HEIGHT;
       
@@ -1603,12 +1606,15 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
                   Math.round(destWidth), Math.round(destHeight)
                 );
               }
+            } else {
+              drawPlaceholderBuilding(ctx, x, y, placeholderBuildingType, w, h);
             }
           } else {
-            // Sprite sheet not loaded yet - draw placeholder building
-            drawPlaceholderBuilding(ctx, x, y, buildingType, w, h);
+            drawPlaceholderBuilding(ctx, x, y, placeholderBuildingType, w, h);
           }
         }
+      } else {
+        drawPlaceholderBuilding(ctx, x, y, placeholderBuildingType, w, h);
       }
       
       // Draw fire effect
@@ -2520,6 +2526,17 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
 
         if (selectedTool === 'select') {
           const tile = grid[gridY]?.[gridX];
+          
+          if (selectedCryptoBuilding) {
+            const canPlace = tile?.building.type === 'grass' || tile?.building.type === 'tree';
+            if (canPlace) {
+              placeCryptoBuilding(gridX, gridY, selectedCryptoBuilding);
+              setSelectedCryptoBuilding(null);
+            }
+            panCandidateRef.current = null;
+            return;
+          }
+          
           const isOpenTile = tile?.building.type === 'empty' ||
             tile?.building.type === 'grass' ||
             tile?.building.type === 'water';
@@ -2528,7 +2545,6 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             return;
           }
           panCandidateRef.current = null;
-          // For multi-tile buildings, select the origin tile
           const origin = findBuildingOrigin(gridX, gridY);
           if (origin) {
             setSelectedTile({ x: origin.originX, y: origin.originY });
@@ -2559,7 +2575,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid]);
+  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, grid, selectedCryptoBuilding, placeCryptoBuilding, setSelectedCryptoBuilding]);
   
   // Calculate camera bounds based on grid size
   const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {
