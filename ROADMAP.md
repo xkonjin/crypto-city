@@ -4,27 +4,30 @@ A rough plan for evolving Pogicity into a full city simulation game, inspired by
 
 ---
 
-## Phase 1: Core Assets & Lots (Current)
+## Phase 1: Core Assets & Lots (COMPLETE)
 
 ### Building Assets
-- [x] Residential buildings (various sizes)
-- [x] Commercial buildings
-- [x] Landmarks
+
+- [x] Residential buildings (various sizes) - house_small, house_medium, mansion, apartment_low, apartment_high
+- [x] Commercial buildings - shop_small, shop_medium, office_low, office_high, mall
+- [x] Landmarks - stadium, museum, airport, space_program, city_hall, amusement_park
 - [x] Props (trees, statues, fountains, benches)
-- [ ] Industrial buildings
-- [ ] Civic buildings (police, fire, hospital, schools)
-- [ ] Parks & recreation
-- [ ] Utilities (power plants, water towers)
+- [x] Industrial buildings - factory_small, factory_medium, factory_large, warehouse (with farm variants)
+- [x] Civic buildings - police_station, fire_station, hospital, school, university
+- [x] Parks & recreation - 28 park/recreation building types including sports fields, pools, playgrounds, etc.
+- [x] Utilities - power_plant, water_tower
 
 ### Lot System
+
 - [ ] **Lot definitions** - Combine props + buildings into placeable lots
   - Front yard props, fencing, parking, landscaping
   - Lot "styles" (suburban, urban, historic, modern)
-- [ ] **Lot growth** - Empty zoned lots develop over time based on demand
-- [ ] **Lot upgrading** - Buildings can upgrade/densify when conditions are met
-- [ ] **Lot abandonment** - Buildings decay when conditions deteriorate
+- [x] **Lot growth** - Empty zoned lots develop over time based on demand (implemented in simulation.ts)
+- [x] **Lot upgrading** - Buildings can upgrade/densify when conditions are met (consolidation system)
+- [x] **Lot abandonment** - Buildings decay when conditions deteriorate (abandonment mechanic)
 
 ### Additional Props
+
 - [ ] Fences (will need special depth sorting - see MainScene.ts comments)
 - [ ] Traffic lights (overhang depth anchoring - see MainScene.ts comments)
 - [ ] Street lamps (different styles)
@@ -33,103 +36,99 @@ A rough plan for evolving Pogicity into a full city simulation game, inspired by
 
 ---
 
-## Phase 2: Zoning & Simulation Core
+## Phase 2: Zoning & Simulation Core (COMPLETE)
 
 ### Zoning System (SC3K/SC4 style)
-- [ ] **Zone types**: Residential (R), Commercial (C), Industrial (I)
-- [ ] **Density levels**: Low, Medium, High
-- [ ] **Zone painting** - Drag to zone areas along roads
-- [ ] **De-zoning** - Remove zones to stop development
-- [ ] **Zone demand** - R/C/I demand bars based on city conditions
+
+- [x] **Zone types**: Residential (R), Commercial (C), Industrial (I)
+- [x] **Density levels**: Low, Medium, High (building tiers in simulation)
+- [x] **Zone painting** - Drag to zone areas along roads
+- [x] **De-zoning** - Remove zones to stop development
+- [x] **Zone demand** - R/C/I demand bars based on city conditions (StatisticsPanel)
 
 ### RCI Simulation
-- [ ] **Population** - Residents live in R zones, need jobs & shops
-- [ ] **Jobs** - C and I zones provide employment
-- [ ] **Commerce** - C zones need customers (residents)
-- [ ] **Industry** - I zones produce goods, create pollution
-- [ ] **Demand calculation**:
-  ```
-  R demand = f(jobs available, desirability, land value)
-  C demand = f(population, traffic access, wealth)
-  I demand = f(labor pool, freight access, tax rates)
-  ```
+
+- [x] **Population** - Residents live in R zones, need jobs & shops
+- [x] **Jobs** - C and I zones provide employment
+- [x] **Commerce** - C zones need customers (residents)
+- [x] **Industry** - I zones produce goods, create pollution
+- [x] **Demand calculation**: Implemented in simulation.ts with tax effects, service bonuses, etc.
 
 ### Land Value & Desirability
-- [ ] **Land value map** - Affects what develops where
-- [ ] **Desirability factors**:
-  - (+) Parks, landmarks, water, low crime, good schools
-  - (-) Pollution, crime, traffic, industrial proximity
-- [ ] **Wealth levels** - $, $$, $$$ residents/businesses
-- [ ] **NIMBY effects** - Some buildings lower nearby values
+
+- [x] **Land value map** - Affects what develops where (implemented with landValue overlay)
+- [x] **Desirability factors**: Parks, water, services all affect development
+- [ ] **Wealth levels** - $, $$, $$$ residents/businesses (future enhancement)
+- [x] **NIMBY effects** - Industrial pollution lowers nearby values
 
 ---
 
-## Phase 3: City Services & Budget
+## Phase 3: City Services & Budget (COMPLETE)
 
 ### Service Buildings
-- [ ] **Police** - Coverage radius, reduces crime
-- [ ] **Fire** - Coverage radius, reduces fire risk
-- [ ] **Health** - Hospitals, clinics - affects life expectancy
-- [ ] **Education** - Schools, colleges - affects workforce quality
-- [ ] **Utilities**:
-  - Power grid (power plants, lines, coverage)
-  - Water system (pumps, pipes, towers)
-  - Garbage (landfills, recycling, incinerators)
+
+- [x] **Police** - Coverage radius, reduces crime (police_station with SERVICE_CONFIG)
+- [x] **Fire** - Coverage radius, reduces fire risk (fire_station, fire simulation)
+- [x] **Health** - Hospital affects health stat (hospital building)
+- [x] **Education** - Schools, university affect education stat
+- [x] **Utilities**:
+  - [x] Power grid (power_plant with coverage radius)
+  - [x] Water system (water_tower with coverage radius)
+  - [ ] Garbage (landfills, recycling, incinerators) - future enhancement
 
 ### Budget System
-- [ ] **Income**:
-  - Property taxes (R/C/I separate rates)
-  - Business deals & ordinances
-  - Neighbor deals (sell utilities)
-- [ ] **Expenses**:
-  - Service funding (police, fire, health, education)
-  - Transportation maintenance
-  - Loan repayments
-- [ ] **Monthly/yearly budget cycle**
-- [ ] **Debt & loans** - Borrow money with interest
+
+- [x] **Income**: Property taxes with adjustable rate
+- [x] **Expenses**: Service funding (police, fire, health, education, transportation, parks)
+- [x] **Monthly budget cycle** - Weekly deposits based on income/expenses
+- [ ] **Debt & loans** - Borrow money with interest (future enhancement)
 
 ### Advisors (SC3K style)
-- [ ] **Finance Advisor** - Budget recommendations
-- [ ] **City Planner** - Zoning & development advice
-- [ ] **Transportation Advisor** - Traffic & transit
-- [ ] **Utilities Advisor** - Power/water coverage
-- [ ] **Safety Advisor** - Police/fire coverage
-- [ ] **Health/Education Advisor** - Service coverage
-- [ ] Each advisor has personality & portrait
+
+- [x] **Power Advisor** - Power coverage warnings
+- [x] **Water Advisor** - Water coverage warnings
+- [x] **Finance Advisor** - Budget deficit warnings
+- [x] **Safety Advisor** - Crime warnings
+- [x] **Health Advisor** - Health service warnings
+- [x] **Education Advisor** - Education warnings
+- [x] **Environment Advisor** - Pollution warnings
+- [x] **Employment Advisor** - Job shortage warnings
+- [x] **Urban Planning Advisor** - Abandonment warnings
+- [ ] Advisor portraits - future enhancement
 
 ---
 
-## Phase 4: Transportation & Traffic
+## Phase 4: Transportation & Traffic (MOSTLY COMPLETE)
 
 ### Road Types
-- [ ] **Streets** - Low capacity, local traffic
-- [ ] **Avenues** - Medium capacity, 4 lanes
-- [ ] **Highways** - High capacity, limited access
-- [ ] **One-way roads** - Traffic flow control
-- [ ] **Intersections** - Stop signs, traffic lights
+
+- [x] **Roads** - Basic road network with auto-connecting
+- [x] **Bridges** - Automatic bridge creation over water (small, large, suspension types)
+- [ ] **Avenues** - Medium capacity, 4 lanes (future enhancement)
+- [ ] **Highways** - High capacity, limited access (future enhancement)
+- [ ] **One-way roads** - Traffic flow control (future enhancement)
 
 ### Public Transit
-- [ ] **Bus system** - Bus stops, routes, depots
-- [ ] **Rail** - Subway, elevated rail, stations
-- [ ] **Commuter rail** - Regional connections
+
+- [x] **Rail** - Rail tracks with auto-connecting
+- [x] **Rail Stations** - Passenger and freight stations (2x2)
+- [x] **Subway** - Underground transit system with stations
+- [ ] **Bus system** - Bus stops, routes, depots (future enhancement)
 
 ### Traffic Simulation
-- [ ] **Pathfinding** - A* from origin to destination
-- [ ] **Traffic density** - Track vehicles per road segment
-- [ ] **Congestion effects** - Slows travel, lowers desirability
-- [ ] **Commute patterns** - R->C/I in morning, reverse in evening
 
-### NPC Simulation (Quasi-random)
-- [ ] **Generalized patterns** instead of true agent simulation:
-  ```
-  Morning: Spawn from R zones, path toward C/I zones
-  Midday: Random movement in commercial areas
-  Evening: Return paths toward R zones
-  Weekend: Parks, landmarks, shopping areas
-  ```
-- [ ] **Traffic weighting** - NPCs prefer main roads
-- [ ] **Destination attractors** - Landmarks, shops, parks draw NPCs
-- [ ] Keep some random wanderers for charm!
+- [x] **Visual cars** - Cars spawn and drive on roads
+- [x] **Traffic overlay** - Visualization of road traffic (canvas overlay)
+- [ ] **Traffic density heatmap** - Zone-based calculation (future enhancement)
+- [ ] **Congestion effects** - Slows travel, lowers desirability (future enhancement)
+
+### NPC Simulation (Implemented)
+
+- [x] **Pedestrians** - NPCs walk around the city with various behaviors
+- [x] **Destination attractors** - NPCs visit commercial, industrial, parks, beaches
+- [x] **Activity system** - NPCs perform activities at recreational areas
+- [x] **Building interaction** - NPCs enter/exit buildings
+- [x] **Beach activities** - Swimming, lying on mats at beach tiles
 
 ### Implementation Hacks: Simplifying Transit & Traffic
 
@@ -144,9 +143,9 @@ Traffic simulation is notoriously complex (see: Cities Skylines death waves, SC2
 ```typescript
 // Each road tile has a "usage" value
 interface RoadTile {
-  capacity: number;      // Streets: 100, Avenues: 300, Highways: 1000
-  usage: number;         // Current "cars" on this segment
-  congestion: number;    // usage / capacity (0-1+)
+  capacity: number; // Streets: 100, Avenues: 300, Highways: 1000
+  usage: number; // Current "cars" on this segment
+  congestion: number; // usage / capacity (0-1+)
 }
 
 // Every sim tick, recompute usage based on ZONES, not agents
@@ -157,13 +156,13 @@ function computeTrafficUsage(grid: Grid): void {
   }
 
   // For each R tile, add "commuters" to nearby roads
-  for (const residential of getZones(grid, 'R')) {
+  for (const residential of getZones(grid, "R")) {
     const population = residential.population;
     const nearbyRoads = getRoadsInRadius(residential, 5);
 
     // Distribute commuter "weight" to roads leading toward C/I zones
     for (const road of nearbyRoads) {
-      const distToWork = distanceToNearestZone(road, ['C', 'I']);
+      const distToWork = distanceToNearestZone(road, ["C", "I"]);
       road.usage += population * (1 / distToWork);
     }
   }
@@ -176,6 +175,7 @@ function computeTrafficUsage(grid: Grid): void {
 ```
 
 **Visual Cars:** Spawn car sprites based on `road.usage`, not actual simulation.
+
 ```typescript
 // More cars spawn on high-usage roads
 const carsToSpawn = Math.floor(road.usage / 20);
@@ -183,14 +183,14 @@ const carsToSpawn = Math.floor(road.usage / 20);
 
 #### Hack #2: "Flow Lanes" Instead of Pathfinding
 
-**The Problem:** A* pathfinding for every car = CPU explosion.
+**The Problem:** A\* pathfinding for every car = CPU explosion.
 
 **The Hack:** Pre-compute "flow lanes" - roads know which direction leads where.
 
 ```typescript
 // Pre-computed once when roads change
 interface RoadFlowData {
-  toCommercial: Direction;  // "go this way to reach C zones"
+  toCommercial: Direction; // "go this way to reach C zones"
   toIndustrial: Direction;
   toResidential: Direction;
   toHighway: Direction | null;
@@ -213,7 +213,7 @@ function updateCar(car: Car, road: RoadTile): void {
 }
 ```
 
-**No A*!** Cars are like water - they flow along pre-computed gradients.
+**No A\*!** Cars are like water - they flow along pre-computed gradients.
 
 #### Hack #3: Transit as Coverage Zones
 
@@ -223,17 +223,17 @@ function updateCar(car: Car, road: RoadTile): void {
 
 ```typescript
 interface TransitStop {
-  type: 'bus' | 'rail' | 'subway';
+  type: "bus" | "rail" | "subway";
   position: { x: number; y: number };
-  coverageRadius: number;  // Bus: 5 tiles, Rail: 10 tiles
-  capacity: number;        // Affects effectiveness
+  coverageRadius: number; // Bus: 5 tiles, Rail: 10 tiles
+  capacity: number; // Affects effectiveness
 }
 
 // Transit coverage reduces "effective distance" for commuters
 function getEffectiveCommuteDistance(
   home: Position,
   work: Position,
-  transitStops: TransitStop[]
+  transitStops: TransitStop[],
 ): number {
   const realDistance = manhattanDistance(home, work);
 
@@ -249,7 +249,7 @@ function getEffectiveCommuteDistance(
     return realDistance * 0.6;
   }
 
-  return realDistance;  // Car-only commute
+  return realDistance; // Car-only commute
 }
 ```
 
@@ -270,15 +270,17 @@ interface ConnectivityMap {
 
 // Two tiles can commute if same network ID
 function canCommute(home: Position, work: Position): boolean {
-  return connectivityMap[home.y][home.x].networkId ===
-         connectivityMap[work.y][work.x].networkId;
+  return (
+    connectivityMap[home.y][home.x].networkId ===
+    connectivityMap[work.y][work.x].networkId
+  );
 }
 
 // Congestion penalty is just average of roads in area, not actual path
 function getCommutePenalty(home: Position, work: Position): number {
   const roadsBetween = getRoadsInRect(home, work);
-  const avgCongestion = average(roadsBetween.map(r => r.congestion));
-  return avgCongestion;  // 0 = free flow, 1+ = gridlock
+  const avgCongestion = average(roadsBetween.map((r) => r.congestion));
+  return avgCongestion; // 0 = free flow, 1+ = gridlock
 }
 ```
 
@@ -310,10 +312,10 @@ function spawnTrafficVisualization(): void {
 
 ```typescript
 function getTimeOfDayMultiplier(hour: number): number {
-  if (hour >= 7 && hour <= 9) return 2.0;   // Morning rush
+  if (hour >= 7 && hour <= 9) return 2.0; // Morning rush
   if (hour >= 17 && hour <= 19) return 2.0; // Evening rush
-  if (hour >= 22 || hour <= 5) return 0.3;  // Night
-  return 1.0;  // Normal
+  if (hour >= 22 || hour <= 5) return 0.3; // Night
+  return 1.0; // Normal
 }
 
 // Apply to all road usage calculations
@@ -338,9 +340,9 @@ function updateBus(bus: Bus, route: BusRoute): void {
 
   if (atPosition(bus, target)) {
     // "Stop" animation for a second
-    bus.state = 'stopped';
+    bus.state = "stopped";
     setTimeout(() => {
-      bus.state = 'moving';
+      bus.state = "moving";
       route.currentIndex = (route.currentIndex + 1) % route.stops.length;
     }, 1000);
   }
@@ -354,7 +356,7 @@ function updateBus(bus: Bus, route: BusRoute): void {
 
 **The Problem:** How do NPCs get on a bus, ride it, and get off?
 
-**The Hack:** They don't. They teleport. But it *looks* like they rode.
+**The Hack:** They don't. They teleport. But it _looks_ like they rode.
 
 ```typescript
 // NPC decides to use transit
@@ -372,7 +374,7 @@ function handleNPCTransit(npc: NPC, destination: Position): void {
   npc.pathTo(nearestStop.position);
   npc.onArrival = () => {
     // Phase 2: "Wait" at stop (stand there, maybe play waiting anim)
-    npc.state = 'waiting_for_transit';
+    npc.state = "waiting_for_transit";
     npc.waitingAt = nearestStop;
   };
 }
@@ -385,7 +387,7 @@ function onTransitArrivesAtStop(transit: Transit, stop: TransitStop): void {
   for (const npc of waitingNPCs) {
     // Make NPC invisible (they're "on" the vehicle)
     npc.visible = false;
-    npc.state = 'riding_transit';
+    npc.state = "riding_transit";
     npc.ridingVehicle = transit;
   }
 }
@@ -402,7 +404,7 @@ function onTransitDepartsStop(transit: Transit, stop: TransitStop): void {
       // "Get off" - reappear at stop
       npc.visible = true;
       npc.position = stop.position;
-      npc.state = 'walking';
+      npc.state = "walking";
       npc.ridingVehicle = null;
 
       // Continue walking to final destination
@@ -414,12 +416,14 @@ function onTransitDepartsStop(transit: Transit, stop: TransitStop): void {
 ```
 
 **What the player sees:**
+
 1. NPC walks to bus stop, stands there
 2. Bus arrives, NPC disappears
 3. Bus drives to another stop
 4. NPC reappears at that stop, walks away
 
 **What's actually happening:**
+
 - NPC is just invisible while "riding"
 - No seat tracking, no passenger count, no boarding logic
 - NPC teleports between stops, timed to match vehicle arrival
@@ -438,15 +442,15 @@ interface TransitNetwork {
 interface TransitConnection {
   from: TransitStop;
   to: TransitStop;
-  type: 'bus' | 'rail' | 'subway';
-  travelTime: number;  // Simulated time between stops
+  type: "bus" | "rail" | "subway";
+  travelTime: number; // Simulated time between stops
 }
 
 // Find path through transit network
 function findTransitPath(
   origin: Position,
   destination: Position,
-  network: TransitNetwork
+  network: TransitNetwork,
 ): TransitPath | null {
   const originStop = findNearestStop(origin, network);
   const destStop = findNearestStop(destination, network);
@@ -465,7 +469,7 @@ interface TransitPath {
 interface TransitLeg {
   boardAt: TransitStop;
   alightAt: TransitStop;
-  type: 'bus' | 'rail' | 'subway';
+  type: "bus" | "rail" | "subway";
 }
 
 // NPC executes the path
@@ -480,6 +484,7 @@ function executeTransitPath(npc: NPC, path: TransitPath): void {
 ```
 
 **Multi-modal trips:**
+
 ```
 NPC wants to go from residential area to downtown
 
@@ -499,18 +504,18 @@ during "ride" segments.
 ```typescript
 interface TransitVehicle {
   id: string;
-  type: 'bus' | 'train';
+  type: "bus" | "train";
   route: TransitRoute;
   currentStopIndex: number;
   position: Position;
-  passengers: NPC[];  // Just references, not simulated
+  passengers: NPC[]; // Just references, not simulated
 }
 
 interface TransitRoute {
   id: string;
-  name: string;       // "Line 1", "Blue Line"
+  name: string; // "Line 1", "Blue Line"
   stops: TransitStop[];
-  isLoop: boolean;    // Does it loop or ping-pong?
+  isLoop: boolean; // Does it loop or ping-pong?
 }
 
 // Update vehicle each frame
@@ -558,51 +563,59 @@ function getNextStop(vehicle: TransitVehicle): TransitStop {
 
 ```typescript
 // When NPC "boards", play a quick animation
-function boardTransit(npc: NPC, vehicle: TransitVehicle, stop: TransitStop): void {
+function boardTransit(
+  npc: NPC,
+  vehicle: TransitVehicle,
+  stop: TransitStop,
+): void {
   // Walk to vehicle door position
   const doorPos = getVehicleDoorPosition(vehicle);
   npc.walkTo(doorPos);
 
   // Quick "step up" animation
-  npc.playAnimation('board_vehicle');
+  npc.playAnimation("board_vehicle");
 
   // After animation, hide NPC
   setTimeout(() => {
     npc.visible = false;
-    npc.state = 'riding';
+    npc.state = "riding";
     vehicle.passengers.push(npc);
   }, 300);
 }
 
 // When NPC "alights"
-function alightTransit(npc: NPC, vehicle: TransitVehicle, stop: TransitStop): void {
+function alightTransit(
+  npc: NPC,
+  vehicle: TransitVehicle,
+  stop: TransitStop,
+): void {
   // Position at door
   const doorPos = getVehicleDoorPosition(vehicle);
   npc.position = doorPos;
   npc.visible = true;
 
   // "Step down" animation
-  npc.playAnimation('alight_vehicle');
+  npc.playAnimation("alight_vehicle");
 
   // Remove from passengers
-  vehicle.passengers = vehicle.passengers.filter(p => p !== npc);
+  vehicle.passengers = vehicle.passengers.filter((p) => p !== npc);
 
   // Continue journey
-  npc.state = 'walking';
+  npc.state = "walking";
 }
 ```
 
 #### Summary: Transit That Feels Real
 
-| What Player Sees | What's Actually Happening |
-|------------------|---------------------------|
-| NPC walks to bus stop | Normal pathfinding |
-| NPC waits at stop | State = 'waiting', idle animation |
-| Bus arrives, NPC gets on | NPC becomes invisible, added to passengers[] |
+| What Player Sees         | What's Actually Happening                             |
+| ------------------------ | ----------------------------------------------------- |
+| NPC walks to bus stop    | Normal pathfinding                                    |
+| NPC waits at stop        | State = 'waiting', idle animation                     |
+| Bus arrives, NPC gets on | NPC becomes invisible, added to passengers[]          |
 | Bus drives between stops | Vehicle follows route, passengers are just references |
-| NPC gets off at stop | NPC becomes visible at stop position |
-| NPC walks to destination | Normal pathfinding resumes |
-| Multi-modal trip | State machine walks through TransitPath legs |
+| NPC gets off at stop     | NPC becomes visible at stop position                  |
+| NPC walks to destination | Normal pathfinding resumes                            |
+| Multi-modal trip         | State machine walks through TransitPath legs          |
 
 **Key insight:** The vehicle's `passengers[]` array is just a list of invisible NPCs. No seats, no capacity limits (or just a simple `if passengers.length < capacity`). The "riding" is just hiding + position sync.
 
@@ -619,10 +632,10 @@ These have actual brains:
 ```typescript
 interface RealNPC {
   id: string;
-  seed: number;              // Deterministic identity
+  seed: number; // Deterministic identity
   position: Position;
   destination: Position;
-  path: Position[];          // Actual A* path
+  path: Position[]; // Actual A* path
   state: NPCState;
   transitPlan?: TransitPath; // Multi-modal journey
 
@@ -635,19 +648,20 @@ interface RealNPC {
   schedule: DaySchedule;
 
   // Can be interacted with
-  canChat: boolean;          // AI chat enabled
+  canChat: boolean; // AI chat enabled
 }
 
 type NPCState =
-  | 'walking'
-  | 'waiting_for_transit'
-  | 'riding_transit'
-  | 'at_destination'
-  | 'idle';
+  | "walking"
+  | "waiting_for_transit"
+  | "riding_transit"
+  | "at_destination"
+  | "idle";
 ```
 
 **These NPCs:**
-- Have real A* pathfinding (staggered, 5-10 per frame)
+
+- Have real A\* pathfinding (staggered, 5-10 per frame)
 - Can board/ride/exit transit
 - Follow schedules (home → work → shop → home)
 - Can be clicked and chatted with (AI feature)
@@ -660,16 +674,16 @@ These are just sprites following rules:
 ```typescript
 interface SimulatedNPC {
   sprite: Phaser.Sprite;
-  flowDirection: Direction;  // From flow lanes
+  flowDirection: Direction; // From flow lanes
   speed: number;
-  lifetime: number;          // Despawn after this
+  lifetime: number; // Despawn after this
 }
 
 // Spawned based on zone population, not tracked individually
 function spawnSimulatedNPCs(): void {
   for (const zone of residentialZones) {
     const population = zone.population;
-    const npcsToShow = Math.floor(population / 50);  // 1 sprite per 50 pop
+    const npcsToShow = Math.floor(population / 50); // 1 sprite per 50 pop
 
     for (let i = 0; i < npcsToShow; i++) {
       if (isInViewport(zone) && currentNPCCount < MAX_SIMULATED) {
@@ -683,7 +697,7 @@ function spawnSimulatedNPCs(): void {
 function updateSimulatedNPC(npc: SimulatedNPC, delta: number): void {
   const road = getRoadAt(npc.position);
   if (road) {
-    npc.flowDirection = road.flow.toCommercial;  // Or random
+    npc.flowDirection = road.flow.toCommercial; // Or random
   }
 
   moveInDirection(npc, npc.flowDirection, npc.speed * delta);
@@ -696,6 +710,7 @@ function updateSimulatedNPC(npc: SimulatedNPC, delta: number): void {
 ```
 
 **These NPCs:**
+
 - No pathfinding (follow flow lanes)
 - No state machine (just walk until despawn)
 - No persistence (respawn from zones)
@@ -727,8 +742,8 @@ function promoteToReal(sim: SimulatedNPC): RealNPC {
     seed,
     position: sim.position,
     destination: pickRandomDestination(),
-    path: [],  // Will pathfind next frame
-    state: 'walking',
+    path: [], // Will pathfind next frame
+    state: "walking",
     canChat: true,
     // ... generate rest from seed
   };
@@ -748,7 +763,7 @@ function promoteToReal(sim: SimulatedNPC): RealNPC {
 function demoteOldest(): void {
   // Find least recently interacted, non-tracked NPC
   const toRemove = realNPCs
-    .filter(n => !n.isTracked)
+    .filter((n) => !n.isTracked)
     .sort((a, b) => a.lastInteraction - b.lastInteraction)[0];
 
   if (toRemove) {
@@ -810,14 +825,14 @@ What's actually happening:
 
 #### Summary: The Illusion of Traffic
 
-| What Player Sees | What's Actually Happening |
-|------------------|---------------------------|
-| Cars on busy roads | Sprites spawned based on usage number |
-| Traffic jams | High congestion %, slower car sprites |
-| Rush hour | Time multiplier on usage |
+| What Player Sees         | What's Actually Happening                    |
+| ------------------------ | -------------------------------------------- |
+| Cars on busy roads       | Sprites spawned based on usage number        |
+| Traffic jams             | High congestion %, slower car sprites        |
+| Rush hour                | Time multiplier on usage                     |
 | Transit reducing traffic | Coverage radius reduces "effective distance" |
-| Commuters going to work | Flow lanes, not pathfinding |
-| Road capacity matters | Higher capacity = higher usage threshold |
+| Commuters going to work  | Flow lanes, not pathfinding                  |
+| Road capacity matters    | Higher capacity = higher usage threshold     |
 
 **The Rule:** Simulation computes NUMBERS (usage, congestion, coverage).
 Phaser shows PICTURES of those numbers (cars, buses, density).
@@ -825,10 +840,11 @@ The pictures never affect the numbers.
 
 ---
 
-## Phase 5: Events System
+## Phase 5: Events System (PARTIALLY COMPLETE)
 
 ### Petitions (SC3K style)
-- [ ] **Citizen petitions** - Popup requests from residents
+
+- [ ] **Citizen petitions** - Popup requests from residents (future enhancement)
   - "We need a park in Westside!"
   - "Traffic on Main Street is terrible!"
   - "Please lower taxes!"
@@ -836,66 +852,83 @@ The pictures never affect the numbers.
 - [ ] **Petition types**: Zoning, services, taxes, environment
 
 ### Disasters & Emergencies
-- [ ] **Fire outbreaks** - Spread if not contained
-- [ ] **Crime waves** - Spike in crime rate
-- [ ] **Epidemics** - Health crisis
-- [ ] **Infrastructure failure** - Power outage, water main break
+
+- [x] **Fire outbreaks** - Fire simulation with spread mechanics (simulation.ts)
+- [x] **Crime waves** - Crime system with police coverage effects
+- [ ] **Epidemics** - Health crisis (future enhancement)
+- [ ] **Infrastructure failure** - Power outage, water main break (future enhancement)
 - [ ] **Natural disasters** - Earthquake, tornado, flood (optional/toggle)
-- [ ] **Emergency response** - Deploy services, rebuild
+- [ ] **Emergency response** - Deploy services, rebuild (future enhancement)
 
 ### Special Events
-- [ ] **Positive events**:
+
+- [ ] **Positive events** (future enhancement):
   - New business wants to move in
   - Festival/parade (happiness boost)
   - Government grant offered
   - Sports team wants stadium
-- [ ] **Negative events**:
+- [ ] **Negative events** (future enhancement):
   - Factory closing
   - Scandal reduces approval
   - Neighboring city competition
 - [ ] **Timed decisions** - Accept/decline with consequences
 
 ### News Ticker / Headlines
-- [ ] Scrolling news about city events
-- [ ] Dynamic headlines based on city state
-- [ ] Adds life and feedback to simulation
+
+- [x] News ticker component with scrolling headlines
+- [x] Dynamic headlines based on city state (population milestones, budget, etc.)
+- [x] Contextual news generation from simulation data
 
 ---
 
-## Phase 6: Polish & Advanced Features
+## Phase 6: Polish & Advanced Features (MOSTLY COMPLETE)
 
-### Data Views & Overlays
-- [ ] **Zone view** - Show R/C/I colors
-- [ ] **Traffic view** - Heat map of congestion
-- [ ] **Land value view** - Value gradient
-- [ ] **Crime view** - Crime rate heat map
-- [ ] **Pollution view** - Air/ground pollution
-- [ ] **Service coverage** - Police/fire/health radius
+### Data Views & Overlays (COMPLETE)
 
-### Statistics & Graphs
-- [ ] Population over time
-- [ ] Budget history
-- [ ] Zone demand history
-- [ ] Approval rating
-- [ ] City milestones
+- [x] **Zone view** - Show R/C/I colors with transparency
+- [x] **Traffic view** - Road usage visualization
+- [x] **Land value view** - Value gradient overlay
+- [x] **Crime view** - Crime rate heat map
+- [x] **Pollution view** - Pollution levels visualization
+- [x] **Service coverage** - Police/fire/health/education radius overlays
+- [x] **Power/Water overlays** - Utility coverage visualization
+- [x] **Density view** - Building density overlay
+- [x] **Desirability view** - Combined desirability factors
+- [x] 14 total overlay modes implemented
 
-### Save/Load System
-- [ ] Serialize grid state
-- [ ] Save simulation state
-- [ ] Multiple save slots
-- [ ] Auto-save
+### Statistics & Graphs (COMPLETE)
+
+- [x] Population display with real-time updates
+- [x] Budget panel with income/expenses breakdown
+- [x] RCI demand bars (Residential/Commercial/Industrial)
+- [x] City Health indicators (services, happiness, environment)
+- [x] Enhanced Statistics Panel with collapsible sections
+- [ ] Historical graphs over time (future enhancement)
+- [ ] City milestones achievements (future enhancement)
+
+### Save/Load System (COMPLETE)
+
+- [x] Serialize grid state with compression (pako)
+- [x] Save simulation state (budget, population, time)
+- [x] IndexedDB persistence via idb package
+- [x] Auto-save on major actions
+- [x] Load/restore city state
+- [ ] Multiple save slots UI (future enhancement)
+- [ ] Cloud save via Supabase (infrastructure ready)
 
 ### Sound & Music
+
 - [x] Background music (chill/jazz)
 - [x] UI sounds
-- [ ] Ambient city sounds
-- [ ] Event-specific sounds
+- [ ] Ambient city sounds (future enhancement)
+- [ ] Event-specific sounds (future enhancement)
 
 ---
 
 ## Technical Notes
 
 ### Depth Sorting (Already documented in MainScene.ts)
+
 ```
 Layer offsets:
   0.00 - Ground tiles
@@ -910,33 +943,35 @@ Layer offsets:
 ```
 
 ### Performance Considerations
+
 - Chunk-based rendering for large maps
 - LOD for zoomed out view
 - Simulation tick rate separate from render rate
 - Web workers for heavy simulation calculations
 
 ### Data Structures
+
 ```typescript
 // Lot definition
 interface LotDefinition {
   id: string;
-  building: string;  // Building ID
+  building: string; // Building ID
   props: Array<{ id: string; offsetX: number; offsetY: number }>;
-  style: 'suburban' | 'urban' | 'historic' | 'modern';
+  style: "suburban" | "urban" | "historic" | "modern";
   wealthLevel: 1 | 2 | 3;
-  zoneType: 'R' | 'C' | 'I';
-  density: 'low' | 'medium' | 'high';
+  zoneType: "R" | "C" | "I";
+  density: "low" | "medium" | "high";
 }
 
 // Simulation state (per tile)
 interface SimulationTile {
-  zoneType?: 'R' | 'C' | 'I';
-  zoneDensity?: 'low' | 'medium' | 'high';
+  zoneType?: "R" | "C" | "I";
+  zoneDensity?: "low" | "medium" | "high";
   landValue: number;
   pollution: number;
   crime: number;
   services: {
-    police: number;  // 0-100 coverage
+    police: number; // 0-100 coverage
     fire: number;
     health: number;
     education: number;
@@ -1015,12 +1050,14 @@ The game should be thought of as 3 distinct layers:
 ### Current State: Where Things Live
 
 **Grid Source of Truth: React (GameBoard.tsx)**
+
 ```typescript
 // GameBoard.tsx:92
 const [grid, setGrid] = useState<GridCell[][]>(createEmptyGrid);
 ```
 
 **Grid Copy for Rendering: Phaser (MainScene.ts)**
+
 ```typescript
 // MainScene.ts:1316
 updateGrid(newGrid: GridCell[][]): void {
@@ -1030,6 +1067,7 @@ updateGrid(newGrid: GridCell[][]): void {
 ```
 
 **NPCs & Cars: Phaser only (MainScene.ts)**
+
 ```typescript
 // Managed entirely in Phaser, no React involvement
 private characters: Character[] = [];
@@ -1087,16 +1125,19 @@ private cars: Car[] = [];
 ### Key Principles
 
 #### 1. **One-Way Data Flow**
+
 ```
 React (source of truth) ──────► Phaser (renders it)
                          NEVER ◄──────
 ```
+
 - Grid changes happen in React via `setGrid()`
 - React pushes new grid to Phaser via `updateGrid()`
 - Phaser NEVER modifies the grid, only reads it
 - User input in Phaser emits events back to React (click positions, etc.)
 
 #### 2. **Simulation is Pure Functions**
+
 ```typescript
 // app/simulation/tick.ts
 
@@ -1117,20 +1158,21 @@ function simulationTick(state: GameState): GameState {
 // Called from React on interval
 useEffect(() => {
   const interval = setInterval(() => {
-    setGameState(prev => simulationTick(prev));
+    setGameState((prev) => simulationTick(prev));
   }, tickRate);
   return () => clearInterval(interval);
 }, [tickRate]);
 ```
 
 #### 3. **Agents are Ephemeral**
+
 ```typescript
 // NPCs and cars are NOT part of game state
 // They exist only in Phaser, respawn on load
 // They READ the grid to make decisions, but don't modify it
 
 class AgentManager {
-  private grid: GridCell[][];  // Reference from React
+  private grid: GridCell[][]; // Reference from React
 
   updateAgents(deltaTime: number) {
     for (const npc of this.npcs) {
@@ -1146,7 +1188,7 @@ class AgentManager {
     this.cars = [];
 
     // Spawn NPCs near residential
-    const residentialTiles = this.findZones('R');
+    const residentialTiles = this.findZones("R");
     for (let i = 0; i < targetNPCCount; i++) {
       const tile = randomPick(residentialTiles);
       this.spawnNPC(tile.x, tile.y);
@@ -1164,18 +1206,18 @@ class AgentManager {
 
 #### 4. **What Gets Saved vs. Rebuilt**
 
-| Data | Saved? | On Load |
-|------|--------|---------|
-| Grid (tiles, buildings, zones) | ✅ YES | Loaded from save |
-| Budget, treasury | ✅ YES | Loaded from save |
-| Time (year, month, day) | ✅ YES | Loaded from save |
-| Population, demand | ✅ YES | Loaded from save |
-| Active events | ✅ YES | Loaded from save |
-| History/graphs | ✅ YES | Loaded from save |
-| SimulationGrid (land value, etc.) | ❌ NO | Recomputed from grid |
-| NPCs | ❌ NO | Respawned based on zones |
-| Cars | ❌ NO | Respawned based on roads |
-| Sprites/visuals | ❌ NO | Rebuilt from grid |
+| Data                              | Saved? | On Load                  |
+| --------------------------------- | ------ | ------------------------ |
+| Grid (tiles, buildings, zones)    | ✅ YES | Loaded from save         |
+| Budget, treasury                  | ✅ YES | Loaded from save         |
+| Time (year, month, day)           | ✅ YES | Loaded from save         |
+| Population, demand                | ✅ YES | Loaded from save         |
+| Active events                     | ✅ YES | Loaded from save         |
+| History/graphs                    | ✅ YES | Loaded from save         |
+| SimulationGrid (land value, etc.) | ❌ NO  | Recomputed from grid     |
+| NPCs                              | ❌ NO  | Respawned based on zones |
+| Cars                              | ❌ NO  | Respawned based on roads |
+| Sprites/visuals                   | ❌ NO  | Rebuilt from grid        |
 
 ---
 
@@ -1188,15 +1230,15 @@ Since agents are cosmetic, they should feel "alive" without true simulation:
 
 interface AgentConfig {
   // How many agents based on city size
-  npcsPerResidentialTile: number;   // e.g., 0.1 = 1 NPC per 10 R tiles
-  carsPerRoadTile: number;          // e.g., 0.05 = 1 car per 20 road tiles
-  maxNPCs: number;                  // Cap for performance
+  npcsPerResidentialTile: number; // e.g., 0.1 = 1 NPC per 10 R tiles
+  carsPerRoadTile: number; // e.g., 0.05 = 1 car per 20 road tiles
+  maxNPCs: number; // Cap for performance
   maxCars: number;
 }
 
 class AgentManager {
   // Weighted tile selection for spawning
-  private getSpawnWeights(type: 'npc' | 'car'): Map<string, number> {
+  private getSpawnWeights(type: "npc" | "car"): Map<string, number> {
     const weights = new Map<string, number>();
 
     for (let y = 0; y < GRID_HEIGHT; y++) {
@@ -1204,12 +1246,12 @@ class AgentManager {
         const cell = this.grid[y][x];
         let weight = 0;
 
-        if (type === 'npc') {
+        if (type === "npc") {
           // NPCs spawn near residential, commercial, landmarks
-          if (cell.zone?.type === 'R') weight += 3;
-          if (cell.zone?.type === 'C') weight += 2;
+          if (cell.zone?.type === "R") weight += 3;
+          if (cell.zone?.type === "C") weight += 2;
           if (cell.buildingId && isLandmark(cell.buildingId)) weight += 5;
-          if (cell.type === TileType.Tile) weight += 1;  // Sidewalks
+          if (cell.type === TileType.Tile) weight += 1; // Sidewalks
         } else {
           // Cars spawn on roads
           if (cell.type === TileType.Road) weight += 2;
@@ -1226,7 +1268,10 @@ class AgentManager {
   }
 
   // Time-of-day affects movement patterns
-  private getDestinationWeights(agent: Agent, hour: number): Map<string, number> {
+  private getDestinationWeights(
+    agent: Agent,
+    hour: number,
+  ): Map<string, number> {
     const weights = new Map<string, number>();
     const isRushHour = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19);
     const isWeekend = this.gameTime.day % 7 >= 5;
@@ -1238,17 +1283,17 @@ class AgentManager {
         // Commute patterns
         if (hour < 12) {
           // Morning: toward work
-          if (cell.zone?.type === 'C') weight += 5;
-          if (cell.zone?.type === 'I') weight += 4;
+          if (cell.zone?.type === "C") weight += 5;
+          if (cell.zone?.type === "I") weight += 4;
         } else {
           // Evening: toward home
-          if (cell.zone?.type === 'R') weight += 5;
+          if (cell.zone?.type === "R") weight += 5;
         }
       } else {
         // Leisure patterns
         if (isLandmark(cell.buildingId)) weight += 4;
         if (isPark(cell.buildingId)) weight += 3;
-        if (cell.zone?.type === 'C') weight += 2;  // Shopping
+        if (cell.zone?.type === "C") weight += 2; // Shopping
       }
 
       // Always some randomness
@@ -1269,6 +1314,7 @@ class AgentManager {
 ### React ↔ Phaser Communication
 
 **React → Phaser (data push):**
+
 ```typescript
 // PhaserGame.tsx
 useEffect(() => {
@@ -1281,19 +1327,20 @@ useEffect(() => {
 ```
 
 **Phaser → React (events):**
+
 ```typescript
 // MainScene.ts
-this.events.emit('tileClicked', { x, y, button });
-this.events.emit('zoomChanged', newZoom);
-this.events.emit('cameraMove', { scrollX, scrollY });
+this.events.emit("tileClicked", { x, y, button });
+this.events.emit("zoomChanged", newZoom);
+this.events.emit("cameraMove", { scrollX, scrollY });
 
 // PhaserGame.tsx
 useEffect(() => {
-  scene.events.on('tileClicked', handleTileClick);
-  scene.events.on('zoomChanged', onZoomChange);
+  scene.events.on("tileClicked", handleTileClick);
+  scene.events.on("zoomChanged", onZoomChange);
   return () => {
-    scene.events.off('tileClicked', handleTileClick);
-    scene.events.off('zoomChanged', onZoomChange);
+    scene.events.off("tileClicked", handleTileClick);
+    scene.events.off("zoomChanged", onZoomChange);
   };
 }, []);
 ```
@@ -1307,10 +1354,10 @@ useEffect(() => {
 
 const TICK_INTERVALS = {
   paused: null,
-  slow: 2000,      // 1 game hour = 2 real seconds
-  normal: 500,     // 1 game hour = 0.5 real seconds
-  fast: 100,       // 1 game hour = 0.1 real seconds
-  ultra: 20,       // Warp speed for skipping time
+  slow: 2000, // 1 game hour = 2 real seconds
+  normal: 500, // 1 game hour = 0.5 real seconds
+  fast: 100, // 1 game hour = 0.1 real seconds
+  ultra: 20, // Warp speed for skipping time
 };
 
 function useSimulation(speed: SimSpeed) {
@@ -1318,10 +1365,10 @@ function useSimulation(speed: SimSpeed) {
 
   useEffect(() => {
     const interval = TICK_INTERVALS[speed];
-    if (!interval) return;  // Paused
+    if (!interval) return; // Paused
 
     const timer = setInterval(() => {
-      setGameState(prev => {
+      setGameState((prev) => {
         // Pure function, no side effects
         const next = simulationTick(prev);
 
@@ -1371,31 +1418,33 @@ RIGHT:  Coverage exists → Fire goes out → Truck animates (abstract determine
 
 **What this means in practice:**
 
-| Event | Simulation (React) | Visualization (Phaser) |
-|-------|-------------------|------------------------|
-| Fire | Coverage % → spread/contain | Fire sprites + truck driving |
-| Crime | Crime rate from coverage | Police cars patrolling |
-| Traffic | Congestion % per road | Car density matches % |
-| Garbage | Pickup rate from coverage | Garbage trucks driving |
-| Health | Life expectancy stat | Ambulances responding |
+| Event   | Simulation (React)          | Visualization (Phaser)       |
+| ------- | --------------------------- | ---------------------------- |
+| Fire    | Coverage % → spread/contain | Fire sprites + truck driving |
+| Crime   | Crime rate from coverage    | Police cars patrolling       |
+| Traffic | Congestion % per road       | Car density matches %        |
+| Garbage | Pickup rate from coverage   | Garbage trucks driving       |
+| Health  | Life expectancy stat        | Ambulances responding        |
 
 **The rule:** Simulation is a spreadsheet. Phaser is a movie of that spreadsheet.
 The movie doesn't change the numbers.
 
 **Phaser → React communication:**
+
 - Tile clicks (player input)
 - UI events (zoom, pan)
 - OPTIONAL: "truck arrived" for news ticker flavor
 - NEVER: "truck arrived, now update simulation"
 
 ### Key Files to Extend
-| File | Current Role | Simulation Extension |
-|------|--------------|---------------------|
-| `types.ts` | Grid cell types, TileType enum | Add zone types, simulation data |
-| `buildings.ts` | Building definitions | Add lot definitions, growth stages |
-| `GameBoard.tsx` | Grid state, placement | Budget state, simulation tick trigger |
-| `MainScene.ts` | Rendering only | Data overlays, NPC destination logic |
-| *NEW* `simulation/` | - | Core sim logic, separate from rendering |
+
+| File                | Current Role                   | Simulation Extension                    |
+| ------------------- | ------------------------------ | --------------------------------------- |
+| `types.ts`          | Grid cell types, TileType enum | Add zone types, simulation data         |
+| `buildings.ts`      | Building definitions           | Add lot definitions, growth stages      |
+| `GameBoard.tsx`     | Grid state, placement          | Budget state, simulation tick trigger   |
+| `MainScene.ts`      | Rendering only                 | Data overlays, NPC destination logic    |
+| _NEW_ `simulation/` | -                              | Core sim logic, separate from rendering |
 
 ---
 
@@ -1407,29 +1456,29 @@ The game currently has no concept of time. Here's how to add it:
 // New file: app/simulation/TimeManager.ts
 
 export interface GameTime {
-  tick: number;           // Increments every sim update
-  hour: number;           // 0-23
-  day: number;            // 1-31
-  month: number;          // 1-12
-  year: number;           // Starting year (e.g., 2000)
-  speed: 'paused' | 'normal' | 'fast' | 'ultra';
+  tick: number; // Increments every sim update
+  hour: number; // 0-23
+  day: number; // 1-31
+  month: number; // 1-12
+  year: number; // Starting year (e.g., 2000)
+  speed: "paused" | "normal" | "fast" | "ultra";
 }
 
 // Tick rates (ms between simulation ticks)
 const TICK_RATES = {
   paused: Infinity,
-  normal: 1000,    // 1 tick/sec - 1 tick = 1 game hour
-  fast: 250,       // 4 ticks/sec
-  ultra: 50,       // 20 ticks/sec
+  normal: 1000, // 1 tick/sec - 1 tick = 1 game hour
+  fast: 250, // 4 ticks/sec
+  ultra: 50, // 20 ticks/sec
 };
 
 // In GameBoard.tsx, add useEffect for simulation loop:
 useEffect(() => {
-  if (gameTime.speed === 'paused') return;
+  if (gameTime.speed === "paused") return;
 
   const interval = setInterval(() => {
     // Advance time
-    setGameTime(prev => advanceTime(prev));
+    setGameTime((prev) => advanceTime(prev));
 
     // Run simulation tick
     runSimulationTick();
@@ -1440,6 +1489,7 @@ useEffect(() => {
 ```
 
 **Time-based triggers:**
+
 - Every hour: NPC movement patterns, traffic updates
 - Every day: Budget income/expenses, random events check
 - Every week: Zone growth/decay evaluation
@@ -1451,6 +1501,7 @@ useEffect(() => {
 ### Extending the Grid Cell
 
 Current `GridCell` in `types.ts`:
+
 ```typescript
 interface GridCell {
   type: TileType;
@@ -1464,6 +1515,7 @@ interface GridCell {
 ```
 
 **Extended for simulation:**
+
 ```typescript
 interface GridCell {
   // Existing
@@ -1477,8 +1529,8 @@ interface GridCell {
 
   // NEW: Zoning (separate from building)
   zone?: {
-    type: 'R' | 'C' | 'I';
-    density: 'low' | 'medium' | 'high';
+    type: "R" | "C" | "I";
+    density: "low" | "medium" | "high";
   };
 
   // NEW: Simulation data (computed, not stored in save)
@@ -1491,11 +1543,11 @@ interface SimulationGrid {
 }
 
 interface SimulationCell {
-  landValue: number;        // 0-100
-  pollution: number;        // 0-100
-  crime: number;            // 0-100
-  traffic: number;          // 0-100
-  desirability: number;     // Computed from above
+  landValue: number; // 0-100
+  pollution: number; // 0-100
+  crime: number; // 0-100
+  traffic: number; // 0-100
+  desirability: number; // Computed from above
 
   // Service coverage (0-100, computed from service buildings)
   police: number;
@@ -1529,6 +1581,7 @@ app/
 ```
 
 **Keep simulation SEPARATE from rendering:**
+
 - Simulation runs in `GameBoard.tsx` (or dedicated hook)
 - Results passed to `MainScene.ts` only for visualization
 - Allows simulation to run without rendering (fast-forward)
@@ -1542,19 +1595,19 @@ app/
 
 function evaluateZoneGrowth(grid: Grid, simGrid: SimulationGrid) {
   for (const zone of getZonedTiles(grid)) {
-    if (zone.hasBuilding) continue;  // Already developed
+    if (zone.hasBuilding) continue; // Already developed
 
     const sim = simGrid.cells[zone.y][zone.x];
-    const demand = getDemand(zone.type);  // R/C/I demand bar
+    const demand = getDemand(zone.type); // R/C/I demand bar
 
     // Growth chance based on conditions
-    let growthChance = demand * 0.01;  // Base: 1% per demand point
+    let growthChance = demand * 0.01; // Base: 1% per demand point
 
     // Modifiers
-    growthChance *= (sim.landValue / 50);         // Higher land value = faster
-    growthChance *= (sim.desirability / 50);      // More desirable = faster
-    growthChance *= sim.hasPower ? 1 : 0;         // No power = no growth
-    growthChance *= hasRoadAccess(zone) ? 1 : 0;  // Need road connection
+    growthChance *= sim.landValue / 50; // Higher land value = faster
+    growthChance *= sim.desirability / 50; // More desirable = faster
+    growthChance *= sim.hasPower ? 1 : 0; // No power = no growth
+    growthChance *= hasRoadAccess(zone) ? 1 : 0; // Need road connection
 
     if (Math.random() < growthChance) {
       // Pick appropriate lot for zone type, density, wealth
@@ -1577,8 +1630,8 @@ Current NPCs walk randomly. Upgrade to weighted destinations:
 interface NPCDestination {
   x: number;
   y: number;
-  weight: number;  // Higher = more attractive
-  type: 'work' | 'shop' | 'park' | 'home' | 'wander';
+  weight: number; // Higher = more attractive
+  type: "work" | "shop" | "park" | "home" | "wander";
 }
 
 function pickDestination(npc: Character, time: GameTime): NPCDestination {
@@ -1590,16 +1643,16 @@ function pickDestination(npc: Character, time: GameTime): NPCDestination {
 
   if (!isWeekend && hour >= 7 && hour <= 9) {
     // Morning commute: weight toward C/I zones
-    destinations.push(...getZoneDestinations('C', 10));
-    destinations.push(...getZoneDestinations('I', 8));
+    destinations.push(...getZoneDestinations("C", 10));
+    destinations.push(...getZoneDestinations("I", 8));
   } else if (!isWeekend && hour >= 17 && hour <= 19) {
     // Evening commute: weight toward R zones
-    destinations.push(...getZoneDestinations('R', 10));
+    destinations.push(...getZoneDestinations("R", 10));
   } else if (isWeekend || (hour >= 11 && hour <= 14)) {
     // Leisure time: parks, landmarks, commercial
     destinations.push(...getLandmarkDestinations(8));
     destinations.push(...getParkDestinations(6));
-    destinations.push(...getZoneDestinations('C', 4));
+    destinations.push(...getZoneDestinations("C", 4));
   }
 
   // Always add some random wandering
@@ -1619,6 +1672,7 @@ function pickDestination(npc: Character, time: GameTime): NPCDestination {
 A unique feature: click any NPC to chat with them via LLM. They know the map, have personalities, and can respond to commands.
 
 **Core Concept:**
+
 - NPCs are lightweight (deterministic from seed, ~30 bytes each)
 - When clicked, we build context from their seed + world state
 - Feed context to LLM, get response with optional actions
@@ -1630,11 +1684,11 @@ A unique feature: click any NPC to chat with them via LLM. They know the map, ha
 // app/simulation/AgentChat.ts
 
 interface AgentIdentity {
-  seed: number;           // Deterministic identity
-  name: string;           // Generated from seed
-  personality: string;    // "cheerful", "grumpy", "curious", etc.
-  occupation: string;     // "office worker", "student", "retiree"
-  homeZone: { x: number; y: number };  // Their "home" area
+  seed: number; // Deterministic identity
+  name: string; // Generated from seed
+  personality: string; // "cheerful", "grumpy", "curious", etc.
+  occupation: string; // "office worker", "student", "retiree"
+  homeZone: { x: number; y: number }; // Their "home" area
 }
 
 // Build identity from seed (no storage needed!)
@@ -1646,7 +1700,10 @@ function getAgentIdentity(seed: number): AgentIdentity {
     name: NAMES[Math.floor(rng() * NAMES.length)],
     personality: PERSONALITIES[Math.floor(rng() * PERSONALITIES.length)],
     occupation: OCCUPATIONS[Math.floor(rng() * OCCUPATIONS.length)],
-    homeZone: { x: Math.floor(rng() * GRID_WIDTH), y: Math.floor(rng() * GRID_HEIGHT) },
+    homeZone: {
+      x: Math.floor(rng() * GRID_WIDTH),
+      y: Math.floor(rng() * GRID_HEIGHT),
+    },
   };
 }
 
@@ -1654,13 +1711,13 @@ function getAgentIdentity(seed: number): AgentIdentity {
 function buildAgentContext(agent: Agent, city: CityState): string {
   const identity = getAgentIdentity(agent.seed);
   const nearbyBuildings = getBuildingsNear(agent.x, agent.y, 5);
-  const landmarks = city.landmarks.map(l => l.name);
+  const landmarks = city.landmarks.map((l) => l.name);
 
   return `
 You are ${identity.name}, a ${identity.personality} ${identity.occupation} in Pogicity.
-You're currently at (${agent.x}, ${agent.y}) near: ${nearbyBuildings.join(', ')}.
+You're currently at (${agent.x}, ${agent.y}) near: ${nearbyBuildings.join(", ")}.
 
-The city has these landmarks: ${landmarks.join(', ')}.
+The city has these landmarks: ${landmarks.join(", ")}.
 Current time: ${city.time.hour}:00, ${city.time.month}/${city.time.day}/${city.time.year}
 
 You can respond naturally to the player. If they ask you to go somewhere,
@@ -1675,7 +1732,7 @@ Respond in character as ${identity.name}. Keep responses short (1-3 sentences).
 async function chatWithAgent(
   agent: Agent,
   userMessage: string,
-  city: CityState
+  city: CityState,
 ): Promise<{ response: string; action?: AgentAction }> {
   const context = buildAgentContext(agent, city);
 
@@ -1686,7 +1743,7 @@ async function chatWithAgent(
 
   // Parse any actions from response
   const action = parseAction(llmResponse);
-  const cleanResponse = llmResponse.replace(/ACTION:.*$/gm, '').trim();
+  const cleanResponse = llmResponse.replace(/ACTION:.*$/gm, "").trim();
 
   return { response: cleanResponse, action };
 }
@@ -1696,7 +1753,7 @@ function parseAction(response: string): AgentAction | undefined {
   const gotoMatch = response.match(/ACTION:\s*GOTO\s+(\d+)\s+(\d+)/i);
   if (gotoMatch) {
     return {
-      type: 'goto',
+      type: "goto",
       target: { x: parseInt(gotoMatch[1]), y: parseInt(gotoMatch[2]) },
     };
   }
@@ -1705,7 +1762,7 @@ function parseAction(response: string): AgentAction | undefined {
   if (lookMatch) {
     const building = findBuildingByName(lookMatch[1]);
     if (building) {
-      return { type: 'goto', target: building.position };
+      return { type: "goto", target: building.position };
     }
   }
 
@@ -1713,10 +1770,10 @@ function parseAction(response: string): AgentAction | undefined {
 }
 
 type AgentAction =
-  | { type: 'goto'; target: { x: number; y: number } }
-  | { type: 'wave' }
-  | { type: 'sit' }
-  | { type: 'idle'; duration: number };
+  | { type: "goto"; target: { x: number; y: number } }
+  | { type: "wave" }
+  | { type: "sit" }
+  | { type: "idle"; duration: number };
 ```
 
 **Example Interactions:**
@@ -1761,13 +1818,13 @@ Like RollerCoaster Tycoon, most agents are anonymous and ephemeral. But the play
 
 ```typescript
 interface TrackedAgent {
-  seed: number;              // Their identity
-  nickname?: string;         // Player-given name
+  seed: number; // Their identity
+  nickname?: string; // Player-given name
   currentPosition: { x: number; y: number };
-  chatHistory: ChatMessage[];  // Last N messages
+  chatHistory: ChatMessage[]; // Last N messages
   stats: {
     happiness: number;
-    visited: string[];       // Landmarks they've seen
+    visited: string[]; // Landmarks they've seen
   };
 }
 
@@ -1809,12 +1866,12 @@ interface TrackedAgent {
 
 interface GameEvent {
   id: string;
-  type: 'petition' | 'disaster' | 'opportunity' | 'news';
+  type: "petition" | "disaster" | "opportunity" | "news";
   title: string;
   description: string;
   choices?: EventChoice[];
   autoResolve?: boolean;
-  duration?: number;  // Ticks until expires
+  duration?: number; // Ticks until expires
   effects: EventEffect[];
 }
 
@@ -1825,7 +1882,7 @@ interface EventChoice {
 }
 
 interface EventEffect {
-  type: 'happiness' | 'money' | 'demand' | 'service' | 'spawn_building';
+  type: "happiness" | "money" | "demand" | "service" | "spawn_building";
   target?: string;
   value: number;
 }
@@ -1833,13 +1890,13 @@ interface EventEffect {
 // Event triggers
 const EVENT_TRIGGERS = {
   // Petitions trigger based on city conditions
-  'petition_park': (city) => city.parkCoverage < 30 && city.population > 1000,
-  'petition_traffic': (city) => city.avgTraffic > 70,
-  'petition_taxes': (city) => city.taxRate > 10 && city.happiness < 50,
+  petition_park: (city) => city.parkCoverage < 30 && city.population > 1000,
+  petition_traffic: (city) => city.avgTraffic > 70,
+  petition_taxes: (city) => city.taxRate > 10 && city.happiness < 50,
 
   // Disasters trigger randomly with probability
-  'fire_outbreak': (city) => Math.random() < 0.001 * (100 - city.fireCoverage),
-  'crime_wave': (city) => Math.random() < 0.001 * city.crime,
+  fire_outbreak: (city) => Math.random() < 0.001 * (100 - city.fireCoverage),
+  crime_wave: (city) => Math.random() < 0.001 * city.crime,
 };
 
 // Check for events each day
@@ -1868,16 +1925,16 @@ interface Budget {
     residentialTax: number;
     commercialTax: number;
     industrialTax: number;
-    deals: number;  // Special deals, neighbor connections
+    deals: number; // Special deals, neighbor connections
   };
 
   // Monthly expenses
   expenses: {
-    police: number;      // Based on funding slider
+    police: number; // Based on funding slider
     fire: number;
     health: number;
     education: number;
-    transportation: number;  // Road maintenance
+    transportation: number; // Road maintenance
     utilities: number;
     loanPayments: number;
   };
@@ -1927,8 +1984,8 @@ interface Advisor {
   id: string;
   name: string;
   role: string;
-  portrait: string;  // Image path
-  personality: 'optimistic' | 'cautious' | 'aggressive';
+  portrait: string; // Image path
+  personality: "optimistic" | "cautious" | "aggressive";
 
   // Generate advice based on city state
   getAdvice(city: CityState): AdvisorMessage[];
@@ -1939,11 +1996,11 @@ interface Advisor {
 
 interface AdvisorMessage {
   advisorId: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  priority: "low" | "medium" | "high" | "urgent";
   title: string;
   message: string;
   suggestions?: string[];
-  relatedTiles?: { x: number; y: number }[];  // Highlight on map
+  relatedTiles?: { x: number; y: number }[]; // Highlight on map
 }
 
 // Example advisor logic
@@ -1953,23 +2010,23 @@ class FinanceAdvisor implements Advisor {
 
     if (city.budget.treasury < 0) {
       messages.push({
-        advisorId: 'finance',
-        priority: 'urgent',
-        title: 'Budget Crisis!',
+        advisorId: "finance",
+        priority: "urgent",
+        title: "Budget Crisis!",
         message: `We're $${Math.abs(city.budget.treasury)} in debt!`,
         suggestions: [
-          'Raise taxes temporarily',
-          'Cut service funding',
-          'Take out a loan',
+          "Raise taxes temporarily",
+          "Cut service funding",
+          "Take out a loan",
         ],
       });
     }
 
     if (city.budget.monthlyBalance < 0) {
       messages.push({
-        advisorId: 'finance',
-        priority: 'high',
-        title: 'Negative Cash Flow',
+        advisorId: "finance",
+        priority: "high",
+        title: "Negative Cash Flow",
         message: `We're losing $${Math.abs(city.budget.monthlyBalance)} per month.`,
       });
     }
@@ -2053,7 +2110,7 @@ private getOverlayColor(x: number, y: number): number | null {
 // app/data/SaveManager.ts
 
 interface SaveGame {
-  version: number;  // For migration
+  version: number; // For migration
   timestamp: number;
 
   // Core state
@@ -2085,11 +2142,11 @@ interface SerializedGrid {
   width: number;
   height: number;
   // RLE or sparse encoding for tiles
-  tiles: string;  // Encoded tile data
+  tiles: string; // Encoded tile data
   buildings: SerializedBuilding[];
 }
 ```
 
 ---
 
-*This is a living document - update as development progresses!*
+_This is a living document - update as development progresses!_
