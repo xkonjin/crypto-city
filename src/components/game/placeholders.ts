@@ -14,16 +14,34 @@ const loadingSprites = new Set<string>();
 
 // Background colors to make transparent (common AI-generated image backgrounds)
 const BACKGROUND_COLORS = [
-  { r: 255, g: 255, b: 255 }, // White
+  // White/light backgrounds
+  { r: 255, g: 255, b: 255 }, // Pure white
   { r: 254, g: 254, b: 254 }, // Near-white
   { r: 250, g: 250, b: 250 }, // Light gray
   { r: 245, g: 245, b: 245 }, // Lighter gray
   { r: 240, g: 240, b: 240 }, // Gray
+  // Black/dark backgrounds
+  { r: 0, g: 0, b: 0 },       // Pure black
+  { r: 1, g: 1, b: 1 },       // Near-black
+  { r: 5, g: 5, b: 5 },       // Very dark
+  { r: 10, g: 10, b: 10 },    // Dark
+  { r: 15, g: 15, b: 15 },    // Dark gray
+  { r: 20, g: 20, b: 20 },    // Dark gray
+  { r: 25, g: 25, b: 25 },    // Dark gray
+  // Checkered pattern colors (common in AI transparency simulation)
+  { r: 204, g: 204, b: 204 }, // Light checker
+  { r: 153, g: 153, b: 153 }, // Dark checker
+  { r: 191, g: 191, b: 191 }, // Mid checker
+  // Gray ground plane colors
+  { r: 128, g: 128, b: 128 }, // Mid gray
+  { r: 192, g: 192, b: 192 }, // Light gray
+  { r: 169, g: 169, b: 169 }, // Dark gray
 ];
-const COLOR_THRESHOLD = 30; // Distance threshold for background detection
+const COLOR_THRESHOLD = 35; // Distance threshold for background detection
 
 /**
- * Remove background from sprite image by making similar colors transparent
+ * Remove background from sprite image using flood fill from corners
+ * This is more accurate than simple color matching
  */
 function removeBackground(img: HTMLImageElement): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
@@ -36,62 +54,109 @@ function removeBackground(img: HTMLImageElement): HTMLCanvasElement {
   ctx.drawImage(img, 0, 0);
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
+  const width = canvas.width;
+  const height = canvas.height;
   
-  // Sample corners to detect background color
-  const cornerSamples = [
-    0, // top-left
-    (canvas.width - 1) * 4, // top-right
-    (canvas.height - 1) * canvas.width * 4, // bottom-left
-    ((canvas.height - 1) * canvas.width + (canvas.width - 1)) * 4, // bottom-right
-  ];
+  // Get pixel index
+  const getPixelIndex = (x: number, y: number) => (y * width + x) * 4;
   
-  // Detect dominant background color from corners
-  let bgR = 0, bgG = 0, bgB = 0, count = 0;
-  for (const idx of cornerSamples) {
-    if (data[idx + 3] > 0) { // Only count non-transparent pixels
-      bgR += data[idx];
-      bgG += data[idx + 1];
-      bgB += data[idx + 2];
-      count++;
+  // Check if a color matches any known background color
+  const isBackgroundColor = (r: number, g: number, b: number): boolean => {
+    for (const bg of BACKGROUND_COLORS) {
+      const dist = Math.sqrt(
+        Math.pow(r - bg.r, 2) +
+        Math.pow(g - bg.g, 2) +
+        Math.pow(b - bg.b, 2)
+      );
+      if (dist <= COLOR_THRESHOLD) {
+        return true;
+      }
+    }
+    return false;
+  };
+  
+  // Sample multiple points along edges to detect background
+  const edgeSamples: number[] = [];
+  // Top edge
+  for (let x = 0; x < width; x += Math.max(1, Math.floor(width / 20))) {
+    edgeSamples.push(getPixelIndex(x, 0));
+  }
+  // Bottom edge
+  for (let x = 0; x < width; x += Math.max(1, Math.floor(width / 20))) {
+    edgeSamples.push(getPixelIndex(x, height - 1));
+  }
+  // Left edge
+  for (let y = 0; y < height; y += Math.max(1, Math.floor(height / 20))) {
+    edgeSamples.push(getPixelIndex(0, y));
+  }
+  // Right edge
+  for (let y = 0; y < height; y += Math.max(1, Math.floor(height / 20))) {
+    edgeSamples.push(getPixelIndex(width - 1, y));
+  }
+  
+  // Collect unique background colors from edges
+  const detectedBgColors: Array<{r: number, g: number, b: number}> = [];
+  for (const idx of edgeSamples) {
+    if (idx >= 0 && idx < data.length - 3) {
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      
+      // Check if this color is close to a known background
+      if (isBackgroundColor(r, g, b)) {
+        // Add if not already in list (with tolerance)
+        const exists = detectedBgColors.some(bg => 
+          Math.abs(bg.r - r) < 10 && Math.abs(bg.g - g) < 10 && Math.abs(bg.b - b) < 10
+        );
+        if (!exists) {
+          detectedBgColors.push({ r, g, b });
+        }
+      }
     }
   }
   
-  if (count > 0) {
-    bgR = Math.round(bgR / count);
-    bgG = Math.round(bgG / count);
-    bgB = Math.round(bgB / count);
-  } else {
-    // Default to white if corners are transparent
-    bgR = bgG = bgB = 255;
+  // Also add the corner colors as potential backgrounds
+  const corners = [
+    getPixelIndex(0, 0),
+    getPixelIndex(width - 1, 0),
+    getPixelIndex(0, height - 1),
+    getPixelIndex(width - 1, height - 1),
+  ];
+  for (const idx of corners) {
+    const r = data[idx];
+    const g = data[idx + 1];
+    const b = data[idx + 2];
+    const exists = detectedBgColors.some(bg => 
+      Math.abs(bg.r - r) < 15 && Math.abs(bg.g - g) < 15 && Math.abs(bg.b - b) < 15
+    );
+    if (!exists) {
+      detectedBgColors.push({ r, g, b });
+    }
   }
   
-  // Make pixels close to background color transparent
+  // Make pixels matching detected backgrounds transparent
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
     
-    // Check distance from detected background
-    const distFromBg = Math.sqrt(
-      Math.pow(r - bgR, 2) +
-      Math.pow(g - bgG, 2) +
-      Math.pow(b - bgB, 2)
-    );
-    
-    // Also check against known background colors
-    let isBackground = distFromBg <= COLOR_THRESHOLD;
-    if (!isBackground) {
-      for (const bg of BACKGROUND_COLORS) {
-        const dist = Math.sqrt(
-          Math.pow(r - bg.r, 2) +
-          Math.pow(g - bg.g, 2) +
-          Math.pow(b - bg.b, 2)
-        );
-        if (dist <= COLOR_THRESHOLD) {
-          isBackground = true;
-          break;
-        }
+    // Check against detected background colors
+    let isBackground = false;
+    for (const bg of detectedBgColors) {
+      const dist = Math.sqrt(
+        Math.pow(r - bg.r, 2) +
+        Math.pow(g - bg.g, 2) +
+        Math.pow(b - bg.b, 2)
+      );
+      if (dist <= COLOR_THRESHOLD) {
+        isBackground = true;
+        break;
       }
+    }
+    
+    // Also check known background colors
+    if (!isBackground) {
+      isBackground = isBackgroundColor(r, g, b);
     }
     
     if (isBackground) {
