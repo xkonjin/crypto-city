@@ -465,9 +465,11 @@ export async function checkPerplexityHealth(): Promise<boolean> {
   return Boolean(apiKey);
 }
 
-export default {
+const perplexityNewsAPI = {
   fetchCryptoNews,
   syncNewsToGameEvents,
   generateSimulatedNews,
   checkPerplexityHealth,
 };
+
+export default perplexityNewsAPI;
