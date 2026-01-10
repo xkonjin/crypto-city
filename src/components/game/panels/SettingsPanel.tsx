@@ -14,6 +14,9 @@ import { Separator } from '@/components/ui/separator';
 import { SpriteTestPanel } from './SpriteTestPanel';
 import { SavedCityMeta } from '@/types/game';
 import { LocaleSelector } from 'gt-next';
+import { useSoundOptional } from '@/context/SoundContext';
+import { Volume2, VolumeX, Music, Zap } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 
 // Translatable UI labels
 const UI_LABELS = {
@@ -72,6 +75,17 @@ const UI_LABELS = {
   day: msg('Day'),
   night: msg('Night'),
   cannotShrink: msg('Cannot shrink city further - minimum size reached.'),
+  // Sound settings
+  soundSettings: msg('Sound & Music'),
+  masterVolume: msg('Master Volume'),
+  sfxVolume: msg('Sound Effects'),
+  musicVolume: msg('Music Volume'),
+  musicCategory: msg('Music Style'),
+  musicAmbient: msg('Ambient'),
+  musicChill: msg('Chill'),
+  musicJazz: msg('Jazz'),
+  playMusic: msg('Play Music'),
+  stopMusic: msg('Stop Music'),
 };
 
 // Format a date for display
@@ -131,6 +145,7 @@ export function SettingsPanel() {
   const { state, setActivePanel, setDisastersEnabled, newGame, loadState, exportState, expandCity, shrinkCity, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
   const { disastersEnabled, cityName, gridSize, id: currentCityId } = state;
   const m = useMessages();
+  const sound = useSoundOptional();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [newCityName, setNewCityName] = useState(cityName);
@@ -275,6 +290,111 @@ export function SettingsPanel() {
               <LocaleSelector />
             </div>
           </div>
+
+          {/* Sound & Music Settings */}
+          {sound && (
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{m(UI_LABELS.soundSettings)}</div>
+              
+              {/* Master Volume */}
+              <div className="py-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="flex items-center gap-2">
+                    {sound.sfxEnabled || sound.musicEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                    {m(UI_LABELS.masterVolume)}
+                  </Label>
+                  <span className="text-xs text-muted-foreground">{Math.round(sound.masterVolume * 100)}%</span>
+                </div>
+                <Slider
+                  value={[sound.masterVolume * 100]}
+                  onValueChange={([v]) => sound.setMasterVolume(v / 100)}
+                  max={100}
+                  step={5}
+                  className="w-full"
+                />
+              </div>
+              
+              {/* SFX */}
+              <div className="py-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    {m(UI_LABELS.sfxVolume)}
+                  </Label>
+                  <Switch
+                    checked={sound.sfxEnabled}
+                    onCheckedChange={sound.setSfxEnabled}
+                  />
+                </div>
+                {sound.sfxEnabled && (
+                  <Slider
+                    value={[sound.sfxVolume * 100]}
+                    onValueChange={([v]) => sound.setSfxVolume(v / 100)}
+                    max={100}
+                    step={5}
+                    className="w-full"
+                  />
+                )}
+              </div>
+              
+              {/* Music */}
+              <div className="py-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="flex items-center gap-2">
+                    <Music className="w-4 h-4" />
+                    {m(UI_LABELS.musicVolume)}
+                  </Label>
+                  <Switch
+                    checked={sound.musicEnabled}
+                    onCheckedChange={sound.setMusicEnabled}
+                  />
+                </div>
+                {sound.musicEnabled && (
+                  <>
+                    <Slider
+                      value={[sound.musicVolume * 100]}
+                      onValueChange={([v]) => sound.setMusicVolume(v / 100)}
+                      max={100}
+                      step={5}
+                      className="w-full mb-3"
+                    />
+                    
+                    {/* Music Category */}
+                    <Label className="text-xs">{m(UI_LABELS.musicCategory)}</Label>
+                    <div className="flex rounded-md border border-border overflow-hidden mt-1 mb-2">
+                      {(['ambient', 'chill', 'jazz'] as const).map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => sound.setMusicCategory(cat)}
+                          className={`flex-1 px-2 py-1.5 text-xs font-medium transition-colors ${
+                            sound.musicCategory === cat
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {cat === 'ambient' && m(UI_LABELS.musicAmbient)}
+                          {cat === 'chill' && m(UI_LABELS.musicChill)}
+                          {cat === 'jazz' && m(UI_LABELS.musicJazz)}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* Play/Stop */}
+                    <Button
+                      variant={sound.isMusicPlaying ? 'destructive' : 'default'}
+                      size="sm"
+                      className="w-full"
+                      onClick={() => sound.isMusicPlaying ? sound.stopMusic() : sound.playMusic()}
+                    >
+                      {sound.isMusicPlaying ? m(UI_LABELS.stopMusic) : m(UI_LABELS.playMusic)}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          <Separator />
 
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">{m(UI_LABELS.cityInformation)}</div>
