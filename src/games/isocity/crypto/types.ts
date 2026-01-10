@@ -128,8 +128,15 @@ export interface CryptoBuildingDefinition {
   footprint: { width: number; height: number };
   // Icon emoji for UI
   icon: string;
-  // Whether sprite is procedurally generated
+  // Whether sprite is procedurally generated (false = use sprite images)
   isProcedural: boolean;
+  // Sprite images for non-procedural buildings
+  sprites?: {
+    south: string;
+    north?: string;
+    east?: string;
+    west?: string;
+  };
   // Crypto-specific metadata
   crypto: CryptoBuildingMeta;
   // Cost to build

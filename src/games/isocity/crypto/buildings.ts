@@ -44,7 +44,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 3, height: 3 },
     icon: '🏦',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/3x3aave_lending_tower_south.png',
+    },
     cost: 15000,
     crypto: {
       tier: 'institution',
@@ -72,7 +75,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '🦄',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2uniswap_exchange_south.png',
+    },
     cost: 10000,
     crypto: {
       tier: 'whale',
@@ -100,7 +106,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 3, height: 2 },
     icon: '🌊',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/3x2lido_staking_hub_south.png',
+    },
     cost: 12000,
     crypto: {
       tier: 'institution',
@@ -128,7 +137,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '⚗️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2pendle_yield_factory_south.png',
+    },
     cost: 8000,
     crypto: {
       tier: 'whale',
@@ -157,7 +169,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '🌀',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2curve_finance_pool_south.png',
+    },
     cost: 11000,
     crypto: {
       tier: 'institution',
@@ -185,7 +200,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 3, height: 3 },
     icon: '🏛️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/3x3makerdao_vault_south.png',
+    },
     cost: 14000,
     crypto: {
       tier: 'institution',
@@ -213,7 +231,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '🏧',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2compound_bank_south.png',
+    },
     cost: 9000,
     crypto: {
       tier: 'whale',
@@ -241,7 +262,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 3 },
     icon: '🔗',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x3eigenlayer_restaking_south.png',
+    },
     cost: 13000,
     crypto: {
       tier: 'institution',
@@ -270,7 +294,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '⚖️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2balancer_vault_south.png',
+    },
     cost: 7500,
     crypto: {
       tier: 'whale',
@@ -298,7 +325,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '🏰',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2yearn_vault_south.png',
+    },
     cost: 8500,
     crypto: {
       tier: 'whale',
@@ -703,7 +733,10 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'exchange',
     footprint: { width: 4, height: 4 },
     icon: '🏢',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/exchange/4x4binance_tower_south.png',
+    },
     cost: 25000,
     crypto: {
       tier: 'institution',
@@ -731,7 +764,10 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'exchange',
     footprint: { width: 3, height: 3 },
     icon: '🪙',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/exchange/3x3coinbase_hq_south.png',
+    },
     cost: 20000,
     crypto: {
       tier: 'institution',
@@ -759,7 +795,10 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'exchange',
     footprint: { width: 2, height: 3 },
     icon: '🦑',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/exchange/2x3kraken_exchange_south.png',
+    },
     cost: 15000,
     crypto: {
       tier: 'whale',
@@ -787,7 +826,10 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'exchange',
     footprint: { width: 3, height: 2 },
     icon: '🅾️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/exchange/3x2okx_center_south.png',
+    },
     cost: 14000,
     crypto: {
       tier: 'whale',
@@ -815,7 +857,10 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'exchange',
     footprint: { width: 2, height: 2 },
     icon: '🎯',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/exchange/2x2bybit_arena_south.png',
+    },
     cost: 12000,
     crypto: {
       tier: 'whale',
@@ -908,7 +953,10 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 4, height: 4 },
     icon: '⟠',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/4x4ethereum_beacon_south.png',
+    },
     cost: 30000,
     crypto: {
       tier: 'institution',
@@ -935,7 +983,10 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 3, height: 3 },
     icon: '◎',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/3x3solana_tower_south.png',
+    },
     cost: 22000,
     crypto: {
       tier: 'institution',
@@ -962,7 +1013,10 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 3, height: 3 },
     icon: '₿',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/3x3bitcoin_vault_south.png',
+    },
     cost: 35000,
     crypto: {
       tier: 'institution',
@@ -989,7 +1043,10 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 2, height: 3 },
     icon: '🌉',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/2x3arbitrum_bridge_south.png',
+    },
     cost: 15000,
     crypto: {
       tier: 'whale',
@@ -1017,7 +1074,10 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 2, height: 2 },
     icon: '🔴',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/2x2optimism_hub_south.png',
+    },
     cost: 14000,
     crypto: {
       tier: 'whale',
@@ -1045,7 +1105,10 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 2, height: 2 },
     icon: '💜',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/2x2polygon_plaza_south.png',
+    },
     cost: 12000,
     crypto: {
       tier: 'whale',
@@ -1072,7 +1135,10 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 2, height: 2 },
     icon: '🔵',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/2x2base_camp_south.png',
+    },
     cost: 13000,
     crypto: {
       tier: 'whale',
@@ -1127,7 +1193,10 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 2, height: 3 },
     icon: '🔐',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/2x3zksync_tower_south.png',
+    },
     cost: 14000,
     crypto: {
       tier: 'whale',
@@ -1274,7 +1343,10 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'ct',
     footprint: { width: 2, height: 2 },
     icon: '🎙️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/ct/2x2ct_studio_south.png',
+    },
     cost: 6000,
     crypto: {
       tier: 'degen',
@@ -1298,7 +1370,10 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'ct',
     footprint: { width: 2, height: 2 },
     icon: '💼',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/ct/2x2vc_office_south.png',
+    },
     cost: 15000,
     crypto: {
       tier: 'institution',
@@ -1371,7 +1446,10 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'ct',
     footprint: { width: 2, height: 2 },
     icon: '🖼️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/ct/2x2nft_gallery_south.png',
+    },
     cost: 8000,
     crypto: {
       tier: 'whale',
@@ -1395,7 +1473,10 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'ct',
     footprint: { width: 2, height: 2 },
     icon: '🏛️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/ct/2x2dao_hq_south.png',
+    },
     cost: 10000,
     crypto: {
       tier: 'whale',
@@ -1444,7 +1525,10 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'ct',
     footprint: { width: 2, height: 2 },
     icon: '🎰',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/ct/2x2degen_lounge_south.png',
+    },
     cost: 5500,
     crypto: {
       tier: 'degen',
@@ -1524,7 +1608,10 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 1, height: 1 },
     icon: '🐸',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/1x1pepe_statue_south.png',
+    },
     cost: 2000,
     crypto: {
       tier: 'degen',
@@ -1548,7 +1635,10 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 2 },
     icon: '🐕',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x2doge_fountain_south.png',
+    },
     cost: 3500,
     crypto: {
       tier: 'degen',
@@ -1572,7 +1662,10 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 2 },
     icon: '🐕‍🦺',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x2shiba_shrine_south.png',
+    },
     cost: 3000,
     crypto: {
       tier: 'degen',
@@ -1644,7 +1737,10 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 3 },
     icon: '🌙',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x3moon_monument_south.png',
+    },
     cost: 5000,
     crypto: {
       tier: 'degen',
@@ -1668,7 +1764,10 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 3, height: 2 },
     icon: '🏎️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/3x2lambo_dealership_south.png',
+    },
     cost: 8000,
     crypto: {
       tier: 'whale',
@@ -1692,7 +1791,10 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 2 },
     icon: '💎',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x2diamond_hands_plaza_south.png',
+    },
     cost: 4500,
     crypto: {
       tier: 'whale',
@@ -1862,7 +1964,10 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 2 },
     icon: '🐕',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x2wif_temple_south.png',
+    },
     cost: 4000,
     crypto: {
       tier: 'degen',
@@ -1886,7 +1991,10 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 2 },
     icon: '🦴',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x2bonk_arena_south.png',
+    },
     cost: 3500,
     crypto: {
       tier: 'degen',
@@ -1934,7 +2042,10 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 2 },
     icon: '🔵',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x2brett_base_south.png',
+    },
     cost: 4200,
     crypto: {
       tier: 'degen',
@@ -2014,7 +2125,10 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 4, height: 4 },
     icon: '🏢',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/4x4plasma_hq_south.png',
+    },
     cost: 50000,
     crypto: {
       tier: 'institution',
@@ -2039,7 +2153,10 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 1, height: 1 },
     icon: '⚡',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/1x1plasma_node_south.png',
+    },
     cost: 5000,
     crypto: {
       tier: 'degen',
@@ -2064,7 +2181,10 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 2, height: 3 },
     icon: '🌉',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/2x3plasma_bridge_south.png',
+    },
     cost: 12000,
     crypto: {
       tier: 'whale',
@@ -2089,7 +2209,10 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 2, height: 2 },
     icon: '🔐',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/2x2plasma_vault_south.png',
+    },
     cost: 15000,
     crypto: {
       tier: 'institution',
@@ -2139,7 +2262,10 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 3, height: 3 },
     icon: '🏟️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/3x3plasma_arena_south.png',
+    },
     cost: 20000,
     crypto: {
       tier: 'institution',
@@ -2308,7 +2434,10 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 3, height: 3 },
     icon: '⚛️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/3x3plasma_reactor_south.png',
+    },
     cost: 25000,
     crypto: {
       tier: 'institution',
@@ -2463,7 +2592,10 @@ export const STABLECOIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'stablecoin',
     footprint: { width: 4, height: 3 },
     icon: '💵',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/stablecoin/3x3tether_hq_south.png',
+    },
     cost: 30000,
     crypto: {
       tier: 'institution',
@@ -2491,7 +2623,10 @@ export const STABLECOIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'stablecoin',
     footprint: { width: 3, height: 3 },
     icon: '🔵',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/stablecoin/3x3circle_tower_south.png',
+    },
     cost: 25000,
     crypto: {
       tier: 'institution',
@@ -2556,7 +2691,10 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
     category: 'infrastructure',
     footprint: { width: 3, height: 3 },
     icon: '🔗',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/infrastructure/3x3chainlink_hub_south.png',
+    },
     cost: 22000,
     crypto: {
       tier: 'institution',
@@ -2584,7 +2722,10 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
     category: 'infrastructure',
     footprint: { width: 2, height: 2 },
     icon: '📊',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/infrastructure/2x2the_graph_indexer_south.png',
+    },
     cost: 10000,
     crypto: {
       tier: 'whale',
@@ -2612,7 +2753,10 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
     category: 'infrastructure',
     footprint: { width: 2, height: 2 },
     icon: '🔮',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/infrastructure/2x2pyth_observatory_south.png',
+    },
     cost: 11000,
     crypto: {
       tier: 'whale',
@@ -2641,7 +2785,10 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
     category: 'infrastructure',
     footprint: { width: 2, height: 3 },
     icon: '🌉',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/infrastructure/2x3layerzero_bridge_south.png',
+    },
     cost: 14000,
     crypto: {
       tier: 'whale',
@@ -2670,7 +2817,10 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
     category: 'infrastructure',
     footprint: { width: 2, height: 2 },
     icon: '🕳️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/infrastructure/2x2wormhole_portal_south.png',
+    },
     cost: 13000,
     crypto: {
       tier: 'whale',

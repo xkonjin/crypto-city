@@ -1,12 +1,17 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { msg, useMessages } from 'gt-next';
-import { useGame } from '@/context/GameContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import React from "react";
+import { msg, useMessages } from "gt-next";
+import { useGame } from "@/context/GameContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AdvisorIcon,
   InfoIcon,
@@ -18,15 +23,17 @@ import {
   EducationIcon,
   EnvironmentIcon,
   JobsIcon,
-} from '@/components/ui/Icons';
+} from "@/components/ui/Icons";
 
 // Translatable UI labels
 const UI_LABELS = {
-  cityAdvisors: msg('City Advisors'),
-  overallCityRating: msg('Overall City Rating'),
-  ratingDescription: msg('Based on happiness, health, education, safety & environment'),
-  noUrgentIssues: msg('No urgent issues to report!'),
-  cityRunningSmoothly: msg('Your city is running smoothly.'),
+  cityAdvisors: msg("City Advisors"),
+  overallCityRating: msg("Overall City Rating"),
+  ratingDescription: msg(
+    "Based on happiness, health, education, safety & environment",
+  ),
+  noUrgentIssues: msg("No urgent issues to report!"),
+  cityRunningSmoothly: msg("Your city is running smoothly."),
 };
 
 const ADVISOR_ICON_MAP: Record<string, React.ReactNode> = {
@@ -41,70 +48,145 @@ const ADVISOR_ICON_MAP: Record<string, React.ReactNode> = {
   jobs: <JobsIcon size={18} />,
 };
 
+// Advisor portraits with emoji avatars and background colors
+const ADVISOR_PORTRAITS: Record<string, { emoji: string; bgColor: string }> = {
+  power: { emoji: "⚡", bgColor: "bg-amber-500/80" },
+  water: { emoji: "💧", bgColor: "bg-blue-500/80" },
+  cash: { emoji: "💰", bgColor: "bg-emerald-500/80" },
+  shield: { emoji: "🛡️", bgColor: "bg-indigo-500/80" },
+  hospital: { emoji: "🏥", bgColor: "bg-rose-500/80" },
+  education: { emoji: "📚", bgColor: "bg-purple-500/80" },
+  environment: { emoji: "🌳", bgColor: "bg-green-500/80" },
+  planning: { emoji: "🏗️", bgColor: "bg-slate-500/80" },
+  jobs: { emoji: "💼", bgColor: "bg-orange-500/80" },
+};
+
 export function AdvisorsPanel() {
   const { state, setActivePanel } = useGame();
   const { advisorMessages, stats } = state;
   const m = useMessages();
-  
-  const avgRating = (stats.happiness + stats.health + stats.education + stats.safety + stats.environment) / 5;
-  const grade = avgRating >= 90 ? 'A+' : avgRating >= 80 ? 'A' : avgRating >= 70 ? 'B' : avgRating >= 60 ? 'C' : avgRating >= 50 ? 'D' : 'F';
-  const gradeColor = avgRating >= 70 ? 'text-green-400' : avgRating >= 50 ? 'text-amber-400' : 'text-red-400';
-  
+
+  const avgRating =
+    (stats.happiness +
+      stats.health +
+      stats.education +
+      stats.safety +
+      stats.environment) /
+    5;
+  const grade =
+    avgRating >= 90
+      ? "A+"
+      : avgRating >= 80
+        ? "A"
+        : avgRating >= 70
+          ? "B"
+          : avgRating >= 60
+            ? "C"
+            : avgRating >= 50
+              ? "D"
+              : "F";
+  const gradeColor =
+    avgRating >= 70
+      ? "text-green-400"
+      : avgRating >= 50
+        ? "text-amber-400"
+        : "text-red-400";
+
   return (
-    <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
+    <Dialog open={true} onOpenChange={() => setActivePanel("none")}>
       <DialogContent className="max-w-[500px] max-h-[600px]">
         <DialogHeader>
           <DialogTitle>{m(UI_LABELS.cityAdvisors)}</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <Card className="flex items-center gap-4 p-4 bg-primary/10 border-primary/30">
-            <div 
+            <div
               className={`w-16 h-16 flex items-center justify-center text-3xl font-black rounded-md ${gradeColor} bg-primary/20`}
             >
               {grade}
             </div>
             <div>
-              <div className="text-foreground font-semibold">{m(UI_LABELS.overallCityRating)}</div>
-              <div className="text-muted-foreground text-sm">{m(UI_LABELS.ratingDescription)}</div>
+              <div className="text-foreground font-semibold">
+                {m(UI_LABELS.overallCityRating)}
+              </div>
+              <div className="text-muted-foreground text-sm">
+                {m(UI_LABELS.ratingDescription)}
+              </div>
             </div>
           </Card>
-          
+
           <ScrollArea className="max-h-[350px]">
             <div className="space-y-3">
               {advisorMessages.length === 0 ? (
                 <Card className="text-center py-8 text-muted-foreground bg-primary/10 border-primary/30">
                   <AdvisorIcon size={32} className="mx-auto mb-3 opacity-50" />
                   <div className="text-sm">{m(UI_LABELS.noUrgentIssues)}</div>
-                  <div className="text-xs mt-1">{m(UI_LABELS.cityRunningSmoothly)}</div>
+                  <div className="text-xs mt-1">
+                    {m(UI_LABELS.cityRunningSmoothly)}
+                  </div>
                 </Card>
               ) : (
-                advisorMessages.map((advisor, i) => (
-                  <Card key={i} className={`p-3 bg-primary/10 border-primary/30 ${
-                    advisor.priority === 'critical' ? 'border-l-2 border-l-red-500' :
-                    advisor.priority === 'high' ? 'border-l-2 border-l-amber-500' :
-                    advisor.priority === 'medium' ? 'border-l-2 border-l-yellow-500' : ''
-                  }`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg text-muted-foreground">
-                        {ADVISOR_ICON_MAP[advisor.icon] || <InfoIcon size={18} />}
-                      </span>
-                      <span className="text-foreground font-medium text-sm">{advisor.name}</span>
-                      <Badge 
-                        variant={
-                          advisor.priority === 'critical' ? 'destructive' :
-                          advisor.priority === 'high' ? 'destructive' : 'secondary'
-                        }
-                        className="ml-auto text-[10px]"
-                      >
-                        {advisor.priority}
-                      </Badge>
-                    </div>
-                    {advisor.messages.map((msg, j) => (
-                      <div key={j} className="text-muted-foreground text-sm leading-relaxed">{msg}</div>
-                    ))}
-                  </Card>
-                ))
+                advisorMessages.map((advisor, i) => {
+                  const portrait = ADVISOR_PORTRAITS[advisor.icon] || {
+                    emoji: "📋",
+                    bgColor: "bg-slate-500/80",
+                  };
+                  return (
+                    <Card
+                      key={i}
+                      className={`p-3 bg-primary/10 border-primary/30 ${
+                        advisor.priority === "critical"
+                          ? "border-l-2 border-l-red-500"
+                          : advisor.priority === "high"
+                            ? "border-l-2 border-l-amber-500"
+                            : advisor.priority === "medium"
+                              ? "border-l-2 border-l-yellow-500"
+                              : ""
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`w-10 h-10 flex-shrink-0 rounded-full ${portrait.bgColor} flex items-center justify-center text-lg shadow-md`}
+                        >
+                          {portrait.emoji}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-muted-foreground">
+                              {ADVISOR_ICON_MAP[advisor.icon] || (
+                                <InfoIcon size={16} />
+                              )}
+                            </span>
+                            <span className="text-foreground font-medium text-sm">
+                              {advisor.name}
+                            </span>
+                            <Badge
+                              variant={
+                                advisor.priority === "critical"
+                                  ? "destructive"
+                                  : advisor.priority === "high"
+                                    ? "destructive"
+                                    : "secondary"
+                              }
+                              className="ml-auto text-[10px]"
+                            >
+                              {advisor.priority}
+                            </Badge>
+                          </div>
+                          {advisor.messages.map((advMsg, j) => (
+                            <div
+                              key={j}
+                              className="text-muted-foreground text-sm leading-relaxed"
+                            >
+                              {advMsg}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })
               )}
             </div>
           </ScrollArea>

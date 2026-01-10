@@ -1,11 +1,47 @@
 // ============================================================================
-// PLACEHOLDER BUILDING COLORS
+// PLACEHOLDER BUILDING COLORS & CRYPTO SPRITE RENDERING
 // ============================================================================
 // Colors for rendering buildings before sprites are loaded
 // Based on zone/category for visual consistency
+// Also handles loading and rendering crypto building sprites
 
 import { getCryptoBuilding } from '@/games/isocity/crypto/buildings';
-import type { CryptoCategory } from '@/games/isocity/crypto/types';
+import type { CryptoCategory, CryptoBuildingDefinition } from '@/games/isocity/crypto/types';
+
+// Cache for loaded crypto building sprites
+const cryptoSpriteCache = new Map<string, HTMLImageElement>();
+const loadingSprites = new Set<string>();
+
+/**
+ * Load a crypto building sprite image
+ */
+export function loadCryptoBuildingSprite(building: CryptoBuildingDefinition): void {
+  if (building.isProcedural || !building.sprites?.south) return;
+  
+  const spritePath = building.sprites.south;
+  if (cryptoSpriteCache.has(spritePath) || loadingSprites.has(spritePath)) return;
+  
+  loadingSprites.add(spritePath);
+  
+  const img = new Image();
+  img.onload = () => {
+    cryptoSpriteCache.set(spritePath, img);
+    loadingSprites.delete(spritePath);
+  };
+  img.onerror = () => {
+    console.warn(`Failed to load crypto sprite: ${spritePath}`);
+    loadingSprites.delete(spritePath);
+  };
+  img.src = spritePath;
+}
+
+/**
+ * Get a loaded crypto building sprite
+ */
+export function getCryptoBuildingSprite(building: CryptoBuildingDefinition): HTMLImageElement | null {
+  if (building.isProcedural || !building.sprites?.south) return null;
+  return cryptoSpriteCache.get(building.sprites.south) || null;
+}
 
 export interface PlaceholderColor {
   top: string;
@@ -79,11 +115,33 @@ export function drawPlaceholderBuilding(
 ): void {
   let colors = PLACEHOLDER_COLORS[buildingType];
   
-  if (!colors) {
-    const cryptoBuilding = getCryptoBuilding(buildingType);
-    if (cryptoBuilding) {
-      colors = CRYPTO_CATEGORY_COLORS[cryptoBuilding.category];
+  // Check if this is a crypto building with a sprite
+  const cryptoBuilding = getCryptoBuilding(buildingType);
+  if (cryptoBuilding) {
+    // Try to load and draw the sprite if available
+    if (!cryptoBuilding.isProcedural && cryptoBuilding.sprites?.south) {
+      loadCryptoBuildingSprite(cryptoBuilding);
+      const sprite = getCryptoBuildingSprite(cryptoBuilding);
+      if (sprite) {
+        // Calculate dimensions based on footprint
+        const footprintW = cryptoBuilding.footprint.width;
+        const footprintH = cryptoBuilding.footprint.height;
+        
+        // Scale sprite to fit the tile footprint
+        const spriteAspect = sprite.width / sprite.height;
+        const targetWidth = tileWidth * Math.max(footprintW, footprintH);
+        const targetHeight = targetWidth / spriteAspect;
+        
+        // Center the sprite on the tile
+        const drawX = x + (tileWidth * footprintW - targetWidth) / 2;
+        const drawY = y + tileHeight - targetHeight + (tileHeight * footprintH) / 2;
+        
+        ctx.drawImage(sprite, drawX, drawY, targetWidth, targetHeight);
+        return;
+      }
     }
+    // Fall back to category colors for procedural or unloaded sprites
+    colors = CRYPTO_CATEGORY_COLORS[cryptoBuilding.category];
   }
   
   colors = colors || PLACEHOLDER_COLORS.default;

@@ -52,3 +52,6 @@ _Animations/
 public/example-states/
 _backup_crypto/
 _crypto_backup/
+
+# Local dev tools
+.opencode/

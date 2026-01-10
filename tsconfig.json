@@ -38,7 +38,8 @@
   "exclude": [
     "node_modules",
     "_backup_crypto",
-    "_crypto_backup"
+    "_crypto_backup",
+    "scripts"
   ]
 }
 
