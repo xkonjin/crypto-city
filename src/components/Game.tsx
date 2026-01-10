@@ -595,11 +595,17 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {state.activePanel === "petitions" && <PetitionsPanel />}
           {state.activePanel === "events" && <EventsPanel />}
 
-          {showCryptoBuildingPanel && (
+          {/* Crypto Building Panel - shown via sidebar or toggle button */}
+          {(showCryptoBuildingPanel || state.activePanel === "crypto") && (
             <div className="fixed right-4 top-20 z-40 w-80">
               <div className="relative">
                 <button
-                  onClick={() => setShowCryptoBuildingPanel(false)}
+                  onClick={() => {
+                    setShowCryptoBuildingPanel(false);
+                    if (state.activePanel === "crypto") {
+                      setActivePanel("none");
+                    }
+                  }}
                   className="absolute -top-2 -right-2 z-50 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full text-white text-xs flex items-center justify-center shadow-lg"
                 >
                   ✕

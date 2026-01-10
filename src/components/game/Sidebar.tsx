@@ -20,6 +20,7 @@ const CATEGORY_LABELS: Record<string, unknown> = {
   community: msg('Community'),
   utilities: msg('Utilities'),
   special: msg('Special'),
+  crypto: msg('Crypto Buildings'),
 };
 
 // UI labels for translation
@@ -700,6 +701,20 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
               forceOpenUpward={forceOpenUpward}
             />
           ))}
+          
+          {/* Crypto Buildings - Opens crypto panel */}
+          <Button
+            onClick={() => setActivePanel(activePanel === 'crypto' ? 'none' : 'crypto')}
+            variant={activePanel === 'crypto' ? 'default' : 'ghost'}
+            className={`w-full justify-start gap-3 px-3 py-2 h-auto text-sm ${
+              activePanel === 'crypto' ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black' : ''
+            }`}
+            title="Open Crypto Buildings panel (92 buildings)"
+          >
+            <span className="text-lg">₿</span>
+            <span className="flex-1 text-left">{m(CATEGORY_LABELS.crypto as Parameters<typeof m>[0])}</span>
+            <span className="text-xs opacity-60">92</span>
+          </Button>
         </div>
       </ScrollArea>
       
