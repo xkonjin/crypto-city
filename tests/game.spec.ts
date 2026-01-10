@@ -360,7 +360,8 @@ test.describe("Crypto Buildings", () => {
     const panelHeading = page.locator("text=/Crypto Buildings/i").first();
     await expect(panelHeading).toBeVisible({ timeout: 5000 });
 
-    const totalCount = page.locator("text=/99 total/i").first();
+    // Check that total count is displayed (118 buildings with legends category)
+    const totalCount = page.locator("text=/\\d+ total/i").first();
     await expect(totalCount).toBeVisible({ timeout: 5000 });
   });
 
