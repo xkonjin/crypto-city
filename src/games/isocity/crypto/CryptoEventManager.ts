@@ -452,8 +452,62 @@ export class CryptoEventManager {
   }
   
   /**
+   * Get late-game difficulty scaling based on building count
+   * Higher building counts = more negative events, fewer positive events
+   */
+  private getDifficultyScaling(): { negativeMultiplier: number; positiveMultiplier: number } {
+    if (!this.economyManager) {
+      return { negativeMultiplier: 1, positiveMultiplier: 1 };
+    }
+    
+    const state = this.economyManager.getState();
+    const buildingCount = state.buildingCount;
+    const treasury = state.treasury;
+    
+    // Scaling tiers based on building count
+    // 0-10 buildings: Normal difficulty
+    // 11-20 buildings: Slightly harder
+    // 21-50 buildings: Moderate scaling
+    // 51+ buildings: Full late-game difficulty
+    let negativeMultiplier = 1.0;
+    let positiveMultiplier = 1.0;
+    
+    if (buildingCount > 50) {
+      negativeMultiplier = 1.8;  // 80% more negative events
+      positiveMultiplier = 0.6;  // 40% fewer positive events
+    } else if (buildingCount > 20) {
+      negativeMultiplier = 1.4;  // 40% more negative events
+      positiveMultiplier = 0.8;  // 20% fewer positive events
+    } else if (buildingCount > 10) {
+      negativeMultiplier = 1.2;  // 20% more negative events
+      positiveMultiplier = 0.9;  // 10% fewer positive events
+    }
+    
+    // Additional scaling for large treasuries (whale target)
+    // Treasury over $500k attracts more negative events
+    if (treasury > 500000) {
+      negativeMultiplier *= 1.3;
+    } else if (treasury > 200000) {
+      negativeMultiplier *= 1.15;
+    }
+    
+    return { negativeMultiplier, positiveMultiplier };
+  }
+  
+  /**
+   * Check if an event type is negative (hurts player)
+   */
+  private isNegativeEvent(type: CryptoEventType): boolean {
+    const negativeEvents: CryptoEventType[] = [
+      'bear_market', 'rug_pull', 'hack', 'ct_drama', 
+      'liquidation_cascade', 'regulatory_fud'
+    ];
+    return negativeEvents.includes(type);
+  }
+  
+  /**
    * Check if a new event should trigger
-   * Now also processes real-world triggers
+   * Now also processes real-world triggers and includes late-game difficulty scaling
    */
   private checkForNewEvent(): void {
     if (this.activeEvents.size >= this.maxActiveEvents) return;
@@ -464,16 +518,25 @@ export class CryptoEventManager {
     // If we triggered a real event, skip random events this cycle
     if (this.activeEvents.size >= this.maxActiveEvents) return;
     
-    // THEN: Roll for random events
+    // Get difficulty scaling based on player progress
+    const { negativeMultiplier, positiveMultiplier } = this.getDifficultyScaling();
+    
+    // THEN: Roll for random events with difficulty scaling
     for (const [type, definition] of Object.entries(CRYPTO_EVENTS)) {
       // Check if event is exclusive with any active event
       if (this.isExclusiveConflict(type as CryptoEventType)) {
         continue;
       }
       
-      // Random check based on rarity
-      if (Math.random() < definition.rarity / 10) { // Divide by 10 for per-check probability
-        this.triggerEvent(type as CryptoEventType);
+      // Apply difficulty scaling to rarity
+      const eventType = type as CryptoEventType;
+      const isNegative = this.isNegativeEvent(eventType);
+      const scalingMultiplier = isNegative ? negativeMultiplier : positiveMultiplier;
+      const adjustedRarity = (definition.rarity / 10) * scalingMultiplier;
+      
+      // Random check based on adjusted rarity
+      if (Math.random() < adjustedRarity) {
+        this.triggerEvent(eventType);
         return; // Only one event per check
       }
     }

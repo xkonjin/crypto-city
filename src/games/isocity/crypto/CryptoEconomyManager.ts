@@ -79,6 +79,9 @@ export function createInitialEconomyState(): CryptoEconomyState {
     buildingCount: 0,
     lastUpdate: Date.now(),
     tickCount: 0,
+    bankruptcyCounter: 0,
+    isBankrupt: false,
+    decayingBuildings: [],
   };
 }
 
@@ -417,6 +420,14 @@ export class CryptoEconomyManager {
       
       buildingCount++;
       
+      // Skip yield calculation for decaying buildings (bankruptcy effect)
+      if (this.state.decayingBuildings.includes(placed.id)) {
+        // Still count for TVL but no yield
+        const tvlMultiplier = CRYPTO_TIER_MULTIPLIERS[def.crypto.tier];
+        totalTVL += ECONOMY_CONFIG.TVL_PER_BUILDING_BASE * tvlMultiplier * 0.5; // Reduced TVL
+        continue;
+      }
+      
       const effects = def.crypto.effects;
       const tierMultiplier = CRYPTO_TIER_MULTIPLIERS[def.crypto.tier];
       
@@ -616,7 +627,87 @@ export class CryptoEconomyManager {
     // Random sentiment fluctuation (also scaled by speed)
     this.fluctuateSentiment(speedMultiplier);
     
+    // Check for bankruptcy conditions
+    this.checkBankruptcy();
+    
     this.notifyListeners();
+  }
+  
+  /**
+   * Check and handle bankruptcy conditions
+   * Bankruptcy triggers when treasury is 0 for extended period
+   * Buildings start decaying (producing 0 yield) until treasury recovers
+   */
+  private checkBankruptcy(): void {
+    const BANKRUPTCY_THRESHOLD_TICKS = 50; // ~4 minutes at normal speed
+    const DECAY_CHANCE_PER_TICK = 0.05; // 5% chance per tick to decay a building
+    
+    if (this.state.treasury <= 0) {
+      // Increment bankruptcy counter
+      this.state.bankruptcyCounter++;
+      
+      // Check if we've crossed into bankruptcy
+      if (this.state.bankruptcyCounter >= BANKRUPTCY_THRESHOLD_TICKS && !this.state.isBankrupt) {
+        this.state.isBankrupt = true;
+        console.log('[CryptoEconomy] Bankruptcy triggered! Buildings will start decaying.');
+      }
+      
+      // If bankrupt, randomly decay buildings (they produce 0 yield)
+      if (this.state.isBankrupt) {
+        const nonDecayingBuildings = Array.from(this.placedBuildings.keys())
+          .filter(id => !this.state.decayingBuildings.includes(id));
+        
+        if (nonDecayingBuildings.length > 0 && Math.random() < DECAY_CHANCE_PER_TICK) {
+          // Randomly pick a building to start decaying
+          const randomIndex = Math.floor(Math.random() * nonDecayingBuildings.length);
+          const buildingToDecay = nonDecayingBuildings[randomIndex];
+          this.state.decayingBuildings.push(buildingToDecay);
+          console.log(`[CryptoEconomy] Building ${buildingToDecay} is now decaying due to bankruptcy`);
+        }
+      }
+    } else {
+      // Treasury is positive - reset bankruptcy counter
+      if (this.state.bankruptcyCounter > 0) {
+        this.state.bankruptcyCounter = 0;
+      }
+      
+      // If we were bankrupt but now have funds, start recovering
+      if (this.state.isBankrupt && this.state.treasury > 10000) {
+        this.state.isBankrupt = false;
+        // Decaying buildings stay decayed until repaired
+        console.log('[CryptoEconomy] Bankruptcy ended. Repair buildings to restore yields.');
+      }
+    }
+  }
+  
+  /**
+   * Repair a decaying building (costs money)
+   * @param buildingId - ID of building to repair
+   * @returns true if repair successful
+   */
+  repairBuilding(buildingId: string): boolean {
+    const REPAIR_COST = 5000; // $5k to repair
+    
+    if (!this.state.decayingBuildings.includes(buildingId)) {
+      return false; // Not decaying
+    }
+    
+    if (!this.canAfford(REPAIR_COST)) {
+      return false; // Can't afford repair
+    }
+    
+    // Deduct repair cost and remove from decaying list
+    this.state.treasury -= REPAIR_COST;
+    this.state.decayingBuildings = this.state.decayingBuildings.filter(id => id !== buildingId);
+    this.recalculateEconomy();
+    return true;
+  }
+  
+  /**
+   * Check if a building is currently decaying
+   */
+  isBuildingDecaying(buildingId: string): boolean {
+    return this.state.decayingBuildings.includes(buildingId);
   }
   
   /**
@@ -708,17 +799,20 @@ export class CryptoEconomyManager {
         this.state.marketSentiment = Math.max(0, this.state.marketSentiment - 25 * magnitude);
         break;
       case 'airdrop':
-        // Treasury boost from single airdrop
-        this.state.treasury += 10000 * magnitude;
+        // Treasury boost from single airdrop (reduced from $10k to $5k for balance)
+        this.state.treasury += 5000 * magnitude;
         break;
       case 'airdrop_season':
-        // Larger treasury boost from multiple airdrops
-        this.state.treasury += 25000 * magnitude;
-        this.state.marketSentiment = Math.min(100, this.state.marketSentiment + 15);
+        // Larger treasury boost from multiple airdrops (reduced from $25k to $12k)
+        this.state.treasury += 12000 * magnitude;
+        this.state.marketSentiment = Math.min(100, this.state.marketSentiment + 10);
         break;
       case 'rug_pull':
         // Treasury and sentiment hit
-        this.state.treasury = Math.max(0, this.state.treasury - 5000 * magnitude);
+        // Scale rug losses to 10% of treasury (minimum $5,000)
+        // This makes late-game rug pulls actually meaningful
+        const rugLoss = Math.max(5000, Math.floor(this.state.treasury * 0.10)) * magnitude;
+        this.state.treasury = Math.max(0, this.state.treasury - rugLoss);
         this.state.marketSentiment = Math.max(0, this.state.marketSentiment - 15);
         break;
       case 'hack':

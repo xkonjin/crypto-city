@@ -203,6 +203,12 @@ export interface CryptoEconomyState {
   lastUpdate: number;
   // Tick count
   tickCount: number;
+  // Bankruptcy state - consecutive ticks at zero treasury
+  bankruptcyCounter: number;
+  // Whether currently in bankruptcy mode (buildings decaying)
+  isBankrupt: boolean;
+  // IDs of buildings currently decaying due to bankruptcy
+  decayingBuildings: string[];
 }
 
 // =============================================================================
