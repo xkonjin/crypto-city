@@ -109,13 +109,53 @@ const BUILDING_REACTIONS: Record<string, string[]> = {
   ],
 
   // DeFi
-  'aave_tower': [
+  'aave_lending_tower': [
     "Aave Tower. Lending and borrowing at scale. The metagame for yield farming since 2020.",
     "Building Aave. Solid choice. One of the few DeFi protocols that's survived multiple cycles.",
   ],
   'uniswap_exchange': [
     "Uniswap. The place where impermanent loss became a feature, not a bug. Allegedly.",
     "Ah, Uniswap. Democratizing market making since... was it 2018? Time blurs together in crypto years.",
+  ],
+  'makerdao_vault': [
+    "MakerDAO. The OG of DeFi. Before yield farming was cool. Before it was even called DeFi, honestly.",
+    "Building the DAI vault. Decentralized stablecoins done right. Most of the time.",
+  ],
+  'curve_finance_pool': [
+    "Curve. The stablecoin swap metagame. Low fees, high TVL. The boring play that actually works.",
+  ],
+  'lido_staking_hub': [
+    "Lido staking. Liquid staking changed the game. Now your ETH can earn while you... also earn. Compounding metagame.",
+  ],
+  'compound_bank': [
+    "Compound. The protocol that made lending boring in the best way. Boring is underrated in DeFi.",
+  ],
+  
+  // Exchanges
+  'binance_tower': [
+    "Binance Tower. The volume leader. The controversies leader too, but volume is volume.",
+    "Building CZ's empire. The SAFU funds better actually be SAFU.",
+  ],
+  'coinbase_hq': [
+    "Coinbase HQ. The regulated on-ramp. Normies' first stop. Nothing wrong with meeting people where they are.",
+  ],
+  'kraken_exchange': [
+    "Kraken. The exchange that somehow avoided most of the drama. That's a skill in this industry.",
+  ],
+  
+  // Chain
+  'ethereum_beacon': [
+    "Ethereum Beacon. The merge happened. PoS is live. The ultrasound money thesis continues.",
+    "Building on Ethereum. The network effects are real. Even if the gas fees are also real.",
+  ],
+  'solana_tower': [
+    "Solana Tower. Fast blocks, fast failures, fast recovery. The metagame for speed.",
+  ],
+  'bitcoin_vault': [
+    "Bitcoin Vault. Digital gold. The only crypto your normie friends might actually understand.",
+  ],
+  'arbitrum_bridge': [
+    "Arbitrum. L2 scaling done right. The metagame evolved and rollups won. For now.",
   ],
 
   // Meme
@@ -170,8 +210,9 @@ const MILESTONE_MESSAGES: Record<string, string[]> = {
 };
 
 // Random periodic commentary
-// Voice: Gaming metaphors, market observations, self-aware crypto humor
+// Voice: Gaming metaphors, market observations, self-aware crypto humor, Cobie's famous sayings
 const RANDOM_COMMENTARY: string[] = [
+  // Core Cobie-isms
   "The metagame right now is to build infrastructure while everyone else chases the next shiny thing.",
   "Your city is doing fine. Better than most portfolios, probably.",
   "I've been in crypto since 2012. Your city already has more utility than half my early investments.",
@@ -184,6 +225,33 @@ const RANDOM_COMMENTARY: string[] = [
   "The probability of everything going right is low. The probability of learning something is high. Keep building.",
   "Nice city. The metagame is always changing but good fundamentals tend to survive.",
   "At least you're not panic selling during a dip. That's more discipline than most people have.",
+  
+  // Famous Cobie phrases
+  "Stay the course. That's it. That's the alpha.",
+  "The best plays are usually the boring ones. Boring is underrated.",
+  "Everyone has a plan until they see their portfolio down 60%.",
+  "If you're not sure what to do, doing nothing is often correct.",
+  "The market is a machine for transferring money from the impatient to the patient.",
+  
+  // UpOnly podcast references
+  "This reminds me of something we discussed on UpOnly. Can't remember what. The podcasts all blur together after a while.",
+  "Ledger said something relevant on the show once. I think. Content creation is weird.",
+  
+  // Self-deprecating humor
+  "I've made every mistake you can make in crypto. Somehow still here. That's the metagame.",
+  "Don't ask me for financial advice. I once held through a 99% drawdown. By accident.",
+  "My track record is public. Draw your own conclusions.",
+  
+  // Market observations
+  "Retail is quiet. That's historically when you want to be building.",
+  "CT is bullish. Historically, that's when you want to start thinking about exits. Historically.",
+  "Everyone's calling for the cycle top. So we probably have more room to run. Or not. I don't know.",
+  "The narrative changed again. Try to keep up. Or don't. The fundamentals rarely do.",
+  
+  // Gaming metaphors
+  "You're playing the right game. Most people don't even know what game they're in.",
+  "The current meta rewards builders. That usually changes, but enjoy it while it lasts.",
+  "This is a long game. Act accordingly.",
 ];
 
 // Check functions for tips
