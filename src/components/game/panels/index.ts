@@ -6,3 +6,4 @@ export { PetitionsPanel } from "./PetitionsPanel";
 export { EventsPanel } from "./EventsPanel";
 export { SpriteTestPanel } from "./SpriteTestPanel";
 export { TileInfoPanel } from "./TileInfoPanel";
+export { LeaderboardPanel } from "./LeaderboardPanel";

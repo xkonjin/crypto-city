@@ -38,6 +38,7 @@ import {
   AdvisorsPanel,
   PetitionsPanel,
   EventsPanel,
+  LeaderboardPanel,
 } from "@/components/game/panels";
 import { MiniMap } from "@/components/game/MiniMap";
 import { TopBar, StatsPanel } from "@/components/game/TopBar";
@@ -618,6 +619,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {state.activePanel === "settings" && <SettingsPanel />}
           {state.activePanel === "petitions" && <PetitionsPanel />}
           {state.activePanel === "events" && <EventsPanel />}
+          {state.activePanel === "leaderboard" && <LeaderboardPanel />}
 
           {/* Crypto Building Panel - shown via sidebar or toggle button */}
           {(showCryptoBuildingPanel || state.activePanel === "crypto") && (

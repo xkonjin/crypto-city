@@ -602,7 +602,8 @@ export interface GameState {
     | "settings"
     | "petitions"
     | "events"
-    | "crypto";
+    | "crypto"
+    | "leaderboard";
   disastersEnabled: boolean;
   adjacentCities: AdjacentCity[];
   waterBodies: WaterBody[];
