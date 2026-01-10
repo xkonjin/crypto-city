@@ -93,6 +93,21 @@ export class CryptoEconomyManager {
   private listeners: Set<(state: CryptoEconomyState) => void> = new Set();
   
   // ---------------------------------------------------------------------------
+  // GAME SPEED INTEGRATION
+  // ---------------------------------------------------------------------------
+  
+  /** Current game speed (0=paused, 1=normal, 2=fast, 3=very fast) */
+  private gameSpeed: 0 | 1 | 2 | 3 = 1;
+  
+  /** Speed multipliers for economy calculations */
+  private static readonly SPEED_MULTIPLIERS = {
+    0: 0,     // Paused - no ticks
+    1: 1,     // Normal
+    2: 2,     // Fast - 2x yield
+    3: 4,     // Very fast - 4x yield
+  } as const;
+  
+  // ---------------------------------------------------------------------------
   // REAL WORLD DATA INTEGRATION
   // ---------------------------------------------------------------------------
   
@@ -556,8 +571,17 @@ export class CryptoEconomyManager {
   /**
    * Process one simulation tick
    * Clamps elapsed time to prevent time drift exploits when tab is backgrounded
+   * Respects game speed setting: yields are scaled by speed multiplier
    */
   tick(): void {
+    // Skip tick processing when game is paused
+    const speedMultiplier = CryptoEconomyManager.SPEED_MULTIPLIERS[this.gameSpeed];
+    if (speedMultiplier === 0) {
+      // Still update lastUpdate to prevent time drift when unpaused
+      this.state = { ...this.state, lastUpdate: Date.now() };
+      return;
+    }
+    
     const now = Date.now();
     const elapsed = now - this.state.lastUpdate;
     // Clamp elapsed time to max 2x the tick rate to prevent time drift exploits
@@ -567,8 +591,9 @@ export class CryptoEconomyManager {
     const tickFraction = clampedElapsed / ECONOMY_CONFIG.TICK_RATE;
     
     // Calculate yield earned this tick (yield is per-day, tick is 5 seconds)
+    // Scale by game speed multiplier
     const ticksPerDay = (24 * 60 * 60 * 1000) / ECONOMY_CONFIG.TICK_RATE;
-    const yieldThisTick = (this.state.dailyYield / ticksPerDay) * tickFraction;
+    const yieldThisTick = (this.state.dailyYield / ticksPerDay) * tickFraction * speedMultiplier;
     
     // Update treasury and accumulated yield
     this.state = {
@@ -588,8 +613,8 @@ export class CryptoEconomyManager {
       }
     }
     
-    // Random sentiment fluctuation
-    this.fluctuateSentiment();
+    // Random sentiment fluctuation (also scaled by speed)
+    this.fluctuateSentiment(speedMultiplier);
     
     this.notifyListeners();
   }
@@ -598,12 +623,13 @@ export class CryptoEconomyManager {
    * Apply random sentiment fluctuation
    * When real data is enabled, we fluctuate the simulated base and blend
    * When disabled, we fluctuate the actual sentiment directly
+   * @param speedMultiplier - Scale fluctuation intensity by game speed
    */
-  private fluctuateSentiment(): void {
-    // Small random walk with mean reversion to 50
+  private fluctuateSentiment(speedMultiplier: number = 1): void {
+    // Small random walk with mean reversion to 50, scaled by game speed
     const current = this.realDataEnabled ? this.simulatedSentiment : this.state.marketSentiment;
-    const meanReversion = (50 - current) * 0.01;
-    const randomWalk = (Math.random() - 0.5) * 4;
+    const meanReversion = (50 - current) * 0.01 * speedMultiplier;
+    const randomWalk = (Math.random() - 0.5) * 4 * Math.sqrt(speedMultiplier);
     
     const newSimulatedSentiment = Math.max(0, Math.min(100, current + meanReversion + randomWalk));
     
@@ -645,6 +671,22 @@ export class CryptoEconomyManager {
       clearInterval(this.tickInterval);
       this.tickInterval = null;
     }
+  }
+  
+  /**
+   * Set game speed for economy simulation
+   * The crypto economy respects the game's pause/speed settings
+   * @param speed - 0 = paused, 1 = normal, 2 = fast, 3 = very fast
+   */
+  setGameSpeed(speed: 0 | 1 | 2 | 3): void {
+    this.gameSpeed = speed;
+  }
+  
+  /**
+   * Get current game speed
+   */
+  getGameSpeed(): 0 | 1 | 2 | 3 {
+    return this.gameSpeed;
   }
   
   // ---------------------------------------------------------------------------

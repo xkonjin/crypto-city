@@ -132,6 +132,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     };
   }, []);
 
+  // Sync game speed with crypto economy
+  // This ensures yields pause when game is paused and scale with speed
+  useEffect(() => {
+    cryptoEconomy.setGameSpeed(state.speed);
+  }, [state.speed]);
+
   // Cheat code system
   const {
     triggeredCheat,
