@@ -16,6 +16,7 @@ import { SavedCityMeta, GameState } from "@/types/game";
 import { decompressFromUTF16, compressToUTF16 } from "lz-string";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import { Users, X } from "lucide-react";
+import { storePendingReferralCode } from "@/lib/referral";
 
 const STORAGE_KEY = "isocity-game-state";
 const SAVED_CITIES_INDEX_KEY = "isocity-saved-cities-index";
@@ -388,6 +389,15 @@ export default function HomePage() {
         window.location.replace(`/coop/${roomCode.toUpperCase()}`);
         return;
       }
+      
+      // Check for referral code in URL (?ref=XXXXXX)
+      const refCode = params.get("ref");
+      if (refCode && refCode.length === 6 && /^[A-Za-z0-9]{6}$/.test(refCode)) {
+        storePendingReferralCode(refCode);
+        // Clear the ref param from URL to prevent re-applying on refresh
+        window.history.replaceState({}, "", "/");
+      }
+      
       // Always show landing page - don't auto-load into game
       // User can select from saved cities or start new
     };

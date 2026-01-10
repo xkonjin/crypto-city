@@ -7,3 +7,4 @@ export { EventsPanel } from "./EventsPanel";
 export { SpriteTestPanel } from "./SpriteTestPanel";
 export { TileInfoPanel } from "./TileInfoPanel";
 export { LeaderboardPanel } from "./LeaderboardPanel";
+export { ReferralPanel } from "./ReferralPanel";

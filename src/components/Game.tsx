@@ -28,6 +28,11 @@ import { useMultiplayerOptional } from "@/context/MultiplayerContext";
 import { ShareModal } from "@/components/multiplayer/ShareModal";
 import { Copy, Check } from "lucide-react";
 
+// Import achievement share system (Issue #39)
+import { AchievementToast } from "@/components/game/AchievementToast";
+import { AchievementShareDialog } from "@/components/game/AchievementShareDialog";
+import { Achievement } from "@/types/game";
+
 // Import game components
 import { OverlayMode } from "@/components/game/types";
 import { getOverlayForTool } from "@/components/game/overlays";
@@ -41,6 +46,7 @@ import {
   PetitionsPanel,
   EventsPanel,
   LeaderboardPanel,
+  ReferralPanel,
 } from "@/components/game/panels";
 import { MiniMap } from "@/components/game/MiniMap";
 import { TopBar, StatsPanel } from "@/components/game/TopBar";
@@ -71,6 +77,9 @@ import {
   WIN_THRESHOLDS,
   LOSE_THRESHOLDS,
 } from "@/lib/gameObjectives";
+
+// Import referral system (Issue #38)
+import { applyPendingReferral, REFERRED_BONUS } from "@/lib/referral";
 
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg("containers"), msg("bulk materials"), msg("oil")];
@@ -125,6 +134,14 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const previousDayRef = useRef(state.day);
   // ==== END GAME OBJECTIVES STATE ====
 
+  // ==== ACHIEVEMENT SHARE STATE (Issue #39) ====
+  const [pendingAchievement, setPendingAchievement] = useState<Achievement | null>(null);
+  const [showAchievementToast, setShowAchievementToast] = useState(false);
+  const [showAchievementShareDialog, setShowAchievementShareDialog] = useState(false);
+  const shownAchievementsRef = useRef<Set<string>>(new Set());
+  const previousAchievementsCountRef = useRef<number>(state.achievements?.length || 0);
+  // ==== END ACHIEVEMENT SHARE STATE ====
+
   // Real-world crypto data integration - triggers events from actual market data
   const { data: realCryptoData, blendedData, isOnline, hasData: hasRealData } = useRealCryptoData({
     economyManager: cryptoEconomy,
@@ -157,6 +174,25 @@ export default function Game({ onExit }: { onExit?: () => void }) {
       cryptoEventManager.stop();
     };
   }, []);
+
+  // ==== REFERRAL SYSTEM (Issue #38) ====
+  // Apply pending referral bonus when game starts
+  useEffect(() => {
+    const bonus = applyPendingReferral();
+    if (bonus) {
+      // Add bonus to treasury
+      addMoney(bonus);
+      // Show notification
+      addNotification(
+        "Welcome Bonus!",
+        `You received $${REFERRED_BONUS.toLocaleString()} for using a referral code!`,
+        "gift"
+      );
+    }
+  // Only run once on mount - empty dependency array
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // ==== END REFERRAL SYSTEM ====
 
   // Sync game speed with crypto economy
   // This ensures yields pause when game is paused and scale with speed
@@ -272,6 +308,65 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Only trigger on specific state changes, not on every state/objectives update
   }, [state.day, state.stats.happiness, state.stats.population, economyState, gameMode, gameObjectives.isGameOver, setSpeed]);
   // ==== END GAME OBJECTIVES TRACKING ====
+
+  // ==== ACHIEVEMENT UNLOCK TRACKING (Issue #39) ====
+  // Track when new achievements are unlocked and show toast
+  useEffect(() => {
+    const achievements = state.achievements || [];
+    const currentCount = achievements.length;
+    
+    // Check if we have new achievements
+    if (currentCount > previousAchievementsCountRef.current) {
+      // Find the newly unlocked achievements
+      const newlyUnlocked = achievements.filter(
+        (a) => !shownAchievementsRef.current.has(a.id)
+      );
+      
+      // Show toast for the first newly unlocked achievement
+      // (Queue system could be added for multiple simultaneous unlocks)
+      if (newlyUnlocked.length > 0 && !showAchievementToast) {
+        const achievement = newlyUnlocked[0];
+        setPendingAchievement(achievement);
+        setShowAchievementToast(true);
+        shownAchievementsRef.current.add(achievement.id);
+      }
+    }
+    
+    previousAchievementsCountRef.current = currentCount;
+  }, [state.achievements, showAchievementToast]);
+
+  // Listen for custom achievement-unlocked events (for testing)
+  useEffect(() => {
+    const handleAchievementUnlocked = (event: CustomEvent<Achievement>) => {
+      const achievement = event.detail;
+      if (!shownAchievementsRef.current.has(achievement.id)) {
+        setPendingAchievement(achievement);
+        setShowAchievementToast(true);
+        shownAchievementsRef.current.add(achievement.id);
+      }
+    };
+
+    window.addEventListener('achievement-unlocked', handleAchievementUnlocked as EventListener);
+    return () => {
+      window.removeEventListener('achievement-unlocked', handleAchievementUnlocked as EventListener);
+    };
+  }, []);
+
+  // Achievement toast handlers
+  const handleAchievementToastDismiss = useCallback(() => {
+    setShowAchievementToast(false);
+  }, []);
+
+  const handleAchievementShare = useCallback(() => {
+    setShowAchievementToast(false);
+    setShowAchievementShareDialog(true);
+  }, []);
+
+  const handleAchievementShareDialogClose = useCallback(() => {
+    setShowAchievementShareDialog(false);
+    setPendingAchievement(null);
+  }, []);
+  // ==== END ACHIEVEMENT UNLOCK TRACKING ====
 
   // Cheat code system
   const {
@@ -656,6 +751,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {state.activePanel === "settings" && <SettingsPanel />}
           {state.activePanel === "petitions" && <PetitionsPanel />}
           {state.activePanel === "events" && <EventsPanel />}
+          {state.activePanel === "referral" && <ReferralPanel />}
 
           <VinnieDialog
             open={showVinnieDialog}
@@ -688,6 +784,24 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               onContinueSandbox={handleContinueSandbox}
             />
           )}
+
+          {/* Achievement Toast and Share Dialog (Issue #39) */}
+          <AchievementToast
+            achievement={pendingAchievement}
+            isVisible={showAchievementToast}
+            onDismiss={handleAchievementToastDismiss}
+            onShare={handleAchievementShare}
+          />
+          <AchievementShareDialog
+            achievement={pendingAchievement}
+            stats={{
+              treasury: state.stats.money,
+              population: state.stats.population,
+              days: state.day,
+            }}
+            isOpen={showAchievementShareDialog}
+            onClose={handleAchievementShareDialogClose}
+          />
         </div>
       </TooltipProvider>
     );
@@ -810,6 +924,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {state.activePanel === "petitions" && <PetitionsPanel />}
           {state.activePanel === "events" && <EventsPanel />}
           {state.activePanel === "leaderboard" && <LeaderboardPanel />}
+          {state.activePanel === "referral" && <ReferralPanel />}
 
           {/* Crypto Building Panel - shown via sidebar or toggle button */}
           {(showCryptoBuildingPanel || state.activePanel === "crypto") && (
@@ -870,6 +985,24 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               onContinueSandbox={handleContinueSandbox}
             />
           )}
+
+          {/* Achievement Toast and Share Dialog (Issue #39) */}
+          <AchievementToast
+            achievement={pendingAchievement}
+            isVisible={showAchievementToast}
+            onDismiss={handleAchievementToastDismiss}
+            onShare={handleAchievementShare}
+          />
+          <AchievementShareDialog
+            achievement={pendingAchievement}
+            stats={{
+              treasury: state.stats.money,
+              population: state.stats.population,
+              days: state.day,
+            }}
+            isOpen={showAchievementShareDialog}
+            onClose={handleAchievementShareDialogClose}
+          />
         </div>
 
         {/* Crypto News Ticker - Bottom */}

@@ -603,7 +603,8 @@ export interface GameState {
     | "petitions"
     | "events"
     | "crypto"
-    | "leaderboard";
+    | "leaderboard"
+    | "referral";
   disastersEnabled: boolean;
   adjacentCities: AdjacentCity[];
   waterBodies: WaterBody[];
