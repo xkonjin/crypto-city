@@ -597,3 +597,129 @@ html, body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 }
+
+/* =============================================================================
+   RUG PULL ANIMATIONS (Issue #47)
+   ============================================================================= */
+
+/* Screen shake animation - intensity controlled via CSS variable */
+@keyframes rugScreenShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-3px, -2px) rotate(-0.5deg); }
+  20% { transform: translate(3px, 2px) rotate(0.5deg); }
+  30% { transform: translate(-4px, 1px) rotate(-0.5deg); }
+  40% { transform: translate(4px, -1px) rotate(0.5deg); }
+  50% { transform: translate(-3px, 2px) rotate(-0.3deg); }
+  60% { transform: translate(3px, -2px) rotate(0.3deg); }
+  70% { transform: translate(-2px, 1px) rotate(-0.2deg); }
+  80% { transform: translate(2px, -1px) rotate(0.2deg); }
+  90% { transform: translate(-1px, 0px) rotate(-0.1deg); }
+}
+
+.rug-screen-shake {
+  animation: rugScreenShake var(--shake-duration, 0.5s) ease-out;
+}
+
+/* Light shake for rug pull buildings */
+@keyframes rugShake {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+  25% { transform: translate(calc(-50% + 3px), calc(-50% - 2px)) rotate(1deg); }
+  50% { transform: translate(calc(-50% - 3px), calc(-50% + 2px)) rotate(-1deg); }
+  75% { transform: translate(calc(-50% + 2px), calc(-50% - 1px)) rotate(0.5deg); }
+}
+
+/* Building implosion animation */
+@keyframes rugImplode {
+  0% { 
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: translate(-50%, calc(-50% + 10px)) scale(0.9);
+    opacity: 0.8;
+  }
+  80% { 
+    transform: translate(-50%, calc(-50% + 30px)) scale(0.5);
+    opacity: 0.5;
+  }
+  100% { 
+    transform: translate(-50%, calc(-50% + 50px)) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Red warning flash */
+@keyframes rugFlash {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+/* Smoke particle floating animation */
+@keyframes rugSmokeFloat {
+  0% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  30% {
+    opacity: 0.6;
+    transform: translate(
+      calc(-50% + var(--smoke-x, 0px) * 0.3),
+      calc(-50% + var(--smoke-y, 0px) * 0.3)
+    ) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+      calc(-50% + var(--smoke-x, 0px)),
+      calc(-50% + var(--smoke-y, 0px))
+    ) scale(1.5);
+  }
+}
+
+/* Debris flying animation */
+@keyframes rugDebris {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+      calc(-50% + var(--debris-x, 0px)),
+      calc(-50% + var(--debris-y, 0px))
+    ) rotate(720deg);
+  }
+}
+
+/* RUGGED text reveal animation */
+@keyframes rugTextReveal {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.5) rotateX(90deg);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.2) rotateX(0deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1) rotateX(0deg);
+  }
+}
+
+/* Utility class for game container shake */
+.game-container.shake {
+  animation: rugScreenShake var(--shake-duration, 0.5s) ease-out;
+}
+
+/* Shake intensity variants */
+.shake-light {
+  --shake-duration: 0.3s;
+}
+
+.shake-medium {
+  --shake-duration: 0.5s;
+}
+
+.shake-heavy {
+  --shake-duration: 0.8s;
+}

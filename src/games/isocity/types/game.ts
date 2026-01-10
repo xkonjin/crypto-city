@@ -604,7 +604,8 @@ export interface GameState {
     | "events"
     | "crypto"
     | "leaderboard"
-    | "referral";
+    | "referral"
+    | "challenges";
   disastersEnabled: boolean;
   adjacentCities: AdjacentCity[];
   waterBodies: WaterBody[];

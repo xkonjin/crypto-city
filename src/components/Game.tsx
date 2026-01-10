@@ -47,6 +47,7 @@ import {
   EventsPanel,
   LeaderboardPanel,
   ReferralPanel,
+  ChallengesPanel,
 } from "@/components/game/panels";
 import { MiniMap } from "@/components/game/MiniMap";
 import { TopBar, StatsPanel } from "@/components/game/TopBar";
@@ -80,6 +81,29 @@ import {
 
 // Import referral system (Issue #38)
 import { applyPendingReferral, REFERRED_BONUS } from "@/lib/referral";
+
+// Import weekly challenges system (Issue #40)
+import {
+  ChallengeState,
+  loadChallengeState,
+  saveChallengeState,
+  updateChallengesProgress,
+  recordRugPull,
+  recordNewDay,
+  createInitialChallengeState,
+} from "@/lib/challenges";
+
+// Import rug pull animation system (Issue #47)
+import { RugPullAnimation } from "@/components/game/RugPullAnimation";
+import { RugPullToast } from "@/components/game/RugPullToast";
+import {
+  RugPullEvent,
+  createRugPullEvent,
+  RugPullQueue,
+  ANIMATION_PHASES,
+  calculateShakeIntensity,
+} from "@/lib/rugPullEffect";
+import { useSound } from "@/hooks/useSound";
 
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg("containers"), msg("bulk materials"), msg("oil")];
@@ -141,6 +165,23 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const shownAchievementsRef = useRef<Set<string>>(new Set());
   const previousAchievementsCountRef = useRef<number>(state.achievements?.length || 0);
   // ==== END ACHIEVEMENT SHARE STATE ====
+
+  // ==== RUG PULL ANIMATION STATE (Issue #47) ====
+  const [activeRugPull, setActiveRugPull] = useState<RugPullEvent | null>(null);
+  const [rugPullScreenPosition, setRugPullScreenPosition] = useState<{ x: number; y: number } | null>(null);
+  const [showRugPullToast, setShowRugPullToast] = useState(false);
+  const [isScreenShaking, setIsScreenShaking] = useState(false);
+  const rugPullQueueRef = useRef<RugPullQueue>(new RugPullQueue());
+  const gameContainerRef = useRef<HTMLDivElement>(null);
+  const { playSfx } = useSound();
+  // ==== END RUG PULL ANIMATION STATE ====
+
+  // ==== WEEKLY CHALLENGES STATE (Issue #40) ====
+  const [challengeState, setChallengeState] = useState<ChallengeState>(() => 
+    typeof window !== 'undefined' ? loadChallengeState() : createInitialChallengeState()
+  );
+  const previousDayForChallengesRef = useRef(state.day);
+  // ==== END WEEKLY CHALLENGES STATE ====
 
   // Real-world crypto data integration - triggers events from actual market data
   const { data: realCryptoData, blendedData, isOnline, hasData: hasRealData } = useRealCryptoData({
@@ -309,6 +350,66 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   }, [state.day, state.stats.happiness, state.stats.population, economyState, gameMode, gameObjectives.isGameOver, setSpeed]);
   // ==== END GAME OBJECTIVES TRACKING ====
 
+  // ==== WEEKLY CHALLENGES TRACKING (Issue #40) ====
+  // Update challenge progress and track days
+  useEffect(() => {
+    // Check if a new game day has started for challenges
+    if (state.day !== previousDayForChallengesRef.current) {
+      previousDayForChallengesRef.current = state.day;
+      
+      // Record the new day for duration-based challenges
+      const happinessThreshold = 70;
+      const updatedAfterDay = recordNewDay(challengeState, state.stats.happiness, happinessThreshold);
+      setChallengeState(updatedAfterDay);
+    }
+    
+    // Update all challenge progress
+    const updatedChallenges = updateChallengesProgress(
+      challengeState.challenges,
+      state,
+      economyState,
+      challengeState
+    );
+    
+    // Only update if progress changed to avoid infinite loops
+    const hasProgressChanged = updatedChallenges.some(
+      (c, i) => c.progress !== challengeState.challenges[i]?.progress || 
+                c.completed !== challengeState.challenges[i]?.completed
+    );
+    
+    if (hasProgressChanged) {
+      const newState: ChallengeState = {
+        ...challengeState,
+        challenges: updatedChallenges,
+        lastUpdated: Date.now(),
+      };
+      setChallengeState(newState);
+      saveChallengeState(newState);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only trigger on specific state changes
+  }, [state.day, state.stats.population, state.stats.happiness, economyState.tvl, economyState.buildingCount]);
+  
+  // Handle rug pull events for challenges
+  useEffect(() => {
+    const handleRugPullForChallenge = () => {
+      const updatedState = recordRugPull(challengeState);
+      setChallengeState(updatedState);
+    };
+    
+    const unsubscribe = cryptoEventManager.subscribe((events) => {
+      const latestEvent = events[0];
+      if (latestEvent?.type === 'rug_pull') {
+        handleRugPullForChallenge();
+      }
+    });
+    
+    return () => {
+      unsubscribe();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only need to track challengeState changes
+  }, [challengeState.rugPullsSurvived]);
+  // ==== END WEEKLY CHALLENGES TRACKING ====
+
   // ==== ACHIEVEMENT UNLOCK TRACKING (Issue #39) ====
   // Track when new achievements are unlocked and show toast
   useEffect(() => {
@@ -367,6 +468,108 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     setPendingAchievement(null);
   }, []);
   // ==== END ACHIEVEMENT UNLOCK TRACKING ====
+
+  // ==== RUG PULL ANIMATION HANDLERS (Issue #47) ====
+  // Handle screen shake effect
+  const handleScreenShake = useCallback((intensity: number, duration: number) => {
+    if (gameContainerRef.current) {
+      const shakeClass = intensity > 0.7 ? 'shake-heavy' : intensity > 0.4 ? 'shake-medium' : 'shake-light';
+      gameContainerRef.current.classList.add('shake', shakeClass);
+      setIsScreenShaking(true);
+      
+      setTimeout(() => {
+        if (gameContainerRef.current) {
+          gameContainerRef.current.classList.remove('shake', 'shake-light', 'shake-medium', 'shake-heavy');
+        }
+        setIsScreenShaking(false);
+      }, duration);
+    }
+  }, []);
+
+  // Handle rug pull animation completion
+  const handleRugPullAnimationComplete = useCallback(() => {
+    // Show the toast notification after animation completes
+    setShowRugPullToast(true);
+  }, []);
+
+  // Handle rug pull toast dismiss
+  const handleRugPullToastDismiss = useCallback(() => {
+    setShowRugPullToast(false);
+    // Clear the active rug pull and allow next in queue
+    setTimeout(() => {
+      setActiveRugPull(null);
+      setRugPullScreenPosition(null);
+    }, 300);
+  }, []);
+
+  // Process a rug pull event from the queue
+  const processRugPullEvent = useCallback(async (event: RugPullEvent) => {
+    // Play the rug pull sound
+    playSfx('rugPull');
+    
+    // Set the active rug pull
+    setActiveRugPull(event);
+    
+    // Calculate screen position (center of screen for now - could be improved to use building position)
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    setRugPullScreenPosition({ x: centerX, y: centerY });
+    
+    // Wait for animation to complete
+    const totalDuration = 
+      ANIMATION_PHASES.warning.duration +
+      ANIMATION_PHASES.collapse.duration +
+      ANIMATION_PHASES.aftermath.duration;
+    
+    return new Promise<void>((resolve) => {
+      setTimeout(resolve, totalDuration);
+    });
+  }, [playSfx]);
+
+  // Set up rug pull queue processor
+  useEffect(() => {
+    rugPullQueueRef.current.setProcessor(processRugPullEvent);
+  }, [processRugPullEvent]);
+
+  // Listen for rug pull events from CryptoEventManager
+  useEffect(() => {
+    const handleRugPull = (buildingId: string, buildingName: string) => {
+      // Create rug pull event with default treasury loss from the event definition
+      const treasuryLoss = 5000; // Default from CRYPTO_EVENTS.rug_pull
+      const event = createRugPullEvent(buildingName, { x: 0, y: 0 }, treasuryLoss);
+      
+      // Queue the rug pull animation
+      rugPullQueueRef.current.enqueue(event);
+    };
+    
+    // Register the callback with the event manager
+    cryptoEventManager.setRugPullCallback(handleRugPull);
+    
+    return () => {
+      cryptoEventManager.setRugPullCallback(() => {});
+    };
+  }, []);
+
+  // Listen for test rug pull events (for testing)
+  useEffect(() => {
+    const handleTestRugPull = (e: CustomEvent) => {
+      const { buildingName, position, treasuryLoss } = e.detail || {};
+      if (buildingName && treasuryLoss) {
+        const event = createRugPullEvent(
+          buildingName,
+          position || { x: 0, y: 0 },
+          treasuryLoss
+        );
+        rugPullQueueRef.current.enqueue(event);
+      }
+    };
+    
+    window.addEventListener('test-rug-pull', handleTestRugPull as EventListener);
+    return () => {
+      window.removeEventListener('test-rug-pull', handleTestRugPull as EventListener);
+    };
+  }, []);
+  // ==== END RUG PULL ANIMATION HANDLERS ====
 
   // Cheat code system
   const {
@@ -752,6 +955,17 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {state.activePanel === "petitions" && <PetitionsPanel />}
           {state.activePanel === "events" && <EventsPanel />}
           {state.activePanel === "referral" && <ReferralPanel />}
+          {state.activePanel === "challenges" && (
+            <ChallengesPanel
+              cryptoState={economyState}
+              challengeState={challengeState}
+              onClaimReward={(amount) => {
+                addMoney(amount);
+                cryptoEconomy.deposit(amount);
+              }}
+              onUpdateChallengeState={setChallengeState}
+            />
+          )}
 
           <VinnieDialog
             open={showVinnieDialog}
@@ -802,6 +1016,19 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             isOpen={showAchievementShareDialog}
             onClose={handleAchievementShareDialogClose}
           />
+
+          {/* Rug Pull Animation and Toast (Issue #47) */}
+          <RugPullAnimation
+            event={activeRugPull}
+            screenPosition={rugPullScreenPosition}
+            onComplete={handleRugPullAnimationComplete}
+            onScreenShake={handleScreenShake}
+          />
+          <RugPullToast
+            event={activeRugPull}
+            isVisible={showRugPullToast}
+            onDismiss={handleRugPullToastDismiss}
+          />
         </div>
       </TooltipProvider>
     );
@@ -810,7 +1037,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   // Desktop layout
   return (
     <TooltipProvider>
-      <div className="w-full h-full min-h-[720px] overflow-hidden bg-background flex flex-col">
+      <div ref={gameContainerRef} data-testid="game-container" className="game-container w-full h-full min-h-[720px] overflow-hidden bg-background flex flex-col">
         {/* Crypto Treasury Panel - Top */}
         <div className="relative z-50">
           <TreasuryPanel economyState={economyState} />
@@ -925,6 +1152,17 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {state.activePanel === "events" && <EventsPanel />}
           {state.activePanel === "leaderboard" && <LeaderboardPanel />}
           {state.activePanel === "referral" && <ReferralPanel />}
+          {state.activePanel === "challenges" && (
+            <ChallengesPanel
+              cryptoState={economyState}
+              challengeState={challengeState}
+              onClaimReward={(amount) => {
+                addMoney(amount);
+                cryptoEconomy.deposit(amount);
+              }}
+              onUpdateChallengeState={setChallengeState}
+            />
+          )}
 
           {/* Crypto Building Panel - shown via sidebar or toggle button */}
           {(showCryptoBuildingPanel || state.activePanel === "crypto") && (
@@ -1002,6 +1240,19 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             }}
             isOpen={showAchievementShareDialog}
             onClose={handleAchievementShareDialogClose}
+          />
+
+          {/* Rug Pull Animation and Toast (Issue #47) */}
+          <RugPullAnimation
+            event={activeRugPull}
+            screenPosition={rugPullScreenPosition}
+            onComplete={handleRugPullAnimationComplete}
+            onScreenShake={handleScreenShake}
+          />
+          <RugPullToast
+            event={activeRugPull}
+            isVisible={showRugPullToast}
+            onDismiss={handleRugPullToastDismiss}
           />
         </div>
 
