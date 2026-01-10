@@ -46,12 +46,9 @@ export {
   getClassificationColor,
   getSentimentDescription,
   // Perplexity News
-  fetchPerplexityNews,
-  getNewsBySentiment,
-  getNewsByChain,
-  getHighImpactNews,
-  getOverallNewsSentiment,
-  formatNewsForDisplay,
+  fetchCryptoNews,
+  syncNewsToGameEvents,
+  perplexityNews,
   // Twitter
   fetchTwitterData,
   getTweetsBySentiment,

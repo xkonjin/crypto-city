@@ -55,11 +55,12 @@ export const BUILDING_CATEGORIES = {
   plasma: Object.keys(ALL_CRYPTO_BUILDINGS).filter(id => ALL_CRYPTO_BUILDINGS[id].category === 'plasma'),
   stablecoin: Object.keys(ALL_CRYPTO_BUILDINGS).filter(id => ALL_CRYPTO_BUILDINGS[id].category === 'stablecoin'),
   crypto_infrastructure: Object.keys(ALL_CRYPTO_BUILDINGS).filter(id => ALL_CRYPTO_BUILDINGS[id].category === 'infrastructure'),
+  legends: Object.keys(ALL_CRYPTO_BUILDINGS).filter(id => ALL_CRYPTO_BUILDINGS[id].category === 'legends'),
 } as const;
 
 // Crypto category list for UI
 export const CRYPTO_CATEGORIES: CryptoCategory[] = [
-  'defi', 'exchange', 'chain', 'ct', 'meme', 'plasma', 'stablecoin', 'infrastructure'
+  'defi', 'exchange', 'chain', 'ct', 'meme', 'plasma', 'stablecoin', 'infrastructure', 'legends'
 ];
 
 // =============================================================================

@@ -54,14 +54,10 @@ export {
 
 // Perplexity AI News
 export {
-  fetchPerplexityNews,
-  getNewsBySentiment,
-  getNewsByChain,
-  getHighImpactNews,
-  getOverallNewsSentiment,
-  formatNewsForDisplay,
-  checkPerplexityHealth,
+  fetchCryptoNews,
+  syncNewsToGameEvents,
 } from './perplexityNews';
+export { default as perplexityNews } from './perplexityNews';
 
 // Twitter/CT
 export {
@@ -107,7 +103,7 @@ import { RealWorldCryptoData } from '../cache/types';
 import { fetchDefiLlamaData } from './defiLlama';
 import { fetchCoinGeckoData } from './coinGecko';
 import { fetchFearGreedData } from './fearGreed';
-import { fetchPerplexityNews } from './perplexityNews';
+import { fetchCryptoNews } from './perplexityNews';
 import { fetchTwitterData } from './twitter';
 
 /**
@@ -174,8 +170,26 @@ export async function fetchAllCryptoData(forceRefresh = false): Promise<RealWorl
     const newsStale = !cached.news || now > cached.news.expiresAt;
     if (forceRefresh || newsStale) {
       fetchPromises.push(
-        fetchPerplexityNews()
-          .then(data => cryptoCache.setNews(data))
+        fetchCryptoNews()
+          .then(data => {
+            // Map Perplexity response to NewsData format
+            const now = Date.now();
+            const newsData = {
+              items: data.tickerItems.map((item, idx) => ({
+                id: `news-${now}-${idx}`,
+                headline: item.text,
+                summary: item.text,
+                sentiment: item.sentiment,
+                relevantChains: [],
+                source: item.source || 'Perplexity',
+                publishedAt: now,
+                fetchedAt: now,
+                impactLevel: 3,
+              })),
+              lastFetch: now,
+            };
+            return cryptoCache.setNews(newsData);
+          })
           .catch(err => console.error('[CryptoAPI] News fetch failed:', err))
       );
     }

@@ -218,6 +218,7 @@ export const CRYPTO_CATEGORY_COLORS: Record<CryptoCategory, PlaceholderColor> = 
   plasma: { top: '#ec4899', left: '#db2777', right: '#f472b6', height: 1.5 },
   stablecoin: { top: '#10b981', left: '#059669', right: '#34d399', height: 1.1 },
   infrastructure: { top: '#6366f1', left: '#4f46e5', right: '#818cf8', height: 1.2 },
+  legends: { top: '#f97316', left: '#ea580c', right: '#fb923c', height: 1.4 },
 };
 
 export const PLACEHOLDER_COLORS: Record<string, PlaceholderColor> = {

@@ -44,6 +44,7 @@ const CATEGORY_INFO = {
   plasma: { name: 'Plasma', icon: '⚡', color: 'from-pink-500 to-pink-600' },
   stablecoin: { name: 'Stablecoin', icon: '💵', color: 'from-emerald-500 to-emerald-600' },
   infrastructure: { name: 'Infrastructure', icon: '🏗️', color: 'from-slate-500 to-slate-600' },
+  legends: { name: 'Legends', icon: '🗿', color: 'from-amber-500 to-orange-600' },
 };
 
 // =============================================================================

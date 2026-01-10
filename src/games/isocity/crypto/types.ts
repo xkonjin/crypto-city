@@ -44,7 +44,8 @@ export type CryptoCategory =
   | 'meme'           // Meme coin culture (Pepe statues, Doge fountains)
   | 'plasma'         // Custom themed buildings
   | 'stablecoin'     // Stablecoin issuers (Tether, Circle, Ethena)
-  | 'infrastructure'; // Oracles & bridges (Chainlink, LayerZero, Wormhole)
+  | 'infrastructure' // Oracles & bridges (Chainlink, LayerZero, Wormhole)
+  | 'legends';       // Satirical crypto figure monuments (SBF Ruins, Vitalik Tower)
 
 // =============================================================================
 // TVL TIERS
