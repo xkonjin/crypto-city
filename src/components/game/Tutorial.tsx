@@ -21,17 +21,17 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'welcome',
     title: 'Welcome to Crypto City!',
-    description: "You're the mayor of a crypto-themed city. Your goal is to build a thriving metropolis while managing a crypto economy.",
+    description: "You're the mayor of a crypto-themed city. Build infrastructure, grow your population, and earn crypto yields!",
     objective: 'Click Next to continue',
-    tip: "This tutorial will guide you through the basics. You can skip it anytime.",
-    isComplete: () => true, // Always completable
+    tip: "Your goals: Grow population to 10,000+, maintain positive treasury, and achieve 70%+ happiness. The Fear & Greed meter affects all crypto yields!",
+    isComplete: () => true,
   },
   {
     id: 'zone-residential',
     title: 'Step 1: Zone Residential Areas',
-    description: "First, let's create some housing for your citizens. Residential zones (green) attract people to your city.",
+    description: "Residential zones (green) are where citizens live. More residents = more tax income and workers for your crypto empire.",
     objective: 'Place at least 4 residential zone tiles',
-    tip: "Click the 'Residential' button in Zones, then click and drag on grass tiles.",
+    tip: "WHY: Population drives everything - taxes, workers, and crypto building effectiveness. Start near the center where land value is highest!",
     isComplete: (state) => {
       let count = 0;
       for (let y = 0; y < state.gridSize; y++) {
@@ -46,9 +46,9 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'build-road',
     title: 'Step 2: Build Roads',
-    description: "Buildings need road access to develop. Connect your zones to the existing roads.",
+    description: "Roads connect zones to the city network. Without road access, zones can't develop into buildings.",
     objective: 'Build a road connecting to your zones',
-    tip: "Select the Road tool and click to place road tiles next to your zones.",
+    tip: "WHY: Buildings check for road adjacency before growing. No road = no development. Roads also affect land value and traffic flow.",
     isComplete: (state) => {
       let hasRoad = false;
       for (let y = 0; y < state.gridSize; y++) {
@@ -67,9 +67,9 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'build-power',
     title: 'Step 3: Power Your City',
-    description: "Buildings need electricity to function. Build a power plant to supply power.",
+    description: "Power plants supply electricity in a radius around them. Unpowered buildings don't function.",
     objective: 'Build a Power Plant',
-    tip: "Go to Buildings > Utilities and select Power Plant. Place it near your zones.",
+    tip: "WHY: No power = no zone development, no crypto yields, unhappy citizens. Power plants also affect crypto building output!",
     isComplete: (state) => {
       for (let y = 0; y < state.gridSize; y++) {
         for (let x = 0; x < state.gridSize; x++) {
@@ -83,9 +83,9 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'build-water',
     title: 'Step 4: Water Supply',
-    description: "Citizens also need water. Build a water tower to supply your city.",
+    description: "Water towers provide water service. Like power, buildings need water to develop and function.",
     objective: 'Build a Water Tower',
-    tip: "Water towers are also in Utilities. Place it where it can serve your zones.",
+    tip: "WHY: Water affects health, happiness, and building growth. Place strategically to maximize coverage radius.",
     isComplete: (state) => {
       for (let y = 0; y < state.gridSize; y++) {
         for (let x = 0; x < state.gridSize; x++) {
@@ -99,9 +99,9 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'zone-commercial',
     title: 'Step 5: Add Commerce',
-    description: "Your citizens need places to work and shop. Commercial zones (blue) create jobs and services.",
+    description: "Commercial zones (blue) create jobs AND generate sales tax when citizens shop. They buffer industrial pollution too!",
     objective: 'Place at least 2 commercial zone tiles',
-    tip: "Balance is key - too much commercial without enough residential means no workers!",
+    tip: "WHY: Jobs attract more residents. Sales tax boosts income. Pro tip: Place commercial between residential and industrial - it buffers pollution!",
     isComplete: (state) => {
       let count = 0;
       for (let y = 0; y < state.gridSize; y++) {
@@ -116,17 +116,17 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'crypto-intro',
     title: 'Step 6: The Crypto Economy',
-    description: "Now for the fun part! Crypto buildings generate yield and boost your treasury. But beware - some have rug risk!",
+    description: "Crypto buildings generate passive yield for your treasury - like staking rewards for your city. But watch the Risk meter!",
     objective: 'Open the Crypto Buildings panel',
-    tip: "Click the '₿ Crypto Buildings' button in the sidebar to see 92 crypto-themed buildings.",
+    tip: "WHY: Crypto yields can multiply your income but HIGH-RISK buildings can 'rug' (get destroyed). Start with LOW risk buildings, diversify across chains!",
     isComplete: (state) => state.activePanel === 'crypto',
   },
   {
     id: 'complete',
     title: 'Tutorial Complete!',
-    description: "You've learned the basics! Now explore on your own. Build DeFi towers, survive rug pulls, and grow your city!",
+    description: "You know the basics! Watch the Fear & Greed meter - it affects ALL crypto yields. Diversify your buildings and survive the rug pulls!",
     objective: 'Start building your crypto empire',
-    tip: "Watch your market sentiment, diversify your crypto buildings, and have fun!",
+    tip: "Remember: Treasury at $0 triggers bankruptcy (buildings decay). Daily rewards help - come back every day for streak bonuses!",
     isComplete: () => true,
   },
 ];
