@@ -67,4 +67,5 @@ export {
   cryptoEvents,
   CRYPTO_EVENTS,
 } from './CryptoEventManager';
+export type { RugPullCallback } from './CryptoEventManager';
 

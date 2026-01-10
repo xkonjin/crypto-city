@@ -186,6 +186,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
 // EVENT MANAGER CLASS
 // =============================================================================
 
+export type RugPullCallback = (buildingId: string, buildingName: string) => void;
+
 export class CryptoEventManager {
   private activeEvents: Map<string, CryptoEvent> = new Map();
   private eventHistory: CryptoEvent[] = [];
@@ -193,6 +195,12 @@ export class CryptoEventManager {
   private checkInterval: ReturnType<typeof setInterval> | null = null;
   // Changed to pass full active events array instead of single event
   private listeners: Set<(events: CryptoEvent[]) => void> = new Set();
+  
+  // Rug pull callback for destroying buildings
+  private rugPullCallback: RugPullCallback | null = null;
+  
+  // Track crypto buildings in the city (building id -> position)
+  private cryptoBuildingsInCity: Map<string, { x: number; y: number; name: string }> = new Map();
   
   // Configuration
   private eventCheckInterval = 5000; // Check every 5 seconds
@@ -230,6 +238,62 @@ export class CryptoEventManager {
    */
   setEconomyManager(manager: CryptoEconomyManager): void {
     this.economyManager = manager;
+  }
+  
+  // ---------------------------------------------------------------------------
+  // RUG PULL BUILDING DESTRUCTION
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Set callback for when rug pull events destroy a building
+   */
+  setRugPullCallback(callback: RugPullCallback): void {
+    this.rugPullCallback = callback;
+  }
+  
+  /**
+   * Register a crypto building in the city for potential rug pulls
+   */
+  registerCryptoBuilding(buildingId: string, x: number, y: number, name: string): void {
+    this.cryptoBuildingsInCity.set(`${buildingId}_${x}_${y}`, { x, y, name });
+  }
+  
+  /**
+   * Unregister a crypto building (e.g., when bulldozed)
+   */
+  unregisterCryptoBuilding(buildingId: string, x: number, y: number): void {
+    this.cryptoBuildingsInCity.delete(`${buildingId}_${x}_${y}`);
+  }
+  
+  /**
+   * Clear all registered buildings (e.g., on new game)
+   */
+  clearCryptoBuildings(): void {
+    this.cryptoBuildingsInCity.clear();
+  }
+  
+  /**
+   * Attempt to rug a random crypto building
+   * Returns the building info if one was rugged, null otherwise
+   */
+  private triggerBuildingRug(): { x: number; y: number; name: string } | null {
+    if (this.cryptoBuildingsInCity.size === 0) return null;
+    
+    // Get a random building
+    const entries = Array.from(this.cryptoBuildingsInCity.entries());
+    const randomIndex = Math.floor(Math.random() * entries.length);
+    const [key, building] = entries[randomIndex];
+    
+    // Remove from tracking
+    this.cryptoBuildingsInCity.delete(key);
+    
+    // Notify via callback
+    if (this.rugPullCallback) {
+      const buildingId = key.split('_')[0];
+      this.rugPullCallback(buildingId, building.name);
+    }
+    
+    return building;
   }
   
   // ---------------------------------------------------------------------------
@@ -491,6 +555,16 @@ export class CryptoEventManager {
       const change = state.treasury * (1 - effects.treasuryMultiplier);
       if (change > 0) {
         this.economyManager.spend(change);
+      }
+    }
+    
+    // RUG PULL: Destroy a random crypto building!
+    if (event.type === 'rug_pull') {
+      const ruggedBuilding = this.triggerBuildingRug();
+      if (ruggedBuilding) {
+        // Update event description to include the rugged building
+        event.description = `${ruggedBuilding.name} has been rugged! Treasury and sentiment take a hit.`;
+        console.log(`[CryptoEventManager] Rug pull destroyed: ${ruggedBuilding.name} at (${ruggedBuilding.x}, ${ruggedBuilding.y})`);
       }
     }
     
