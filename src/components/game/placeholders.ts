@@ -8,12 +8,103 @@
 import { getCryptoBuilding } from '@/games/isocity/crypto/buildings';
 import type { CryptoCategory, CryptoBuildingDefinition } from '@/games/isocity/crypto/types';
 
-// Cache for loaded crypto building sprites
-const cryptoSpriteCache = new Map<string, HTMLImageElement>();
+// Cache for loaded and processed crypto building sprites (with transparent backgrounds)
+const cryptoSpriteCache = new Map<string, HTMLCanvasElement>();
 const loadingSprites = new Set<string>();
 
+// Background colors to make transparent (common AI-generated image backgrounds)
+const BACKGROUND_COLORS = [
+  { r: 255, g: 255, b: 255 }, // White
+  { r: 254, g: 254, b: 254 }, // Near-white
+  { r: 250, g: 250, b: 250 }, // Light gray
+  { r: 245, g: 245, b: 245 }, // Lighter gray
+  { r: 240, g: 240, b: 240 }, // Gray
+];
+const COLOR_THRESHOLD = 30; // Distance threshold for background detection
+
 /**
- * Load a crypto building sprite image
+ * Remove background from sprite image by making similar colors transparent
+ */
+function removeBackground(img: HTMLImageElement): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return canvas;
+  
+  ctx.drawImage(img, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  
+  // Sample corners to detect background color
+  const cornerSamples = [
+    0, // top-left
+    (canvas.width - 1) * 4, // top-right
+    (canvas.height - 1) * canvas.width * 4, // bottom-left
+    ((canvas.height - 1) * canvas.width + (canvas.width - 1)) * 4, // bottom-right
+  ];
+  
+  // Detect dominant background color from corners
+  let bgR = 0, bgG = 0, bgB = 0, count = 0;
+  for (const idx of cornerSamples) {
+    if (data[idx + 3] > 0) { // Only count non-transparent pixels
+      bgR += data[idx];
+      bgG += data[idx + 1];
+      bgB += data[idx + 2];
+      count++;
+    }
+  }
+  
+  if (count > 0) {
+    bgR = Math.round(bgR / count);
+    bgG = Math.round(bgG / count);
+    bgB = Math.round(bgB / count);
+  } else {
+    // Default to white if corners are transparent
+    bgR = bgG = bgB = 255;
+  }
+  
+  // Make pixels close to background color transparent
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    
+    // Check distance from detected background
+    const distFromBg = Math.sqrt(
+      Math.pow(r - bgR, 2) +
+      Math.pow(g - bgG, 2) +
+      Math.pow(b - bgB, 2)
+    );
+    
+    // Also check against known background colors
+    let isBackground = distFromBg <= COLOR_THRESHOLD;
+    if (!isBackground) {
+      for (const bg of BACKGROUND_COLORS) {
+        const dist = Math.sqrt(
+          Math.pow(r - bg.r, 2) +
+          Math.pow(g - bg.g, 2) +
+          Math.pow(b - bg.b, 2)
+        );
+        if (dist <= COLOR_THRESHOLD) {
+          isBackground = true;
+          break;
+        }
+      }
+    }
+    
+    if (isBackground) {
+      data[i + 3] = 0; // Make transparent
+    }
+  }
+  
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
+}
+
+/**
+ * Load a crypto building sprite image and remove its background
  */
 export function loadCryptoBuildingSprite(building: CryptoBuildingDefinition): void {
   if (building.isProcedural || !building.sprites?.south) return;
@@ -24,8 +115,11 @@ export function loadCryptoBuildingSprite(building: CryptoBuildingDefinition): vo
   loadingSprites.add(spritePath);
   
   const img = new Image();
+  img.crossOrigin = 'anonymous';
   img.onload = () => {
-    cryptoSpriteCache.set(spritePath, img);
+    // Process the image to remove background
+    const processedCanvas = removeBackground(img);
+    cryptoSpriteCache.set(spritePath, processedCanvas);
     loadingSprites.delete(spritePath);
   };
   img.onerror = () => {
@@ -36,9 +130,9 @@ export function loadCryptoBuildingSprite(building: CryptoBuildingDefinition): vo
 }
 
 /**
- * Get a loaded crypto building sprite
+ * Get a loaded crypto building sprite (as canvas with transparent background)
  */
-export function getCryptoBuildingSprite(building: CryptoBuildingDefinition): HTMLImageElement | null {
+export function getCryptoBuildingSprite(building: CryptoBuildingDefinition): HTMLCanvasElement | null {
   if (building.isProcedural || !building.sprites?.south) return null;
   return cryptoSpriteCache.get(building.sprites.south) || null;
 }

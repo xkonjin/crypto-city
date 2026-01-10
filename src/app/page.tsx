@@ -635,101 +635,269 @@ export default function HomePage() {
     );
   }
 
-  // Desktop landing page
+  // Desktop landing page - Retro Pixel Art Style
   return (
     <MultiplayerContextProvider>
-      <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-8">
-        <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-16 items-center">
-          {/* Left - Title and Start Button */}
-          <div className="flex flex-col items-center lg:items-start justify-center space-y-12">
-            <h1 className="text-8xl font-light tracking-wider text-white/90">
-              CryptoCity
-            </h1>
-            <div className="flex flex-col gap-3">
-              <Button
-                onClick={() => setShowGame(true)}
-                className="w-64 py-8 text-2xl font-light tracking-wide bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-none transition-all duration-300"
-              >
-                {hasSaved ? "Continue" : "New Game"}
-              </Button>
-              <Button
-                onClick={() => setShowCoopModal(true)}
-                variant="outline"
-                className="w-64 py-8 text-2xl font-light tracking-wide bg-white/5 hover:bg-white/15 text-white/60 hover:text-white border border-white/15 rounded-none transition-all duration-300"
-              >
-                Co-op
-              </Button>
-              <Button
-                onClick={async () => {
-                  // Clear any room code from URL to prevent multiplayer conflicts
-                  if (window.location.search.includes("room=")) {
-                    window.history.replaceState({}, "", "/");
-                    setPendingRoomCode(null);
-                  }
-                  const response = await fetch(
-                    "/example-states/example_state_9.json",
-                  );
-                  const exampleState = await response.json();
-                  try {
-                    const compressed = compressToUTF16(
-                      JSON.stringify(exampleState),
-                    );
-                    localStorage.setItem(STORAGE_KEY, compressed);
-                  } catch (e) {
-                    console.error("Failed to save example state:", e);
-                  }
-                  setShowGame(true);
-                }}
-                variant="outline"
-                className="w-64 py-8 text-2xl font-light tracking-wide bg-transparent hover:bg-white/10 text-white/40 hover:text-white/60 border border-white/10 rounded-none transition-all duration-300"
-              >
-                Load Example
-              </Button>
-              <div className="flex items-center justify-between w-64">
-                <a
-                  href="https://github.com/amilich/isometric-city"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-left py-2 text-sm font-light tracking-wide text-white/40 hover:text-white/70 transition-colors duration-200"
-                >
-                  Open GitHub
-                </a>
-                <LanguageSelector
-                  variant="ghost"
-                  className="text-white/40 hover:text-white/70 hover:bg-white/10"
-                />
-              </div>
-            </div>
+      <main 
+        className="min-h-screen flex items-center justify-center p-8 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(180deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%)',
+          imageRendering: 'pixelated',
+        }}
+      >
+        {/* Pixel grid overlay for retro feel */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.1) 3px, rgba(255,255,255,0.1) 4px), repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.1) 3px, rgba(255,255,255,0.1) 4px)',
+          }}
+        />
+        
+        {/* Decorative pixel stars */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(30)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-white/40"
+              style={{
+                left: `${(i * 37) % 100}%`,
+                top: `${(i * 23) % 100}%`,
+                animation: `twinkle ${2 + (i % 3)}s ease-in-out infinite`,
+                animationDelay: `${i * 0.2}s`,
+              }}
+            />
+          ))}
+        </div>
+        
+        <style jsx>{`
+          @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.8; }
+          }
+        `}</style>
 
-            {/* Saved Cities */}
-            {savedCities.length > 0 && (
-              <div className="w-64">
-                <h2 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-                  Saved Cities
-                </h2>
-                <div
-                  className="flex flex-col gap-2 max-h-64 overflow-y-auto overscroll-y-contain"
-                  style={{
-                    WebkitOverflowScrolling: "touch",
-                    touchAction: "pan-y",
-                  }}
-                >
-                  {savedCities.slice(0, 5).map((city) => (
-                    <SavedCityCard
-                      key={city.id}
-                      city={city}
-                      onLoad={() => loadSavedCity(city)}
-                      onDelete={() => deleteSavedCity(city)}
+        <div className="max-w-6xl w-full flex flex-col items-center gap-8 relative z-10">
+          {/* Retro Frame Border */}
+          <div 
+            className="w-full p-1 relative"
+            style={{
+              background: 'linear-gradient(135deg, #8b7355 0%, #5c4033 50%, #3d2817 100%)',
+              boxShadow: 'inset 0 0 0 2px #2d1810, inset 0 0 0 4px #a08060, 4px 4px 0 rgba(0,0,0,0.5)',
+            }}
+          >
+            {/* Inner content area with parchment-like background */}
+            <div 
+              className="relative p-8"
+              style={{
+                background: 'linear-gradient(180deg, #2d1b4e 0%, #1a1030 100%)',
+                boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
+              }}
+            >
+              {/* Gold corner decorations */}
+              <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-amber-600/60" />
+              <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-amber-600/60" />
+              <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-amber-600/60" />
+              <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-amber-600/60" />
+              
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                {/* Left - Title and Menu */}
+                <div className="flex flex-col items-center lg:items-start space-y-8">
+                  {/* Pixel Art Title */}
+                  <div className="text-center lg:text-left">
+                    <h1 
+                      className="text-6xl lg:text-7xl font-bold tracking-tight mb-2"
+                      style={{
+                        fontFamily: 'monospace',
+                        color: '#ffd700',
+                        textShadow: '3px 3px 0 #b8860b, 6px 6px 0 #8b6914, -1px -1px 0 #fff8dc',
+                        letterSpacing: '-2px',
+                      }}
+                    >
+                      CRYPTO
+                    </h1>
+                    <h1 
+                      className="text-6xl lg:text-7xl font-bold tracking-tight"
+                      style={{
+                        fontFamily: 'monospace',
+                        color: '#00ffcc',
+                        textShadow: '3px 3px 0 #00997a, 6px 6px 0 #006652, -1px -1px 0 #b2fff0',
+                        letterSpacing: '-2px',
+                      }}
+                    >
+                      CITY
+                    </h1>
+                    <p 
+                      className="mt-4 text-sm tracking-widest uppercase"
+                      style={{
+                        fontFamily: 'monospace',
+                        color: '#a0a0a0',
+                        textShadow: '1px 1px 0 rgba(0,0,0,0.5)',
+                      }}
+                    >
+                      Build Your DeFi Empire
+                    </p>
+                  </div>
+
+                  {/* Retro Menu Buttons */}
+                  <div className="flex flex-col gap-3 w-full max-w-xs">
+                    <button
+                      onClick={() => setShowGame(true)}
+                      className="group relative w-full py-4 px-6 text-lg font-bold uppercase tracking-wider transition-all duration-150"
+                      style={{
+                        fontFamily: 'monospace',
+                        background: 'linear-gradient(180deg, #4a3728 0%, #2d1f15 100%)',
+                        border: '3px solid #8b7355',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -2px 0 rgba(0,0,0,0.3), 3px 3px 0 rgba(0,0,0,0.4)',
+                        color: '#ffd700',
+                        textShadow: '1px 1px 0 rgba(0,0,0,0.5)',
+                      }}
+                    >
+                      <span className="relative z-10">{hasSaved ? "▸ Continue" : "▸ New Game"}</span>
+                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+
+                    <button
+                      onClick={() => setShowCoopModal(true)}
+                      className="group relative w-full py-4 px-6 text-lg font-bold uppercase tracking-wider transition-all duration-150"
+                      style={{
+                        fontFamily: 'monospace',
+                        background: 'linear-gradient(180deg, #3a2a4a 0%, #251a30 100%)',
+                        border: '3px solid #6b5b7b',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -2px 0 rgba(0,0,0,0.3), 3px 3px 0 rgba(0,0,0,0.4)',
+                        color: '#b8a0d0',
+                        textShadow: '1px 1px 0 rgba(0,0,0,0.5)',
+                      }}
+                    >
+                      <span className="relative z-10">▸ Co-op Mode</span>
+                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        if (window.location.search.includes("room=")) {
+                          window.history.replaceState({}, "", "/");
+                          setPendingRoomCode(null);
+                        }
+                        const response = await fetch("/example-states/example_state_9.json");
+                        const exampleState = await response.json();
+                        try {
+                          const compressed = compressToUTF16(JSON.stringify(exampleState));
+                          localStorage.setItem(STORAGE_KEY, compressed);
+                        } catch (e) {
+                          console.error("Failed to save example state:", e);
+                        }
+                        setShowGame(true);
+                      }}
+                      className="group relative w-full py-4 px-6 text-lg font-bold uppercase tracking-wider transition-all duration-150"
+                      style={{
+                        fontFamily: 'monospace',
+                        background: 'linear-gradient(180deg, #2a3a4a 0%, #1a2530 100%)',
+                        border: '3px solid #5b6b7b',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -2px 0 rgba(0,0,0,0.3), 3px 3px 0 rgba(0,0,0,0.4)',
+                        color: '#a0b8d0',
+                        textShadow: '1px 1px 0 rgba(0,0,0,0.5)',
+                      }}
+                    >
+                      <span className="relative z-10">▸ Load Example</span>
+                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  </div>
+
+                  {/* Footer Links */}
+                  <div className="flex items-center gap-4 w-full max-w-xs">
+                    <a
+                      href="https://github.com/amilich/isometric-city"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs tracking-wider uppercase hover:text-amber-400 transition-colors"
+                      style={{
+                        fontFamily: 'monospace',
+                        color: '#6b5b7b',
+                      }}
+                    >
+                      GitHub
+                    </a>
+                    <span style={{ color: '#3d2d4d' }}>|</span>
+                    <LanguageSelector
+                      variant="ghost"
+                      className="text-[#6b5b7b] hover:text-amber-400 hover:bg-transparent p-0 h-auto text-xs"
                     />
-                  ))}
+                  </div>
+
+                  {/* Saved Cities */}
+                  {savedCities.length > 0 && (
+                    <div className="w-full max-w-xs">
+                      <h2 
+                        className="text-xs font-bold uppercase tracking-wider mb-2 pb-1 border-b"
+                        style={{
+                          fontFamily: 'monospace',
+                          color: '#8b7355',
+                          borderColor: '#3d2d4d',
+                        }}
+                      >
+                        ▾ Saved Cities
+                      </h2>
+                      <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
+                        {savedCities.slice(0, 5).map((city) => (
+                          <button
+                            key={city.id}
+                            onClick={() => loadSavedCity(city)}
+                            className="group w-full text-left px-3 py-2 text-xs transition-all"
+                            style={{
+                              fontFamily: 'monospace',
+                              background: 'rgba(60,40,30,0.5)',
+                              border: '1px solid #4a3728',
+                              color: '#a08060',
+                            }}
+                          >
+                            <div className="flex justify-between items-center">
+                              <span className="group-hover:text-amber-400 transition-colors truncate">
+                                {city.cityName}
+                              </span>
+                              <span className="text-[10px] opacity-60">
+                                ${city.money.toLocaleString()}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right - Sprite Gallery with decorative frame */}
+                <div className="flex justify-center lg:justify-end">
+                  <div 
+                    className="relative p-3"
+                    style={{
+                      background: 'linear-gradient(135deg, #5c4033 0%, #3d2817 100%)',
+                      boxShadow: 'inset 0 0 0 2px #2d1810, inset 0 0 0 4px #7a6045, 4px 4px 0 rgba(0,0,0,0.5)',
+                    }}
+                  >
+                    <div 
+                      className="p-2"
+                      style={{
+                        background: '#0a0510',
+                        boxShadow: 'inset 0 0 10px rgba(0,0,0,0.8)',
+                      }}
+                    >
+                      <SpriteGallery count={16} cellSize={100} />
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Right - Sprite Gallery */}
-          <div className="flex justify-center lg:justify-end">
-            <SpriteGallery count={16} />
+          {/* Version badge */}
+          <div 
+            className="text-[10px] tracking-widest uppercase"
+            style={{
+              fontFamily: 'monospace',
+              color: '#4a3a5a',
+            }}
+          >
+            v1.0 • A Crypto City Builder
           </div>
         </div>
 
