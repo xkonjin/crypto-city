@@ -19,8 +19,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useCheatCodes } from "@/hooks/useCheatCodes";
 import { VinnieDialog } from "@/components/VinnieDialog";
 import { CommandMenu } from "@/components/ui/CommandMenu";
-import { TipToast } from "@/components/ui/TipToast";
-import { useTipSystem } from "@/hooks/useTipSystem";
+import { CobieNarrator } from "@/components/game/CobieNarrator";
+import { useCobieNarrator } from "@/hooks/useCobieNarrator";
 import { useMultiplayerSync } from "@/hooks/useMultiplayerSync";
 import { useMultiplayerOptional } from "@/context/MultiplayerContext";
 import { ShareModal } from "@/components/multiplayer/ShareModal";
@@ -130,13 +130,15 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     clearTriggeredCheat,
   } = useCheatCodes();
 
-  // Tip system for helping new players
+  // Cobie narrator system - sardonic tips and commentary
   const {
-    currentTip,
-    isVisible: isTipVisible,
-    onContinue: onTipContinue,
-    onSkipAll: onTipSkipAll,
-  } = useTipSystem(state);
+    currentMessage: cobieMessage,
+    isVisible: isCobieVisible,
+    onDismiss: onCobieDismiss,
+    onDisableCobie,
+    triggerReaction: triggerCobieReaction,
+    triggerMilestone: triggerCobieMilestone,
+  } = useCobieNarrator(state);
 
   // Multiplayer sync
   const {
@@ -479,12 +481,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             onOpenChange={setShowVinnieDialog}
           />
 
-          {/* Tip Toast for helping new players */}
-          <TipToast
-            message={currentTip || ""}
-            isVisible={isTipVisible}
-            onContinue={onTipContinue}
-            onSkipAll={onTipSkipAll}
+          {/* Cobie Narrator for sardonic tips and commentary */}
+          <CobieNarrator
+            message={cobieMessage}
+            isVisible={isCobieVisible}
+            onDismiss={onCobieDismiss}
+            onDisableCobie={onDisableCobie}
           />
         </div>
       </TooltipProvider>
@@ -620,12 +622,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           />
           <CommandMenu />
 
-          {/* Tip Toast for helping new players */}
-          <TipToast
-            message={currentTip || ""}
-            isVisible={isTipVisible}
-            onContinue={onTipContinue}
-            onSkipAll={onTipSkipAll}
+          {/* Cobie Narrator for sardonic tips and commentary */}
+          <CobieNarrator
+            message={cobieMessage}
+            isVisible={isCobieVisible}
+            onDismiss={onCobieDismiss}
+            onDisableCobie={onDisableCobie}
           />
         </div>
 
