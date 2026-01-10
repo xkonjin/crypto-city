@@ -1,6 +1,6 @@
 # CRYPTO BUILDING SPRITES
 
-Sprite assets for 99 crypto-themed buildings. Organized by category.
+Sprite assets for 93 crypto-themed buildings (4 stablecoins after dai_vault addition). Organized by category.
 
 ## STRUCTURE
 
@@ -48,10 +48,11 @@ crypto/
 │   ├── 3x3plasma_reactor_south.png
 │   └── ...
 │
-└── stablecoin/      # Stablecoin issuers (3)
-    ├── 3x3tether_hq_south.png
-    ├── 3x3circle_tower_south.png
-    └── 2x2dai_vault_south.png
+└── stablecoin/      # Stablecoin issuers (4)
+    ├── 3x3tether_hq_south.png    → Tether HQ (footprint: 3x3)
+    ├── 3x3circle_tower_south.png → Circle Tower (USDC)
+    ├── 2x2dai_vault_south.png    → DAI Vault (MakerDAO)
+    └── (ethena_labs is procedural)
 ```
 
 ## NAMING CONVENTION
