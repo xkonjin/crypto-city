@@ -20,6 +20,8 @@ import {
 } from '../../games/isocity/crypto/buildings';
 import { CRYPTO_CATEGORIES } from '../../games/isocity/crypto/buildingRegistry';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import TimeLimitedBanner from '@/components/game/TimeLimitedBanner';
+import type { TimeLimitedOffer } from '@/lib/timeLimitedBuildings';
 
 // =============================================================================
 // TYPES
@@ -27,7 +29,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 interface CryptoBuildingPanelProps {
   selectedBuilding: string | null;
-  onSelectBuilding: (buildingId: string) => void;
+  onSelectBuilding: (buildingId: string, offer?: TimeLimitedOffer) => void;
   treasury: number;
   className?: string;
 }
@@ -256,6 +258,13 @@ export default function CryptoBuildingPanel({
           <span className="text-xs text-gray-400">{CRYPTO_BUILDING_COUNT} total</span>
         </div>
       </div>
+      
+      {/* Time-Limited Offers Banner */}
+      <TimeLimitedBanner 
+        treasury={treasury}
+        onSelectBuilding={onSelectBuilding}
+        className="mx-3 mt-3 mb-2"
+      />
       
       {/* Category tabs */}
       <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-700/50">

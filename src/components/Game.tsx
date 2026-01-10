@@ -48,6 +48,7 @@ import {
   LeaderboardPanel,
   ReferralPanel,
   ChallengesPanel,
+  PrestigePanel,
 } from "@/components/game/panels";
 import { MiniMap } from "@/components/game/MiniMap";
 import { TopBar, StatsPanel } from "@/components/game/TopBar";
@@ -92,6 +93,17 @@ import {
   recordNewDay,
   createInitialChallengeState,
 } from "@/lib/challenges";
+
+// Import prestige system (Issue #45)
+import {
+  PrestigeState,
+  loadPrestigeState,
+  savePrestigeState,
+  createInitialPrestigeState,
+  getTotalStartingTreasuryBonus,
+  getTotalYieldMultiplier,
+  getTotalRugResistance,
+} from "@/lib/prestige";
 
 // Import rug pull animation system (Issue #47)
 import { RugPullAnimation } from "@/components/game/RugPullAnimation";
@@ -182,6 +194,21 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   );
   const previousDayForChallengesRef = useRef(state.day);
   // ==== END WEEKLY CHALLENGES STATE ====
+
+  // ==== PRESTIGE STATE (Issue #45) ====
+  const [prestigeState, setPrestigeState] = useState<PrestigeState>(() => 
+    typeof window !== 'undefined' ? loadPrestigeState() : createInitialPrestigeState()
+  );
+  
+  // Sync prestige bonuses with economy manager when prestige state changes
+  useEffect(() => {
+    const yieldMultiplier = getTotalYieldMultiplier(prestigeState);
+    const rugResistance = getTotalRugResistance(prestigeState);
+    
+    cryptoEconomy.setPrestigeYieldMultiplier(yieldMultiplier);
+    cryptoEconomy.setPrestigeRugResistance(rugResistance);
+  }, [prestigeState]);
+  // ==== END PRESTIGE STATE ====
 
   // Real-world crypto data integration - triggers events from actual market data
   const { data: realCryptoData, blendedData, isOnline, hasData: hasRealData } = useRealCryptoData({
@@ -845,6 +872,42 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   }, [setSpeed]);
   // ==== END GAME END HANDLERS ====
 
+  // ==== PRESTIGE HANDLERS (Issue #45) ====
+  // Handle prestige reset - resets economy but keeps prestige bonuses
+  const handlePrestige = useCallback(() => {
+    // Reset economy to initial state + prestige bonuses
+    const startingTreasuryBonus = getTotalStartingTreasuryBonus(prestigeState);
+    cryptoEconomy.importState({
+      economyState: {
+        treasury: 50000 + startingTreasuryBonus,
+        dailyYield: 0,
+        totalYield: 0,
+        tvl: 0,
+        marketSentiment: 50,
+        buildingCount: 0,
+        lastUpdate: Date.now(),
+        tickCount: 0,
+        bankruptcyCounter: 0,
+        isBankrupt: false,
+        decayingBuildings: [],
+        gameDays: 0,
+        lowHappinessCounter: 0,
+        hadCryptoBuildings: false,
+      },
+      buildings: [],
+    });
+    
+    // TODO: Could also reset city grid here if full prestige reset is desired
+    // For now, just reset the crypto economy
+    
+    addNotification(
+      'Prestige Reset!',
+      `Your crypto empire has reset. Your prestige bonuses remain active.`,
+      'star'
+    );
+  }, [prestigeState, addNotification]);
+  // ==== END PRESTIGE HANDLERS ====
+
   // Mobile layout
   if (isMobile) {
     return (
@@ -964,6 +1027,18 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                 cryptoEconomy.deposit(amount);
               }}
               onUpdateChallengeState={setChallengeState}
+            />
+          )}
+          {state.activePanel === "prestige" && (
+            <PrestigePanel
+              cryptoState={economyState}
+              prestigeState={prestigeState}
+              onUpdatePrestigeState={(newState) => {
+                setPrestigeState(newState);
+                savePrestigeState(newState);
+              }}
+              onPrestige={handlePrestige}
+              gameDays={economyState.gameDays}
             />
           )}
 
@@ -1161,6 +1236,18 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                 cryptoEconomy.deposit(amount);
               }}
               onUpdateChallengeState={setChallengeState}
+            />
+          )}
+          {state.activePanel === "prestige" && (
+            <PrestigePanel
+              cryptoState={economyState}
+              prestigeState={prestigeState}
+              onUpdatePrestigeState={(newState) => {
+                setPrestigeState(newState);
+                savePrestigeState(newState);
+              }}
+              onPrestige={handlePrestige}
+              gameDays={economyState.gameDays}
             />
           )}
 

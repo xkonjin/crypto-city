@@ -134,6 +134,16 @@ export class CryptoEconomyManager {
   private lastTickYield: number = 0;
   
   // ---------------------------------------------------------------------------
+  // PRESTIGE SYSTEM INTEGRATION (Issue #45)
+  // ---------------------------------------------------------------------------
+  
+  /** Prestige yield multiplier - bonus from prestige purchases */
+  private prestigeYieldMultiplier: number = 1.0;
+  
+  /** Prestige rug resistance - reduces rug pull losses */
+  private prestigeRugResistance: number = 0;
+  
+  // ---------------------------------------------------------------------------
   // REAL WORLD DATA INTEGRATION
   // ---------------------------------------------------------------------------
   
@@ -511,6 +521,11 @@ export class CryptoEconomyManager {
     adjustedYield *= serviceMultiplier;
     // ==== END CITY INTEGRATION ====
     
+    // ==== PRESTIGE SYSTEM (Issue #45) ====
+    // Apply prestige yield multiplier from purchased bonuses
+    adjustedYield *= this.prestigeYieldMultiplier;
+    // ==== END PRESTIGE SYSTEM ====
+    
     // Update state
     this.state = {
       ...this.state,
@@ -847,7 +862,9 @@ export class CryptoEconomyManager {
         // Treasury and sentiment hit
         // Scale rug losses to 10% of treasury (minimum $5,000)
         // This makes late-game rug pulls actually meaningful
-        const rugLoss = Math.max(5000, Math.floor(this.state.treasury * 0.10)) * magnitude;
+        // Apply prestige rug resistance to reduce losses (Issue #45)
+        const rugResistanceMultiplier = 1 - this.prestigeRugResistance;
+        const rugLoss = Math.max(5000, Math.floor(this.state.treasury * 0.10)) * magnitude * rugResistanceMultiplier;
         this.state.treasury = Math.max(0, this.state.treasury - rugLoss);
         this.state.marketSentiment = Math.max(0, this.state.marketSentiment - 15);
         break;
@@ -1127,6 +1144,41 @@ export class CryptoEconomyManager {
       serviceMultiplier,
       effectiveYieldMultiplier: populationBonus * serviceMultiplier,
     };
+  }
+  
+  // ---------------------------------------------------------------------------
+  // PRESTIGE SYSTEM (Issue #45)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Set the prestige yield multiplier (from purchased bonuses)
+   * @param multiplier - Yield multiplier (e.g., 1.05 for +5%)
+   */
+  setPrestigeYieldMultiplier(multiplier: number): void {
+    this.prestigeYieldMultiplier = Math.max(1.0, multiplier);
+    this.recalculateEconomy();
+  }
+  
+  /**
+   * Get current prestige yield multiplier
+   */
+  getPrestigeYieldMultiplier(): number {
+    return this.prestigeYieldMultiplier;
+  }
+  
+  /**
+   * Set the prestige rug resistance (from purchased bonuses)
+   * @param resistance - Resistance factor (0-0.5, e.g., 0.1 for -10% losses)
+   */
+  setPrestigeRugResistance(resistance: number): void {
+    this.prestigeRugResistance = Math.max(0, Math.min(0.5, resistance));
+  }
+  
+  /**
+   * Get current prestige rug resistance
+   */
+  getPrestigeRugResistance(): number {
+    return this.prestigeRugResistance;
   }
   
   // ---------------------------------------------------------------------------
