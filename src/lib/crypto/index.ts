@@ -24,6 +24,7 @@ export { CryptoDataCache, cryptoCache } from './cache/cryptoDataCache';
 export {
   // Main fetch function
   fetchAllCryptoData,
+  fetchAllCryptoDataWithErrors,
   checkAllApiHealth,
   // DeFi Llama
   fetchDefiLlamaData,
@@ -108,6 +109,8 @@ export {
 // =============================================================================
 // TYPES
 // =============================================================================
+
+export type { FetchAllCryptoDataResult } from './api';
 
 export type {
   // Cache types

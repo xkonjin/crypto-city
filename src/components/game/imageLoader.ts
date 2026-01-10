@@ -69,12 +69,49 @@ function notifyImageLoaded() {
   imageLoadCallbacks.forEach(cb => cb());
 }
 
+// Fallback placeholder for failed asset loads
+let fallbackPlaceholder: HTMLImageElement | null = null;
+
+/**
+ * Create a fallback placeholder image for failed asset loads
+ */
+function createFallbackPlaceholder(): HTMLImageElement {
+  if (fallbackPlaceholder) return fallbackPlaceholder;
+  
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    // Draw a simple placeholder pattern
+    ctx.fillStyle = '#3f3f46'; // Dark gray background
+    ctx.fillRect(0, 0, 64, 64);
+    ctx.strokeStyle = '#52525b';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(2, 2, 60, 60);
+    // Draw X pattern to indicate missing asset
+    ctx.strokeStyle = '#71717a';
+    ctx.beginPath();
+    ctx.moveTo(16, 16);
+    ctx.lineTo(48, 48);
+    ctx.moveTo(48, 16);
+    ctx.lineTo(16, 48);
+    ctx.stroke();
+  }
+  
+  const img = new Image();
+  img.src = canvas.toDataURL();
+  fallbackPlaceholder = img;
+  return img;
+}
+
 /**
  * Load an image directly without WebP optimization
  * @param src The image source path
+ * @param useFallback If true, returns fallback placeholder on error instead of rejecting
  * @returns Promise resolving to the loaded image
  */
-function loadImageDirect(src: string): Promise<HTMLImageElement> {
+function loadImageDirect(src: string, useFallback = false): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -82,7 +119,16 @@ function loadImageDirect(src: string): Promise<HTMLImageElement> {
       notifyImageLoaded();
       resolve(img);
     };
-    img.onerror = reject;
+    img.onerror = (err) => {
+      if (useFallback) {
+        console.warn(`[ImageLoader] Failed to load asset: ${src}, using fallback`);
+        const placeholder = createFallbackPlaceholder();
+        imageCache.set(src, placeholder); // Cache fallback to avoid repeated warnings
+        resolve(placeholder);
+      } else {
+        reject(err);
+      }
+    };
     img.src = src;
   });
 }
@@ -90,9 +136,10 @@ function loadImageDirect(src: string): Promise<HTMLImageElement> {
 /**
  * Load an image from a source URL, preferring WebP if available
  * @param src The image source path (PNG)
+ * @param useFallback If true, returns fallback placeholder on error instead of rejecting
  * @returns Promise resolving to the loaded image
  */
-export async function loadImage(src: string): Promise<HTMLImageElement> {
+export async function loadImage(src: string, useFallback = true): Promise<HTMLImageElement> {
   // Return cached image if available
   if (imageCache.has(src)) {
     return imageCache.get(src)!;
@@ -106,7 +153,7 @@ export async function loadImage(src: string): Promise<HTMLImageElement> {
     if (supportsWebP) {
       // Try loading WebP first
       try {
-        const img = await loadImageDirect(webpPath);
+        const img = await loadImageDirect(webpPath, false); // Don't use fallback for WebP attempt
         // Also cache under the PNG path for future lookups
         imageCache.set(src, img);
         return img;
@@ -117,8 +164,8 @@ export async function loadImage(src: string): Promise<HTMLImageElement> {
     }
   }
   
-  // Load PNG directly
-  return loadImageDirect(src);
+  // Load PNG directly, with fallback if enabled
+  return loadImageDirect(src, useFallback);
 }
 
 /**

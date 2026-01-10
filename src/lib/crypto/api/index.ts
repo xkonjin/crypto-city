@@ -107,17 +107,46 @@ import { fetchCryptoNews } from './perplexityNews';
 import { fetchTwitterData } from './twitter';
 
 /**
+ * Result of fetchAllCryptoData including error states
+ */
+export interface FetchAllCryptoDataResult {
+  data: RealWorldCryptoData;
+  errors: {
+    prices?: Error;
+    defi?: Error;
+    fearGreed?: Error;
+    news?: Error;
+    twitter?: Error;
+  };
+  hasErrors: boolean;
+  partialSuccess: boolean;
+}
+
+/**
  * Fetch all real-world crypto data from enabled sources
  * Updates the cache and returns the complete data object
  * 
  * This is the main function used by the data sync layer
  * 
  * @param forceRefresh - If true, fetch even if cache is fresh
- * @returns Complete real-world data object
+ * @returns Complete real-world data object with error states
  */
 export async function fetchAllCryptoData(forceRefresh = false): Promise<RealWorldCryptoData> {
+  const result = await fetchAllCryptoDataWithErrors(forceRefresh);
+  return result.data;
+}
+
+/**
+ * Fetch all crypto data with detailed error reporting
+ * Use this when you need to handle partial failures
+ */
+export async function fetchAllCryptoDataWithErrors(forceRefresh = false): Promise<FetchAllCryptoDataResult> {
   console.log('[CryptoAPI] Starting data sync...');
   const startTime = Date.now();
+  
+  const errors: FetchAllCryptoDataResult['errors'] = {};
+  let successCount = 0;
+  let attemptCount = 0;
 
   // Initialize cache if needed
   await cryptoCache.init();
@@ -133,10 +162,17 @@ export async function fetchAllCryptoData(forceRefresh = false): Promise<RealWorl
   if (FEATURES.ENABLE_PRICES) {
     const priceStale = !cached.prices || now > cached.prices.expiresAt;
     if (forceRefresh || priceStale) {
+      attemptCount++;
       fetchPromises.push(
         fetchCoinGeckoData()
-          .then(data => cryptoCache.setPrices(data))
-          .catch(err => console.error('[CryptoAPI] Price fetch failed:', err))
+          .then(data => {
+            successCount++;
+            return cryptoCache.setPrices(data);
+          })
+          .catch(err => {
+            console.error('[CryptoAPI] Price fetch failed:', err);
+            errors.prices = err instanceof Error ? err : new Error(String(err));
+          })
       );
     }
   }
@@ -145,10 +181,17 @@ export async function fetchAllCryptoData(forceRefresh = false): Promise<RealWorl
   if (FEATURES.ENABLE_DEFI) {
     const defiStale = !cached.defi || now > cached.defi.expiresAt;
     if (forceRefresh || defiStale) {
+      attemptCount++;
       fetchPromises.push(
         fetchDefiLlamaData()
-          .then(data => cryptoCache.setDefiData(data))
-          .catch(err => console.error('[CryptoAPI] DeFi fetch failed:', err))
+          .then(data => {
+            successCount++;
+            return cryptoCache.setDefiData(data);
+          })
+          .catch(err => {
+            console.error('[CryptoAPI] DeFi fetch failed:', err);
+            errors.defi = err instanceof Error ? err : new Error(String(err));
+          })
       );
     }
   }
@@ -157,10 +200,17 @@ export async function fetchAllCryptoData(forceRefresh = false): Promise<RealWorl
   if (FEATURES.ENABLE_FEAR_GREED) {
     const fgStale = !cached.fearGreed || now > cached.fearGreed.expiresAt;
     if (forceRefresh || fgStale) {
+      attemptCount++;
       fetchPromises.push(
         fetchFearGreedData()
-          .then(data => cryptoCache.setFearGreed(data))
-          .catch(err => console.error('[CryptoAPI] Fear & Greed fetch failed:', err))
+          .then(data => {
+            successCount++;
+            return cryptoCache.setFearGreed(data);
+          })
+          .catch(err => {
+            console.error('[CryptoAPI] Fear & Greed fetch failed:', err);
+            errors.fearGreed = err instanceof Error ? err : new Error(String(err));
+          })
       );
     }
   }
@@ -169,9 +219,11 @@ export async function fetchAllCryptoData(forceRefresh = false): Promise<RealWorl
   if (FEATURES.ENABLE_NEWS) {
     const newsStale = !cached.news || now > cached.news.expiresAt;
     if (forceRefresh || newsStale) {
+      attemptCount++;
       fetchPromises.push(
         fetchCryptoNews()
           .then(data => {
+            successCount++;
             // Map Perplexity response to NewsData format
             const now = Date.now();
             const newsData = {
@@ -190,7 +242,10 @@ export async function fetchAllCryptoData(forceRefresh = false): Promise<RealWorl
             };
             return cryptoCache.setNews(newsData);
           })
-          .catch(err => console.error('[CryptoAPI] News fetch failed:', err))
+          .catch(err => {
+            console.error('[CryptoAPI] News fetch failed:', err);
+            errors.news = err instanceof Error ? err : new Error(String(err));
+          })
       );
     }
   }
@@ -199,10 +254,17 @@ export async function fetchAllCryptoData(forceRefresh = false): Promise<RealWorl
   if (FEATURES.ENABLE_TWITTER) {
     const twitterStale = !cached.twitter || now > cached.twitter.expiresAt;
     if (forceRefresh || twitterStale) {
+      attemptCount++;
       fetchPromises.push(
         fetchTwitterData()
-          .then(data => cryptoCache.setTwitter(data))
-          .catch(err => console.error('[CryptoAPI] Twitter fetch failed:', err))
+          .then(data => {
+            successCount++;
+            return cryptoCache.setTwitter(data);
+          })
+          .catch(err => {
+            console.error('[CryptoAPI] Twitter fetch failed:', err);
+            errors.twitter = err instanceof Error ? err : new Error(String(err));
+          })
       );
     }
   }
@@ -214,12 +276,20 @@ export async function fetchAllCryptoData(forceRefresh = false): Promise<RealWorl
   }
 
   // Get fresh data from cache
-  const result = await cryptoCache.getAllData(true);
+  const data = await cryptoCache.getAllData(true);
 
   const elapsed = Date.now() - startTime;
-  console.log(`[CryptoAPI] Sync completed in ${elapsed}ms`);
+  const hasErrors = Object.keys(errors).length > 0;
+  const partialSuccess = successCount > 0 && hasErrors;
+  
+  console.log(`[CryptoAPI] Sync completed in ${elapsed}ms (${successCount}/${attemptCount} succeeded${hasErrors ? ', with errors' : ''})`);
 
-  return result;
+  return {
+    data,
+    errors,
+    hasErrors,
+    partialSuccess,
+  };
 }
 
 /**
