@@ -42,6 +42,7 @@ import {
 import { MiniMap } from "@/components/game/MiniMap";
 import { TopBar, StatsPanel } from "@/components/game/TopBar";
 import { CanvasIsometricGrid } from "@/components/game/CanvasIsometricGrid";
+import { ScreenshotShare } from "@/components/game/ScreenshotShare";
 
 // Import crypto components
 import TreasuryPanel, { MiniTreasury } from "@/components/crypto/TreasuryPanel";
@@ -500,6 +501,21 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         {/* Crypto Treasury Panel - Top */}
         <div className="relative z-50">
           <TreasuryPanel economyState={economyState} />
+          {/* Screenshot Share Button */}
+          <div className="absolute right-48 top-1/2 -translate-y-1/2">
+            <ScreenshotShare
+              stats={{
+                population: state.stats.population,
+                money: state.stats.money,
+                cityName: state.cityName,
+              }}
+              cryptoStats={{
+                treasury: economyState.treasury,
+                sentiment: economyState.marketSentiment,
+                buildingCount: economyState.buildingCount,
+              }}
+            />
+          </div>
           {/* Crypto Buildings Toggle Button */}
           <button
             onClick={() => setShowCryptoBuildingPanel(!showCryptoBuildingPanel)}
