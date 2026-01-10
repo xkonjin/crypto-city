@@ -120,6 +120,12 @@ export const OVERLAY_CONFIG: Record<OverlayMode, OverlayConfig> = {
     activeColor: "bg-indigo-500",
     hoverColor: "hover:bg-indigo-600",
   },
+  synergy: {
+    label: "Synergy",
+    title: "Crypto Building Synergies",
+    activeColor: "bg-fuchsia-500",
+    hoverColor: "hover:bg-fuchsia-600",
+  },
 };
 
 /** Map of building tools to their corresponding overlay mode */
@@ -314,6 +320,11 @@ export function getOverlayFillStyle(
       // Population density
       return getDensityColor(tile.building.population);
 
+    case "synergy":
+      // Synergy overlay handled separately in SynergyOverlay component
+      // Return no fill - synergies are drawn as connection lines
+      return NO_OVERLAY;
+
     case "none":
     default:
       return NO_OVERLAY;
@@ -344,6 +355,7 @@ export const OVERLAY_MODES: OverlayMode[] = [
   "pollution",
   "crime",
   "density",
+  "synergy",
 ];
 
 // ============================================================================
@@ -366,6 +378,7 @@ export const OVERLAY_TO_BUILDING_TYPES: Record<OverlayMode, string[]> = {
   pollution: [],
   crime: [],
   density: [],
+  synergy: [],
 };
 
 /** Overlay circle stroke colors (light/visible colors) */
@@ -384,6 +397,7 @@ export const OVERLAY_CIRCLE_COLORS: Record<OverlayMode, string> = {
   pollution: "transparent",
   crime: "transparent",
   density: "transparent",
+  synergy: "rgba(217, 70, 239, 0.8)", // Fuchsia for synergy
 };
 
 /** Building highlight glow colors */
@@ -402,6 +416,7 @@ export const OVERLAY_HIGHLIGHT_COLORS: Record<OverlayMode, string> = {
   pollution: "transparent",
   crime: "transparent",
   density: "transparent",
+  synergy: "rgba(217, 70, 239, 1)", // Fuchsia for synergy
 };
 
 /** Overlay circle fill colors (subtle, for area visibility) */
@@ -420,4 +435,21 @@ export const OVERLAY_CIRCLE_FILL_COLORS: Record<OverlayMode, string> = {
   pollution: "transparent",
   crime: "transparent",
   density: "transparent",
+  synergy: "rgba(217, 70, 239, 0.12)", // Fuchsia for synergy
+};
+
+// ============================================================================
+// Synergy Overlay Constants
+// ============================================================================
+
+/** Synergy connection line colors */
+export const SYNERGY_COLORS = {
+  /** Purple for chain synergy connections */
+  chain: "rgba(168, 85, 247, 0.8)",
+  /** Blue for category synergy connections */
+  category: "rgba(59, 130, 246, 0.8)",
+  /** Glow color for buildings with active synergies */
+  glow: "rgba(217, 70, 239, 0.6)",
+  /** Fill color for synergy indicator badge */
+  badge: "rgba(217, 70, 239, 1)",
 };

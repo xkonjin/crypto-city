@@ -398,6 +398,21 @@ function ZoneIcon({ color, size = 18, className }: IconProps & { color: string }
   );
 }
 
+export function SynergyIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      {/* Two connected nodes representing synergy */}
+      <circle {...baseStroke} cx="7" cy="12" r="3" />
+      <circle {...baseStroke} cx="17" cy="12" r="3" />
+      {/* Connection line with pulse effect */}
+      <path {...baseStroke} d="M10 12h4" />
+      {/* Upper and lower arcs representing energy flow */}
+      <path {...baseStroke} d="M9 9c2-2 4-2 6 0" />
+      <path {...baseStroke} d="M9 15c2 2 4 2 6 0" />
+    </svg>
+  );
+}
+
 export const ToolIcons: Partial<Record<Tool, React.FC<IconProps>>> = {
   select: SelectIcon,
   bulldoze: BulldozeIcon,

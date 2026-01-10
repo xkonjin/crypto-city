@@ -503,7 +503,8 @@ export type OverlayMode =
   | "landValue"
   | "pollution"
   | "crime"
-  | "density";
+  | "density"
+  | "synergy";
 
 // ============================================================================
 // Train Types

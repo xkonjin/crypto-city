@@ -20,6 +20,7 @@ import {
   AlertIcon,
   PopulationIcon,
   ChartIcon,
+  SynergyIcon,
 } from "@/components/ui/Icons";
 import { OverlayMode } from "./types";
 import { OVERLAY_CONFIG, getOverlayButtonClass } from "./overlays";
@@ -53,6 +54,7 @@ const OVERLAY_ICONS: Record<OverlayMode, React.ReactNode> = {
   pollution: <EnvironmentIcon size={14} />,
   crime: <AlertIcon size={14} />,
   density: <PopulationIcon size={14} />,
+  synergy: <SynergyIcon size={14} />,
 };
 
 // ============================================================================

@@ -57,6 +57,14 @@ import {
   OVERLAY_CIRCLE_FILL_COLORS,
   OVERLAY_HIGHLIGHT_COLORS,
 } from '@/components/game/overlays';
+import {
+  calculateSynergyConnections,
+  getBuildingsWithSynergyStatus,
+  drawSynergyConnections,
+  drawSynergyGlows,
+  drawSynergyIndicators,
+  calculatePlacementSynergyPreview,
+} from '@/components/game/synergySystem';
 import { SERVICE_CONFIG } from '@/lib/simulation';
 import { drawPlaceholderBuilding } from '@/components/game/placeholders';
 import { loadImage, loadSpriteImage, onImageLoaded, getCachedImage } from '@/components/game/imageLoader';
@@ -108,6 +116,9 @@ import {
 } from '@/components/game/trainSystem';
 import { Train } from '@/components/game/types';
 import { useLightingSystem } from '@/components/game/lightingSystem';
+import { useSentimentVisuals } from '@/hooks/useSentimentVisuals';
+import { WeatherOverlay } from '@/components/game/WeatherOverlay';
+import { cryptoEconomy } from '@/games/isocity/crypto';
 
 export interface CanvasIsometricGridProps {
   overlayMode: OverlayMode;
@@ -292,6 +303,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const supportsDragPlace = selectedTool !== 'select';
 
   const PAN_DRAG_THRESHOLD = 6;
+
+  // Market sentiment visual effects (Issue #46)
+  // Get current market sentiment from crypto economy and calculate visual effects
+  const marketSentiment = cryptoEconomy.getState().marketSentiment;
+  const sentimentVisuals = useSentimentVisuals(marketSentiment);
 
   // Use extracted building helpers (with pre-computed tile metadata for O(1) lookups)
   const { isPartOfMultiTileBuilding, findBuildingOrigin, isPartOfParkBuilding, getTileMetadata } = useBuildingHelpers(grid, gridSize);
@@ -2088,6 +2104,44 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           }
         }
         
+        // Draw synergy overlay for crypto buildings
+        if (overlayMode === 'synergy') {
+          const placedBuildings = cryptoEconomy.getPlacedBuildings();
+          if (placedBuildings.length > 0) {
+            // Helper function to convert grid to screen coordinates (relative to current transform)
+            const synergyGridToScreen = (gx: number, gy: number) => {
+              return gridToScreen(gx, gy, 0, 0);
+            };
+            
+            // Calculate synergy connections
+            const connections = calculateSynergyConnections(placedBuildings, synergyGridToScreen);
+            const buildingsWithStatus = getBuildingsWithSynergyStatus(placedBuildings, synergyGridToScreen);
+            
+            // Draw synergy glows first (below connection lines)
+            drawSynergyGlows(buildingsCtx, buildingsWithStatus, { x: 0, y: 0 }, 1);
+            
+            // Draw synergy connection lines
+            drawSynergyConnections(buildingsCtx, connections, { x: 0, y: 0 }, 1);
+            
+            // Draw synergy indicator badges on buildings
+            drawSynergyIndicators(buildingsCtx, buildingsWithStatus, { x: 0, y: 0 }, 1);
+          }
+        }
+        
+        // Draw synergy indicator badges even when synergy overlay is not active
+        // (mini indicator on buildings with active synergies)
+        if (overlayMode !== 'synergy') {
+          const placedBuildings = cryptoEconomy.getPlacedBuildings();
+          if (placedBuildings.length > 1) {
+            const synergyGridToScreen = (gx: number, gy: number) => {
+              return gridToScreen(gx, gy, 0, 0);
+            };
+            const buildingsWithStatus = getBuildingsWithSynergyStatus(placedBuildings, synergyGridToScreen);
+            // Only show indicators, not full overlay
+            drawSynergyIndicators(buildingsCtx, buildingsWithStatus, { x: 0, y: 0 }, 1);
+          }
+        }
+        
         buildingsCtx.setTransform(1, 0, 0, 1, 0, 0);
       }
     }
@@ -2202,6 +2256,32 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
               drawHighlight(screenX, screenY);
             }
+          }
+        }
+      } else if (selectedCryptoBuilding && selectedTool === 'select') {
+        // Crypto building placement preview with synergy connections
+        const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
+        
+        // Draw placement highlight (fuchsia for crypto buildings)
+        drawHighlight(screenX, screenY, 'rgba(217, 70, 239, 0.3)', '#d946ef');
+        
+        // Draw synergy preview lines to compatible buildings
+        const placedBuildings = cryptoEconomy.getPlacedBuildings();
+        if (placedBuildings.length > 0) {
+          const synergyGridToScreen = (gx: number, gy: number) => {
+            return gridToScreen(gx, gy, 0, 0);
+          };
+          const previewConnections = calculatePlacementSynergyPreview(
+            selectedCryptoBuilding,
+            hoveredTile.x,
+            hoveredTile.y,
+            placedBuildings,
+            synergyGridToScreen
+          );
+          
+          // Draw preview connections
+          if (previewConnections.length > 0) {
+            drawSynergyConnections(ctx, previewConnections, { x: 0, y: 0 }, 1);
           }
         }
       } else {
@@ -2346,7 +2426,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid, isDragging, dragStartTile, dragEndTile]);
+  }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid, isDragging, dragStartTile, dragEndTile, selectedCryptoBuilding]);
   
   // Animate decorative car traffic AND emergency vehicles on top of the base canvas
   useEffect(() => {
@@ -3014,8 +3094,11 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     <div
       ref={containerRef}
       className="relative w-full h-full overflow-hidden touch-none"
+      data-sentiment={sentimentVisuals.classification}
       style={{ 
         cursor: isPanning ? 'grabbing' : isDragging ? 'crosshair' : 'default',
+        filter: sentimentVisuals.filter,
+        transition: 'filter 2s ease-in-out',
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -3027,6 +3110,13 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
     >
+      {/* Weather overlay based on market sentiment (Issue #46) */}
+      <WeatherOverlay
+        effect={sentimentVisuals.weatherEffect}
+        tint={sentimentVisuals.overlayTint}
+        opacity={sentimentVisuals.overlayOpacity}
+      />
+      
       <canvas
         ref={canvasRef}
         width={canvasSize.width}
