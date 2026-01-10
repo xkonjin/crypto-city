@@ -102,7 +102,7 @@ const BUILDING_REACTIONS: Record<string, string[]> = {
   'magic_carpet_emporium': [
     "Magic Carpet Emporium. High yield, high probability of rug. You know the risks going in. At least it's honest about it.",
   ],
-  'cobie_alpha_bunker': [
+  'alpha_bunker': [
     "Wait, that's my bunker. I appreciate the tribute. Though I should mention - there's no actual alpha inside. Just vibes.",
     "The Alpha Bunker. Finally, someone with taste. Subscribe to my Substack, I guess.",
     "My bunker! The probability of finding alpha here is... well, it's non-zero. That's something.",

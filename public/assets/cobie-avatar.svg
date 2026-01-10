@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#bg-gradient)"/>
+  
+  <!-- Head (bald) -->
+  <ellipse cx="50" cy="52" rx="32" ry="35" fill="#FFD5B8"/>
+  
+  <!-- Bald head shine -->
+  <ellipse cx="42" cy="35" rx="12" ry="8" fill="#FFE4D0" opacity="0.6"/>
+  
+  <!-- Eyes -->
+  <ellipse cx="38" cy="52" rx="5" ry="6" fill="white"/>
+  <ellipse cx="62" cy="52" rx="5" ry="6" fill="white"/>
+  <circle cx="39" cy="53" r="3" fill="#2D3748"/>
+  <circle cx="63" cy="53" r="3" fill="#2D3748"/>
+  <circle cx="40" cy="52" r="1" fill="white"/>
+  <circle cx="64" cy="52" r="1" fill="white"/>
+  
+  <!-- Eyebrows (slightly raised, knowing look) -->
+  <path d="M32 44 Q38 41, 44 44" stroke="#8B7355" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M56 44 Q62 41, 68 44" stroke="#8B7355" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  
+  <!-- Nose -->
+  <path d="M50 54 Q52 60, 50 64 Q48 60, 50 54" fill="#F0C4A8"/>
+  
+  <!-- Smirk (Cobie's signature knowing smile) -->
+  <path d="M40 72 Q50 78, 62 72" stroke="#8B4513" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M58 70 Q62 72, 65 70" stroke="#8B4513" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Ears -->
+  <ellipse cx="18" cy="54" rx="5" ry="7" fill="#FFD5B8"/>
+  <ellipse cx="82" cy="54" rx="5" ry="7" fill="#FFD5B8"/>
+  
+  <!-- Collar/shirt hint -->
+  <path d="M30 85 Q50 95, 70 85" stroke="#4A5568" stroke-width="4" fill="none"/>
+  
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#667EEA"/>
+      <stop offset="100%" stop-color="#764BA2"/>
+    </linearGradient>
+  </defs>
+</svg>

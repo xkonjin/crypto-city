@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import Image from 'next/image';
 import { X, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -103,10 +104,16 @@ function CobieNarratorContent({ message, isVisible, onDismiss, onDisableCobie }:
         
         {/* Content */}
         <div className="p-4 flex items-start gap-3">
-          {/* Cobie Avatar */}
+          {/* Cobie Avatar - Cartoon bald character matching his famous Twitter PFP */}
           <div className="flex-shrink-0 relative">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-2xl shadow-lg">
-              🧙
+            <div className="w-12 h-12 rounded-lg overflow-hidden shadow-lg">
+              <Image
+                src="/assets/cobie-avatar.svg"
+                alt="Cobie"
+                width={48}
+                height={48}
+                className="w-full h-full"
+              />
             </div>
             {/* Online indicator */}
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900 animate-pulse" />
