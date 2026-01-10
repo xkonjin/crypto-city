@@ -63,13 +63,33 @@ function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCard
   const crypto = building.crypto;
   const effects = crypto?.effects;
   
-  // Format risk level
+  // Format risk level with detailed explanations
   const getRiskLevel = (rugRisk: number | undefined) => {
-    if (!rugRisk) return { label: 'Low', color: 'text-green-400' };
-    if (rugRisk < 0.01) return { label: 'Low', color: 'text-green-400' };
-    if (rugRisk < 0.05) return { label: 'Medium', color: 'text-yellow-400' };
-    if (rugRisk < 0.1) return { label: 'High', color: 'text-orange-400' };
-    return { label: 'Degen', color: 'text-red-400' };
+    if (!rugRisk || rugRisk === 0) return { 
+      label: 'Very Low', 
+      color: 'text-green-400',
+      explanation: 'Battle-tested protocol with near-zero historical exploits.'
+    };
+    if (rugRisk < 0.01) return { 
+      label: 'Low', 
+      color: 'text-green-400',
+      explanation: 'Well-audited with strong track record. Safe choice.'
+    };
+    if (rugRisk < 0.05) return { 
+      label: 'Medium', 
+      color: 'text-yellow-400',
+      explanation: 'Newer protocol or complex mechanics. Monitor closely.'
+    };
+    if (rugRisk < 0.1) return { 
+      label: 'High', 
+      color: 'text-orange-400',
+      explanation: 'Experimental or unaudited. High yield = high risk.'
+    };
+    return { 
+      label: 'Degen', 
+      color: 'text-red-400',
+      explanation: 'YOLO territory. Expect to lose this eventually.'
+    };
   };
   
   const risk = getRiskLevel(effects?.rugRisk);
@@ -95,9 +115,17 @@ function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCard
             </div>
           )}
           {effects.rugRisk !== undefined && (
-            <div className="flex justify-between">
-              <span className="text-gray-400">Risk:</span>
-              <span className={risk.color}>{risk.label} ({(effects.rugRisk * 100).toFixed(1)}%)</span>
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Risk:</span>
+                <span className={risk.color}>{risk.label} ({(effects.rugRisk * 100).toFixed(1)}% per cycle)</span>
+              </div>
+              <div className="text-xs text-gray-500 italic">{risk.explanation}</div>
+              {effects.rugRisk > 0.02 && (
+                <div className="text-xs text-red-400/80">
+                  ⚠️ If rugged: Building destroyed, -10% treasury
+                </div>
+              )}
             </div>
           )}
           {effects.populationBoost !== undefined && (
@@ -118,15 +146,18 @@ function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCard
       {/* Synergies */}
       {effects && (effects.chainSynergy?.length > 0 || effects.categorySynergy?.length > 0) && (
         <div className="text-xs border-t border-gray-700 pt-2 space-y-1">
+          <div className="text-gray-500 italic mb-1">
+            💡 Place near similar buildings for yield bonus (up to +50%)
+          </div>
           {effects.chainSynergy?.length > 0 && (
             <div>
-              <span className="text-gray-400">Chain: </span>
+              <span className="text-gray-400">Chain synergy: </span>
               <span className="text-purple-400">{effects.chainSynergy.join(', ')}</span>
             </div>
           )}
           {effects.categorySynergy?.length > 0 && (
             <div>
-              <span className="text-gray-400">Category: </span>
+              <span className="text-gray-400">Category synergy: </span>
               <span className="text-purple-400">{effects.categorySynergy.join(', ')}</span>
             </div>
           )}
