@@ -22,6 +22,7 @@ import { CommandMenu } from "@/components/ui/CommandMenu";
 import { CobieNarrator } from "@/components/game/CobieNarrator";
 import { useCobieNarrator } from "@/hooks/useCobieNarrator";
 import { Tutorial } from "@/components/game/Tutorial";
+import { DailyRewards } from "@/components/game/DailyRewards";
 import { useMultiplayerSync } from "@/hooks/useMultiplayerSync";
 import { useMultiplayerOptional } from "@/context/MultiplayerContext";
 import { ShareModal } from "@/components/multiplayer/ShareModal";
@@ -501,6 +502,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {/* Tutorial system for new players */}
           <Tutorial state={state} />
 
+          {/* Daily rewards system */}
+          <DailyRewards onClaimReward={(amount) => cryptoEconomy.deposit(amount)} />
+
           {/* Cobie Narrator for sardonic tips and commentary */}
           <CobieNarrator
             message={cobieMessage}
@@ -666,6 +670,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
 
           {/* Tutorial system for new players */}
           <Tutorial state={state} />
+
+          {/* Daily rewards system */}
+          <DailyRewards onClaimReward={(amount) => cryptoEconomy.deposit(amount)} />
 
           {/* Cobie Narrator for sardonic tips and commentary */}
           <CobieNarrator
