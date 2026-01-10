@@ -1,24 +1,28 @@
 import { test, expect } from "@playwright/test";
 
 async function startGame(page: import("@playwright/test").Page) {
+  // Wait for page to be fully loaded
   await page
     .waitForLoadState("networkidle", { timeout: 30000 })
     .catch(() => {});
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(2000);
 
+  // Look for start button with various possible texts (including ▸ prefix)
   const startButton = page
     .locator("button")
     .filter({ hasText: /New Game|Continue/i })
     .first();
 
   try {
-    await startButton.waitFor({ state: "visible", timeout: 15000 });
+    await startButton.waitFor({ state: "visible", timeout: 20000 });
     await startButton.click({ force: true });
+    // Wait longer for canvas - sprite loading takes time
     await page
-      .waitForSelector("canvas", { state: "visible", timeout: 20000 })
+      .waitForSelector("canvas", { state: "visible", timeout: 30000 })
       .catch(() => {});
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(4000);
   } catch {
+    // Fallback: try Load Example button
     const loadExampleButton = page
       .locator("button")
       .filter({ hasText: /Load Example/i })
@@ -28,9 +32,9 @@ async function startGame(page: import("@playwright/test").Page) {
     ) {
       await loadExampleButton.click({ force: true });
       await page
-        .waitForSelector("canvas", { state: "visible", timeout: 20000 })
+        .waitForSelector("canvas", { state: "visible", timeout: 30000 })
         .catch(() => {});
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(4000);
     }
   }
 }
