@@ -11,6 +11,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { CryptoEconomyState } from '../../games/isocity/crypto/types';
+import { cryptoEconomy } from '../../games/isocity/crypto';
 
 // =============================================================================
 // TYPES
@@ -177,6 +178,52 @@ function SentimentMeter({ sentiment }: { sentiment: number }) {
 }
 
 // =============================================================================
+// CITY BONUS INDICATOR COMPONENT (Issue #44)
+// =============================================================================
+
+function CityBonusIndicator() {
+  const cityStats = cryptoEconomy.getCityIntegrationStats();
+  const populationBonusPercent = ((cityStats.populationBonus - 1) * 100).toFixed(0);
+  const serviceMultiplierPercent = (cityStats.serviceMultiplier * 100).toFixed(0);
+  
+  // Determine overall status
+  const isOptimal = cityStats.hasPower && cityStats.serviceMultiplier >= 0.9;
+  const hasIssues = !cityStats.hasPower || cityStats.serviceMultiplier < 0.75;
+  
+  return (
+    <div className="flex items-center gap-3 px-4 border-l border-r border-gray-700/50">
+      {/* Population Bonus */}
+      <div className="flex flex-col items-center">
+        <span className="text-[10px] uppercase tracking-wider text-gray-400">
+          Pop Boost
+        </span>
+        <span className={`text-base font-semibold ${
+          cityStats.population > 0 ? 'text-cyan-400' : 'text-gray-500'
+        }`}>
+          +{populationBonusPercent}%
+        </span>
+      </div>
+      
+      {/* Service Status */}
+      <div className="flex flex-col items-center">
+        <span className="text-[10px] uppercase tracking-wider text-gray-400">
+          Services
+        </span>
+        <div className="flex items-center gap-1">
+          <span className={cityStats.hasPower ? 'text-yellow-400' : 'text-gray-600'}>⚡</span>
+          <span className={cityStats.hasWater ? 'text-blue-400' : 'text-gray-600'}>💧</span>
+          <span className={`text-xs font-semibold ${
+            isOptimal ? 'text-green-400' : hasIssues ? 'text-red-400' : 'text-yellow-400'
+          }`}>
+            {serviceMultiplierPercent}%
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
 // MAIN TREASURY PANEL COMPONENT
 // =============================================================================
 
@@ -215,7 +262,7 @@ export default function TreasuryPanel({
       </div>
 
       {/* Yield rate */}
-      <div className="flex items-center gap-2 px-4 border-l border-r border-gray-700/50">
+      <div className="flex items-center gap-2 px-4 border-l border-gray-700/50">
         <div className="flex flex-col items-center">
           <span className="text-[10px] uppercase tracking-wider text-gray-400">
             Daily Yield
@@ -233,6 +280,11 @@ export default function TreasuryPanel({
           </div>
         </div>
       </div>
+
+      {/* City Integration Bonus (Issue #44) */}
+      {!compact && (
+        <CityBonusIndicator />
+      )}
 
       {/* Market sentiment */}
       <div className="flex items-center gap-4">

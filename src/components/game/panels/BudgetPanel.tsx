@@ -13,6 +13,10 @@ const UI_LABELS = {
   income: msg('Income'),
   expenses: msg('Expenses'),
   net: msg('Net'),
+  incomeBreakdown: msg('Income Breakdown'),
+  taxRevenue: msg('Tax Revenue'),
+  cryptoTax: msg('Crypto Tax'),
+  totalIncome: msg('Total Income'),
 };
 
 export function BudgetPanel() {
@@ -39,6 +43,26 @@ export function BudgetPanel() {
         </DialogHeader>
         
         <div className="space-y-6">
+          {/* Income Breakdown Section */}
+          <div className="pb-4 border-b border-border">
+            <div className="text-muted-foreground text-xs mb-2 font-medium">{m(UI_LABELS.incomeBreakdown)}</div>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{m(UI_LABELS.taxRevenue)}</span>
+                <span className="text-green-400 font-mono">${(stats.income - (stats.cryptoTaxRevenue || 0)).toLocaleString()}/mo</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{m(UI_LABELS.cryptoTax)}</span>
+                <span className="text-amber-400 font-mono">${(stats.cryptoTaxRevenue || 0).toLocaleString()}/mo</span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-border/50">
+                <span className="text-muted-foreground font-medium">{m(UI_LABELS.totalIncome)}</span>
+                <span className="text-green-400 font-mono font-medium">${stats.income.toLocaleString()}/mo</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Summary Stats */}
           <div className="grid grid-cols-3 gap-4 pb-4 border-b border-border">
             <div>
               <div className="text-muted-foreground text-xs mb-1">{m(UI_LABELS.income)}</div>

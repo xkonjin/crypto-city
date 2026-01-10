@@ -18,6 +18,8 @@ export interface Stats {
     commercial: number;
     industrial: number;
   };
+  /** Crypto tax revenue - city's share of crypto yields (Issue #44) */
+  cryptoTaxRevenue?: number;
 }
 
 export interface BudgetCategory {

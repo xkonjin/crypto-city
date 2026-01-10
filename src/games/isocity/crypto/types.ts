@@ -209,6 +209,12 @@ export interface CryptoEconomyState {
   isBankrupt: boolean;
   // IDs of buildings currently decaying due to bankruptcy
   decayingBuildings: string[];
+  // Game objectives tracking
+  gameDays: number;
+  // Low happiness counter - consecutive ticks below threshold
+  lowHappinessCounter: number;
+  // Whether player has ever had crypto buildings (for rugged out condition)
+  hadCryptoBuildings: boolean;
 }
 
 // =============================================================================

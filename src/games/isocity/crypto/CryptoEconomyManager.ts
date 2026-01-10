@@ -82,6 +82,10 @@ export function createInitialEconomyState(): CryptoEconomyState {
     bankruptcyCounter: 0,
     isBankrupt: false,
     decayingBuildings: [],
+    // Game objectives tracking
+    gameDays: 0,
+    lowHappinessCounter: 0,
+    hadCryptoBuildings: false,
   };
 }
 
@@ -109,6 +113,25 @@ export class CryptoEconomyManager {
     2: 2,     // Fast - 2x yield
     3: 4,     // Very fast - 4x yield
   } as const;
+  
+  // ---------------------------------------------------------------------------
+  // CITY INTEGRATION (Issue #44)
+  // ---------------------------------------------------------------------------
+  
+  /** City population - affects crypto yields (more users = better yields) */
+  private cityPopulation: number = 0;
+  
+  /** Whether crypto buildings have power - no power = 0 yield */
+  private hasPower: boolean = true;
+  
+  /** Whether crypto buildings have water - no water = faster decay */
+  private hasWater: boolean = true;
+  
+  /** City happiness (0-100) - affects crypto effectiveness */
+  private cityHappiness: number = 50;
+  
+  /** Yield generated in the last tick (for tax calculation) */
+  private lastTickYield: number = 0;
   
   // ---------------------------------------------------------------------------
   // REAL WORLD DATA INTEGRATION
@@ -478,6 +501,16 @@ export class CryptoEconomyManager {
     }
     // ==== END GLOBAL REAL YIELD ADJUSTMENT ====
     
+    // ==== CITY INTEGRATION (Issue #44) ====
+    // Apply population bonus (more citizens = more users = better yields)
+    const populationMultiplier = this.getPopulationMultiplier();
+    adjustedYield *= populationMultiplier;
+    
+    // Apply service multiplier (power/happiness affect yields)
+    const serviceMultiplier = this.getServiceMultiplier();
+    adjustedYield *= serviceMultiplier;
+    // ==== END CITY INTEGRATION ====
+    
     // Update state
     this.state = {
       ...this.state,
@@ -605,6 +638,9 @@ export class CryptoEconomyManager {
     // Scale by game speed multiplier
     const ticksPerDay = (24 * 60 * 60 * 1000) / ECONOMY_CONFIG.TICK_RATE;
     const yieldThisTick = (this.state.dailyYield / ticksPerDay) * tickFraction * speedMultiplier;
+    
+    // Track last tick yield for city tax calculation (Issue #44)
+    this.lastTickYield = yieldThisTick;
     
     // Update treasury and accumulated yield
     this.state = {
@@ -954,6 +990,233 @@ export class CryptoEconomyManager {
     for (const listener of this.listeners) {
       listener(state);
     }
+  }
+  
+  // ---------------------------------------------------------------------------
+  // CITY INTEGRATION (Issue #44)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Set the city population for yield calculation
+   * More citizens = more users = better yields (up to +50% at 50k pop)
+   * @param population - Current city population
+   */
+  setPopulation(population: number): void {
+    this.cityPopulation = Math.max(0, population);
+    this.recalculateEconomy();
+  }
+  
+  /**
+   * Get the current city population
+   */
+  getPopulation(): number {
+    return this.cityPopulation;
+  }
+  
+  /**
+   * Set whether power is available for crypto buildings
+   * No power = crypto buildings produce 0 yield
+   * @param hasPower - Whether power is available
+   */
+  setPowerAvailable(hasPower: boolean): void {
+    this.hasPower = hasPower;
+    this.recalculateEconomy();
+  }
+  
+  /**
+   * Check if power is available
+   */
+  isPowerAvailable(): boolean {
+    return this.hasPower;
+  }
+  
+  /**
+   * Set whether water is available for crypto buildings
+   * No water = crypto buildings decay faster
+   * @param hasWater - Whether water is available
+   */
+  setWaterAvailable(hasWater: boolean): void {
+    this.hasWater = hasWater;
+    this.recalculateEconomy();
+  }
+  
+  /**
+   * Check if water is available
+   */
+  isWaterAvailable(): boolean {
+    return this.hasWater;
+  }
+  
+  /**
+   * Set city happiness level (affects crypto effectiveness)
+   * Low happiness = reduced crypto effectiveness
+   * @param happiness - City happiness (0-100)
+   */
+  setHappiness(happiness: number): void {
+    this.cityHappiness = Math.max(0, Math.min(100, happiness));
+    this.recalculateEconomy();
+  }
+  
+  /**
+   * Get current city happiness
+   */
+  getHappiness(): number {
+    return this.cityHappiness;
+  }
+  
+  /**
+   * Get the yield generated in the last tick
+   * Used by the city simulation to calculate crypto tax revenue
+   * @returns Yield amount from last tick
+   */
+  getLastTickYield(): number {
+    return this.lastTickYield;
+  }
+  
+  /**
+   * Calculate population bonus multiplier for yields
+   * More citizens = more users = better yields
+   * @returns Multiplier (1.0 to 1.5)
+   */
+  getPopulationMultiplier(): number {
+    // Up to +50% bonus at 50,000 population
+    return 1 + Math.min(this.cityPopulation / 50000, 0.5);
+  }
+  
+  /**
+   * Calculate service penalty multiplier for yields
+   * No power = 0 yield, low happiness = reduced effectiveness
+   * @returns Multiplier (0 to 1.0)
+   */
+  getServiceMultiplier(): number {
+    // No power = 0 yield
+    if (!this.hasPower) {
+      return 0;
+    }
+    
+    // Happiness affects effectiveness (50-100 happiness = 0.75-1.0 multiplier)
+    // Below 50 happiness: linear decrease from 0.75 to 0.5
+    const happinessMultiplier = this.cityHappiness >= 50
+      ? 0.75 + (this.cityHappiness - 50) / 200  // 50-100 → 0.75-1.0
+      : 0.5 + this.cityHappiness / 200;          // 0-50 → 0.5-0.75
+    
+    return happinessMultiplier;
+  }
+  
+  /**
+   * Get all city integration stats for UI display
+   */
+  getCityIntegrationStats(): {
+    population: number;
+    populationBonus: number;
+    hasPower: boolean;
+    hasWater: boolean;
+    happiness: number;
+    serviceMultiplier: number;
+    effectiveYieldMultiplier: number;
+  } {
+    const populationBonus = this.getPopulationMultiplier();
+    const serviceMultiplier = this.getServiceMultiplier();
+    
+    return {
+      population: this.cityPopulation,
+      populationBonus,
+      hasPower: this.hasPower,
+      hasWater: this.hasWater,
+      happiness: this.cityHappiness,
+      serviceMultiplier,
+      effectiveYieldMultiplier: populationBonus * serviceMultiplier,
+    };
+  }
+  
+  // ---------------------------------------------------------------------------
+  // GAME OBJECTIVES (Issues #29, #43)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Low happiness threshold for lose condition
+   */
+  private static readonly LOW_HAPPINESS_THRESHOLD = 20;
+  
+  /**
+   * Increment game days counter
+   * Call this when a new game day starts
+   */
+  incrementGameDay(): void {
+    this.state = {
+      ...this.state,
+      gameDays: this.state.gameDays + 1,
+    };
+    this.notifyListeners();
+  }
+  
+  /**
+   * Get current game days
+   */
+  getGameDays(): number {
+    return this.state.gameDays;
+  }
+  
+  /**
+   * Update low happiness tracking
+   * Call this every tick with the current city happiness
+   * @param happiness - Current city happiness (0-100)
+   */
+  updateHappinessTracking(happiness: number): void {
+    if (happiness < CryptoEconomyManager.LOW_HAPPINESS_THRESHOLD) {
+      this.state = {
+        ...this.state,
+        lowHappinessCounter: this.state.lowHappinessCounter + 1,
+      };
+    } else {
+      // Reset counter when happiness recovers
+      if (this.state.lowHappinessCounter > 0) {
+        this.state = {
+          ...this.state,
+          lowHappinessCounter: 0,
+        };
+      }
+    }
+  }
+  
+  /**
+   * Get low happiness counter
+   */
+  getLowHappinessCounter(): number {
+    return this.state.lowHappinessCounter;
+  }
+  
+  /**
+   * Update had crypto buildings tracking
+   * Call when placing a building
+   */
+  updateHadCryptoBuildings(): void {
+    if (!this.state.hadCryptoBuildings && this.state.buildingCount > 0) {
+      this.state = {
+        ...this.state,
+        hadCryptoBuildings: true,
+      };
+    }
+  }
+  
+  /**
+   * Check if player had crypto buildings (for rugged out condition)
+   */
+  getHadCryptoBuildings(): boolean {
+    return this.state.hadCryptoBuildings;
+  }
+  
+  /**
+   * Reset game objectives tracking (for new game)
+   */
+  resetObjectivesTracking(): void {
+    this.state = {
+      ...this.state,
+      gameDays: 0,
+      lowHappinessCounter: 0,
+      hadCryptoBuildings: false,
+    };
+    this.notifyListeners();
   }
   
   // ---------------------------------------------------------------------------

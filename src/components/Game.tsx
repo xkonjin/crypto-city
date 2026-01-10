@@ -59,6 +59,19 @@ import {
 } from "@/games/isocity/crypto";
 import { useRealCryptoData } from "@/hooks/useRealCryptoData";
 
+// Import game objectives system (Issues #29, #43)
+import { GameEndModal } from "@/components/game/GameEndModal";
+import {
+  GameMode,
+  GameObjectives,
+  GameEndStats,
+  createGameObjectives,
+  checkGameEnd,
+  calculateGameEndStats,
+  WIN_THRESHOLDS,
+  LOSE_THRESHOLDS,
+} from "@/lib/gameObjectives";
+
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg("containers"), msg("bulk materials"), msg("oil")];
 
@@ -74,6 +87,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     setSpeed,
     selectedCryptoBuilding,
     setSelectedCryptoBuilding,
+    setCryptoTaxRevenue,
   } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>("none");
   const [selectedTile, setSelectedTile] = useState<{
@@ -100,6 +114,16 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   );
   const [cryptoEvents, setCryptoEvents] = useState<CryptoEvent[]>([]);
   const [showCryptoBuildingPanel, setShowCryptoBuildingPanel] = useState(false);
+
+  // ==== GAME OBJECTIVES STATE (Issues #29, #43) ====
+  const [gameMode, setGameMode] = useState<GameMode>('sandbox');
+  const [gameObjectives, setGameObjectives] = useState<GameObjectives>(
+    createGameObjectives('sandbox')
+  );
+  const [showGameEndModal, setShowGameEndModal] = useState(false);
+  const [gameEndStats, setGameEndStats] = useState<GameEndStats | null>(null);
+  const previousDayRef = useRef(state.day);
+  // ==== END GAME OBJECTIVES STATE ====
 
   // Real-world crypto data integration - triggers events from actual market data
   const { data: realCryptoData, blendedData, isOnline, hasData: hasRealData } = useRealCryptoData({
@@ -139,6 +163,115 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   useEffect(() => {
     cryptoEconomy.setGameSpeed(state.speed);
   }, [state.speed]);
+
+  // ==== CITY-CRYPTO ECONOMY INTEGRATION (Issue #44) ====
+  // Sync city stats with crypto economy for bidirectional effects:
+  // - Population affects crypto yields (more users = better yields)
+  // - Services affect crypto effectiveness (power/happiness)
+  // - Crypto yields generate tax revenue for the city
+  useEffect(() => {
+    // Update crypto economy with city population
+    cryptoEconomy.setPopulation(state.stats.population);
+    
+    // Update crypto economy with city happiness
+    cryptoEconomy.setHappiness(state.stats.happiness);
+    
+    // Check if city has any power infrastructure (power plants)
+    // For simplicity, we assume power is available if there are any buildings producing
+    // (The actual power grid check is complex, so we use a proxy)
+    const hasPowerInfrastructure = state.services.power.some(
+      row => row.some(cell => cell)
+    );
+    cryptoEconomy.setPowerAvailable(hasPowerInfrastructure);
+    
+    // Check if city has water infrastructure
+    const hasWaterInfrastructure = state.services.water.some(
+      row => row.some(cell => cell)
+    );
+    cryptoEconomy.setWaterAvailable(hasWaterInfrastructure);
+  }, [state.stats.population, state.stats.happiness, state.services.power, state.services.water]);
+  
+  // Calculate crypto tax revenue based on daily yield and tax rate
+  // Tax rate applies to crypto yields just like it does to regular income
+  useEffect(() => {
+    // Convert daily yield to estimated monthly revenue
+    // dailyYield is in $/day, we want $/month (30 days)
+    const estimatedMonthlyYield = economyState.dailyYield * 30;
+    
+    // Apply tax rate to get city's share of crypto revenue
+    const cryptoTaxRevenue = estimatedMonthlyYield * (state.taxRate / 100);
+    
+    // Update the city stats with the crypto tax revenue
+    setCryptoTaxRevenue(cryptoTaxRevenue);
+  }, [economyState.dailyYield, state.taxRate, setCryptoTaxRevenue]);
+  // ==== END CITY-CRYPTO ECONOMY INTEGRATION ====
+
+  // ==== GAME OBJECTIVES TRACKING (Issues #29, #43) ====
+  // Track game days and check win/lose conditions
+  useEffect(() => {
+    // Check if a new game day has started
+    if (state.day !== previousDayRef.current) {
+      previousDayRef.current = state.day;
+      cryptoEconomy.incrementGameDay();
+    }
+    
+    // Update low happiness tracking every tick
+    cryptoEconomy.updateHappinessTracking(state.stats.happiness);
+    
+    // Update had crypto buildings tracking
+    cryptoEconomy.updateHadCryptoBuildings();
+    
+    // Skip checking if game already ended or in sandbox mode
+    if (gameObjectives.isGameOver || gameMode === 'sandbox') {
+      return;
+    }
+    
+    // Build tracking object from economy state
+    const tracking = {
+      gameDays: economyState.gameDays,
+      bankruptcyTicks: economyState.bankruptcyCounter,
+      lowHappinessTicks: economyState.lowHappinessCounter,
+      peakTVL: economyState.tvl, // We use current TVL as peak for simplicity
+      peakPopulation: state.stats.population,
+      peakBuildingCount: economyState.buildingCount,
+      hadCryptoBuildings: economyState.hadCryptoBuildings,
+    };
+    
+    // Update objectives with current tracking
+    const updatedObjectives: GameObjectives = {
+      ...gameObjectives,
+      tracking,
+    };
+    
+    // Check for game end conditions
+    const result = checkGameEnd(updatedObjectives, state, economyState);
+    
+    if (result.isGameOver) {
+      // Calculate end stats
+      const stats = calculateGameEndStats(state, economyState, tracking);
+      setGameEndStats(stats);
+      
+      // Update objectives with end state
+      setGameObjectives({
+        ...updatedObjectives,
+        isGameOver: true,
+        isVictory: result.isVictory,
+        endReason: result.endReason,
+        endConditionId: result.endConditionId,
+      });
+      
+      // Show the modal
+      setShowGameEndModal(true);
+      
+      // Pause the game
+      setSpeed(0);
+    } else {
+      // Just update tracking
+      setGameObjectives(updatedObjectives);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only trigger on specific state changes, not on every state/objectives update
+  }, [state.day, state.stats.happiness, state.stats.population, economyState, gameMode, gameObjectives.isGameOver, setSpeed]);
+  // ==== END GAME OBJECTIVES TRACKING ====
 
   // Cheat code system
   const {
@@ -384,6 +517,36 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     [addMoney, addNotification, gt, m],
   );
 
+  // ==== GAME END HANDLERS (Issues #29, #43) ====
+  // Handle Play Again button - reset game
+  const handlePlayAgain = useCallback(() => {
+    setShowGameEndModal(false);
+    setGameObjectives(createGameObjectives(gameMode));
+    setGameEndStats(null);
+    cryptoEconomy.resetObjectivesTracking();
+    // onExit will trigger returning to home screen for new game
+    if (onExit) {
+      onExit();
+    }
+  }, [gameMode, onExit]);
+
+  // Handle Continue in Sandbox button - switch to sandbox mode and continue playing
+  const handleContinueSandbox = useCallback(() => {
+    setShowGameEndModal(false);
+    setGameMode('sandbox');
+    setGameObjectives(prev => ({
+      ...prev,
+      mode: 'sandbox',
+      isGameOver: false,
+      isVictory: false,
+      endReason: undefined,
+      endConditionId: undefined,
+    }));
+    // Resume the game
+    setSpeed(1);
+  }, [setSpeed]);
+  // ==== END GAME END HANDLERS ====
+
   // Mobile layout
   if (isMobile) {
     return (
@@ -512,6 +675,19 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             onDismiss={onCobieDismiss}
             onDisableCobie={onDisableCobie}
           />
+
+          {/* Game End Modal (Issues #29, #43) */}
+          {showGameEndModal && gameEndStats && (
+            <GameEndModal
+              isOpen={showGameEndModal}
+              isVictory={gameObjectives.isVictory}
+              endReason={gameObjectives.endReason || 'Unknown'}
+              endConditionId={gameObjectives.endConditionId || 'unknown'}
+              stats={gameEndStats}
+              onPlayAgain={handlePlayAgain}
+              onContinueSandbox={handleContinueSandbox}
+            />
+          )}
         </div>
       </TooltipProvider>
     );
@@ -681,6 +857,19 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             onDismiss={onCobieDismiss}
             onDisableCobie={onDisableCobie}
           />
+
+          {/* Game End Modal (Issues #29, #43) */}
+          {showGameEndModal && gameEndStats && (
+            <GameEndModal
+              isOpen={showGameEndModal}
+              isVictory={gameObjectives.isVictory}
+              endReason={gameObjectives.endReason || 'Unknown'}
+              endConditionId={gameObjectives.endConditionId || 'unknown'}
+              stats={gameEndStats}
+              onPlayAgain={handlePlayAgain}
+              onContinueSandbox={handleContinueSandbox}
+            />
+          )}
         </div>
 
         {/* Crypto News Ticker - Bottom */}

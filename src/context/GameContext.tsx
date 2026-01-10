@@ -106,6 +106,8 @@ type GameContextValue = {
   isSaving: boolean;
   addMoney: (amount: number) => void;
   addNotification: (title: string, description: string, icon: string) => void;
+  // Crypto-City economy integration (Issue #44)
+  setCryptoTaxRevenue: (revenue: number) => void;
   selectedCryptoBuilding: string | null;
   setSelectedCryptoBuilding: (buildingId: string | null) => void;
   placeCryptoBuilding: (
@@ -1624,6 +1626,22 @@ export function GameProvider({
     [],
   );
 
+  // ==== CRYPTO-CITY ECONOMY INTEGRATION (Issue #44) ====
+  // Set the crypto tax revenue for display in the budget panel
+  // This is called from Game.tsx based on the crypto economy's daily yield
+  const setCryptoTaxRevenue = useCallback((revenue: number) => {
+    setState((prev) => ({
+      ...prev,
+      stats: {
+        ...prev.stats,
+        cryptoTaxRevenue: Math.floor(revenue),
+        // Add crypto tax to total income
+        income: prev.stats.income - (prev.stats.cryptoTaxRevenue || 0) + Math.floor(revenue),
+      },
+    }));
+  }, []);
+  // ==== END CRYPTO-CITY ECONOMY INTEGRATION ====
+
   // Save current city for restore (when viewing shared cities)
   const saveCurrentCityForRestore = useCallback(() => {
     saveCityForRestore(state);
@@ -1995,6 +2013,8 @@ export function GameProvider({
     isSaving,
     addMoney,
     addNotification,
+    // Crypto-City economy integration
+    setCryptoTaxRevenue,
     // Sprite pack management
     currentSpritePack,
     availableSpritePacks: SPRITE_PACKS,
