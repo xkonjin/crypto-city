@@ -1,16 +1,19 @@
 /**
  * Crypto Buildings Registry
  * 
- * Complete registry of all 99 crypto-themed buildings for Crypto City.
+ * Complete registry of crypto-themed buildings for Crypto City.
+ * Count is dynamically calculated via CRYPTO_BUILDING_COUNT export.
+ * 
  * Buildings are organized by category:
- *   - DeFi (23): Lending, DEX, yield protocols
+ *   - DeFi (22): Lending, DEX, yield protocols
  *   - Exchange (7): CEX headquarters
  *   - Chain (13): L1/L2 blockchain buildings
  *   - CT (10): Crypto Twitter culture
- *   - Meme (20): Meme coin culture
+ *   - Meme (14): Meme coin culture
  *   - Plasma (18): Plasma ecosystem
  *   - Stablecoin (3): Stablecoin issuers
  *   - Infrastructure (5): Oracles, bridges, data providers
+ *   - Legends (varies): Rugged protocols and historical events
  * 
  * Economy Balancing Formula:
  *   - Base Yield = Real APY * 0.5 (halved for game balance)
