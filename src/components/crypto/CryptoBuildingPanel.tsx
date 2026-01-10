@@ -19,6 +19,7 @@ import {
   CRYPTO_BUILDING_COUNT,
 } from '../../games/isocity/crypto/buildings';
 import { CRYPTO_CATEGORIES } from '../../games/isocity/crypto/buildingRegistry';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 // =============================================================================
 // TYPES
@@ -59,55 +60,145 @@ interface BuildingCardProps {
 }
 
 function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCardProps) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={!canAfford}
-      className={`
-        relative w-full p-3 rounded-lg text-left transition-all
-        ${isSelected 
-          ? 'bg-gradient-to-br from-amber-500/30 to-orange-500/30 border-2 border-amber-400' 
-          : canAfford 
-            ? 'bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500'
-            : 'bg-gray-900/50 border border-gray-700/30 opacity-50 cursor-not-allowed'
-        }
-      `}
-    >
-      {/* Icon and name */}
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-2xl">{building.icon}</span>
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-sm truncate">{building.name}</div>
-          <div className="text-xs text-gray-400">
-            {building.footprint.width}x{building.footprint.height}
-          </div>
-        </div>
+  const crypto = building.crypto;
+  const effects = crypto?.effects;
+  
+  // Format risk level
+  const getRiskLevel = (rugRisk: number | undefined) => {
+    if (!rugRisk) return { label: 'Low', color: 'text-green-400' };
+    if (rugRisk < 0.01) return { label: 'Low', color: 'text-green-400' };
+    if (rugRisk < 0.05) return { label: 'Medium', color: 'text-yellow-400' };
+    if (rugRisk < 0.1) return { label: 'High', color: 'text-orange-400' };
+    return { label: 'Degen', color: 'text-red-400' };
+  };
+  
+  const risk = getRiskLevel(effects?.rugRisk);
+  
+  // Build tooltip content
+  const tooltipContent = (
+    <div className="space-y-2 max-w-xs">
+      <div className="font-semibold text-base">{building.name}</div>
+      
+      {/* Tier & Size */}
+      <div className="flex gap-4 text-xs text-gray-400">
+        {crypto?.tier && <span>Tier: {crypto.tier}</span>}
+        <span>Size: {building.footprint.width}x{building.footprint.height}</span>
       </div>
       
-      {/* Stats */}
-      <div className="flex items-center justify-between text-xs">
-        <span className={`font-mono ${canAfford ? 'text-amber-400' : 'text-red-400'}`}>
-          ${building.cost.toLocaleString()}
+      {/* Yield Stats */}
+      {effects && (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs border-t border-gray-700 pt-2">
+          {effects.yieldRate !== undefined && (
+            <div className="flex justify-between">
+              <span className="text-gray-400">Yield:</span>
+              <span className="text-green-400">+{effects.yieldRate}/tick</span>
+            </div>
+          )}
+          {effects.rugRisk !== undefined && (
+            <div className="flex justify-between">
+              <span className="text-gray-400">Risk:</span>
+              <span className={risk.color}>{risk.label} ({(effects.rugRisk * 100).toFixed(1)}%)</span>
+            </div>
+          )}
+          {effects.populationBoost !== undefined && (
+            <div className="flex justify-between">
+              <span className="text-gray-400">Pop:</span>
+              <span className="text-blue-400">+{effects.populationBoost}</span>
+            </div>
+          )}
+          {effects.happinessEffect !== undefined && effects.happinessEffect !== 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-400">Happy:</span>
+              <span className="text-pink-400">+{effects.happinessEffect}</span>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Synergies */}
+      {effects && (effects.chainSynergy?.length > 0 || effects.categorySynergy?.length > 0) && (
+        <div className="text-xs border-t border-gray-700 pt-2 space-y-1">
+          {effects.chainSynergy?.length > 0 && (
+            <div>
+              <span className="text-gray-400">Chain: </span>
+              <span className="text-purple-400">{effects.chainSynergy.join(', ')}</span>
+            </div>
+          )}
+          {effects.categorySynergy?.length > 0 && (
+            <div>
+              <span className="text-gray-400">Category: </span>
+              <span className="text-purple-400">{effects.categorySynergy.join(', ')}</span>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Cost */}
+      <div className="text-xs border-t border-gray-700 pt-2">
+        <span className={canAfford ? 'text-amber-400' : 'text-red-400'}>
+          Cost: ${building.cost.toLocaleString()}
         </span>
-        {building.crypto && (
-          <span className="text-gray-500">
-            {building.crypto.tier}
-          </span>
-        )}
+        {!canAfford && <span className="text-red-400 ml-2">(Not enough funds)</span>}
       </div>
-      
-      {/* Yield info */}
-      {building.crypto?.effects?.yieldRate && (
-        <div className="mt-1 text-xs text-green-400">
-          +{building.crypto.effects.yieldRate} yield
-        </div>
-      )}
-      
-      {/* Selected indicator */}
-      {isSelected && (
-        <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-      )}
-    </button>
+    </div>
+  );
+  
+  return (
+    <Tooltip delayDuration={200}>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          disabled={!canAfford}
+          className={`
+            relative w-full p-3 rounded-lg text-left transition-all
+            ${isSelected 
+              ? 'bg-gradient-to-br from-amber-500/30 to-orange-500/30 border-2 border-amber-400' 
+              : canAfford 
+                ? 'bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500'
+                : 'bg-gray-900/50 border border-gray-700/30 opacity-50 cursor-not-allowed'
+            }
+          `}
+        >
+          {/* Icon and name */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">{building.icon}</span>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-sm truncate">{building.name}</div>
+              <div className="text-xs text-gray-400">
+                {building.footprint.width}x{building.footprint.height}
+              </div>
+            </div>
+          </div>
+          
+          {/* Stats */}
+          <div className="flex items-center justify-between text-xs">
+            <span className={`font-mono ${canAfford ? 'text-amber-400' : 'text-red-400'}`}>
+              ${building.cost.toLocaleString()}
+            </span>
+            {effects?.rugRisk !== undefined && (
+              <span className={`${risk.color} text-[10px]`}>
+                {risk.label}
+              </span>
+            )}
+          </div>
+          
+          {/* Yield info */}
+          {effects?.yieldRate !== undefined && (
+            <div className="mt-1 text-xs text-green-400">
+              +{effects.yieldRate} yield
+            </div>
+          )}
+          
+          {/* Selected indicator */}
+          {isSelected && (
+            <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="left" className="bg-gray-900 border-gray-700">
+        {tooltipContent}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
