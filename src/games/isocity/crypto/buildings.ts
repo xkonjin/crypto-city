@@ -425,10 +425,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       tvlTier: 'massive',
       description: 'Eigenlayer Vault enables restaking for additional yield.',
       effects: {
-        yieldRate: 20,
+        yieldRate: 12, // Reduced from 20 - restaking is complex/risky
         stakingBonus: 1.35,
         volatility: 0.15,
-        rugRisk: 0.008,
+        rugRisk: 0.025, // Increased from 0.008 - novel mechanism risk
         airdropChance: 0.04,
         populationBoost: 60,
         happinessEffect: 12,
@@ -709,10 +709,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       tvlTier: 'massive',
       description: 'Hyperliquid Vault powers the fastest perps DEX on its own L1.',
       effects: {
-        yieldRate: 22,
+        yieldRate: 14, // Reduced from 22 - perps are risky
         tradingFees: 35,
         volatility: 0.18,
-        rugRisk: 0.005,
+        rugRisk: 0.02, // Increased from 0.005 - new chain risk
         airdropChance: 0.08,
         populationBoost: 55,
         happinessEffect: 15,
@@ -1532,15 +1532,15 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     sprites: {
       south: '/Building/crypto/ct/2x2degen_lounge_south.png',
     },
-    cost: 5500,
+    cost: 12000, // Increased from 5500 - was too cheap for 20 yield
     crypto: {
       tier: 'degen',
       chain: 'solana',
       description: 'The Degen Lounge is where apes gather to trade.',
       effects: {
-        yieldRate: 20,
+        yieldRate: 15, // Reduced from 20 - more balanced for cost
         volatility: 0.6,
-        rugRisk: 0.08,
+        rugRisk: 0.1, // Increased from 0.08 - degen tier should be risky
         populationBoost: 25,
         happinessEffect: 10,
         zoneRadius: 4,
@@ -2138,10 +2138,10 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       description: 'The central Plasma headquarters.',
       effects: {
-        yieldRate: 30,
+        yieldRate: 18, // Reduced from 30 - still highest but more balanced
         stakingBonus: 1.5,
         volatility: 0.05,
-        rugRisk: 0.0,
+        rugRisk: 0.01, // Increased from 0.0 - even legends have some risk
         populationBoost: 200,
         happinessEffect: 40,
         zoneRadius: 15,
