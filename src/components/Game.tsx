@@ -54,6 +54,7 @@ import {
   CryptoEconomyState,
   CryptoEvent,
 } from "@/games/isocity/crypto";
+import { useRealCryptoData } from "@/hooks/useRealCryptoData";
 
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg("containers"), msg("bulk materials"), msg("oil")];
@@ -96,6 +97,13 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   );
   const [cryptoEvents, setCryptoEvents] = useState<CryptoEvent[]>([]);
   const [showCryptoBuildingPanel, setShowCryptoBuildingPanel] = useState(false);
+
+  // Real-world crypto data integration - triggers events from actual market data
+  const { data: realCryptoData, blendedData, isOnline, hasData: hasRealData } = useRealCryptoData({
+    economyManager: cryptoEconomy,
+    eventManager: cryptoEventManager,
+    enabled: true,
+  });
 
   // Subscribe to crypto economy and event updates
   useEffect(() => {
