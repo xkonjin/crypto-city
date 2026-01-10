@@ -21,6 +21,7 @@ import { VinnieDialog } from "@/components/VinnieDialog";
 import { CommandMenu } from "@/components/ui/CommandMenu";
 import { CobieNarrator } from "@/components/game/CobieNarrator";
 import { useCobieNarrator } from "@/hooks/useCobieNarrator";
+import { Tutorial } from "@/components/game/Tutorial";
 import { useMultiplayerSync } from "@/hooks/useMultiplayerSync";
 import { useMultiplayerOptional } from "@/context/MultiplayerContext";
 import { ShareModal } from "@/components/multiplayer/ShareModal";
@@ -497,6 +498,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             onOpenChange={setShowVinnieDialog}
           />
 
+          {/* Tutorial system for new players */}
+          <Tutorial state={state} />
+
           {/* Cobie Narrator for sardonic tips and commentary */}
           <CobieNarrator
             message={cobieMessage}
@@ -659,6 +663,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             onOpenChange={setShowVinnieDialog}
           />
           <CommandMenu />
+
+          {/* Tutorial system for new players */}
+          <Tutorial state={state} />
 
           {/* Cobie Narrator for sardonic tips and commentary */}
           <CobieNarrator
