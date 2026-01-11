@@ -12,6 +12,26 @@ import type { CryptoCategory, CryptoBuildingDefinition } from '@/games/isocity/c
 const cryptoSpriteCache = new Map<string, HTMLCanvasElement>();
 const loadingSprites = new Set<string>();
 
+// Callbacks to notify when crypto sprites are loaded (for triggering re-renders)
+type SpriteLoadCallback = () => void;
+const spriteLoadCallbacks = new Set<SpriteLoadCallback>();
+
+/**
+ * Register a callback to be notified when crypto sprites finish loading
+ * @returns Cleanup function to unregister the callback
+ */
+export function onCryptoSpriteLoaded(callback: SpriteLoadCallback): () => void {
+  spriteLoadCallbacks.add(callback);
+  return () => { spriteLoadCallbacks.delete(callback); };
+}
+
+/**
+ * Notify all registered callbacks that a crypto sprite has loaded
+ */
+function notifyCryptoSpriteLoaded() {
+  spriteLoadCallbacks.forEach(cb => cb());
+}
+
 // Background colors to make transparent (common AI-generated image backgrounds)
 const BACKGROUND_COLORS = [
   // White/light backgrounds
@@ -186,6 +206,8 @@ export function loadCryptoBuildingSprite(building: CryptoBuildingDefinition): vo
     const processedCanvas = removeBackground(img);
     cryptoSpriteCache.set(spritePath, processedCanvas);
     loadingSprites.delete(spritePath);
+    // Notify listeners that a sprite is ready for rendering
+    notifyCryptoSpriteLoaded();
   };
   img.onerror = () => {
     console.warn(`Failed to load crypto sprite: ${spritePath}`);

@@ -73,7 +73,7 @@ import {
   calculatePlacementSynergyPreview,
 } from '@/components/game/synergySystem';
 import { SERVICE_CONFIG } from '@/lib/simulation';
-import { drawPlaceholderBuilding } from '@/components/game/placeholders';
+import { drawPlaceholderBuilding, onCryptoSpriteLoaded } from '@/components/game/placeholders';
 import { loadImage, loadSpriteImage, onImageLoaded, getCachedImage } from '@/components/game/imageLoader';
 import { TileInfoPanel } from '@/components/game/panels';
 import {
@@ -888,11 +888,18 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   // Progressive image loading - load sprites in background, render immediately
   // Subscribe to image load notifications to trigger re-renders as assets become available
   useEffect(() => {
-    const unsubscribe = onImageLoaded(() => {
+    const unsubscribeImages = onImageLoaded(() => {
       // Trigger re-render when any new image loads
       setImageLoadVersion(v => v + 1);
     });
-    return unsubscribe;
+    // Also subscribe to crypto sprite loads to re-render when those complete
+    const unsubscribeCrypto = onCryptoSpriteLoaded(() => {
+      setImageLoadVersion(v => v + 1);
+    });
+    return () => {
+      unsubscribeImages();
+      unsubscribeCrypto();
+    };
   }, []);
   
   // Load sprite sheets on mount and when sprite pack changes
