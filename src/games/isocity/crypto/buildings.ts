@@ -2876,6 +2876,67 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       },
     },
   },
+  // === RUG PULL PROTECTION BUILDINGS (Issue #57) ===
+  'security_auditor': {
+    id: 'security_auditor',
+    name: 'Security Auditor',
+    category: 'infrastructure',
+    footprint: { width: 2, height: 2 },
+    icon: '🔍',
+    isProcedural: true,
+    cost: 15000,
+    crypto: {
+      tier: 'institution',
+      protocol: 'Trail of Bits',
+      chain: 'ethereum',
+      launchYear: 2018,
+      tvlTier: 'medium',
+      description: 'Security Auditor reduces rug pull risk for nearby buildings by 25%. Essential protection for your DeFi district.',
+      effects: {
+        yieldRate: 2,
+        volatility: 0.02,
+        rugRisk: 0.005,
+        populationBoost: 30,
+        happinessEffect: 15,
+        zoneRadius: 3,
+        chainSynergy: ['ethereum', 'arbitrum', 'optimism', 'base', 'polygon'],
+        categorySynergy: ['infrastructure', 'defi'],
+        // Protection mechanics (Issue #57)
+        protectionRadius: 3,
+        protectionBonus: 0.25,
+      },
+    },
+  },
+  'crypto_insurance': {
+    id: 'crypto_insurance',
+    name: 'Crypto Insurance',
+    category: 'infrastructure',
+    footprint: { width: 2, height: 2 },
+    icon: '🛡️',
+    isProcedural: true,
+    cost: 20000,
+    crypto: {
+      tier: 'institution',
+      protocol: 'Nexus Mutual',
+      chain: 'ethereum',
+      launchYear: 2019,
+      tvlTier: 'high',
+      description: 'Crypto Insurance covers nearby buildings - recover 50% of building value on rug pull. Sleep better at night.',
+      effects: {
+        yieldRate: 1,
+        volatility: 0.03,
+        rugRisk: 0.01,
+        populationBoost: 25,
+        happinessEffect: 20,
+        zoneRadius: 4,
+        chainSynergy: ['ethereum', 'arbitrum'],
+        categorySynergy: ['infrastructure', 'defi'],
+        // Insurance mechanics (Issue #57)
+        insuranceRadius: 4,
+        insuranceRecovery: 0.5,
+      },
+    },
+  },
 };
 
 // =============================================================================

@@ -20,6 +20,10 @@ export type {
   CryptoEventType,
   CryptoEvent,
   CryptoEventDefinition,
+  // Rug Pull Protection types (Issue #57)
+  RugWarning,
+  BuildingRuins,
+  AuditReport,
 } from './types';
 
 export {

@@ -89,6 +89,15 @@ export interface CryptoEffects {
   chainSynergy: CryptoChain[];
   // Category synergy - bonus when near buildings in same category
   categorySynergy: CryptoCategory[];
+  // === RUG PULL PROTECTION (Issue #57) ===
+  /** Protection radius in tiles (for auditor buildings) */
+  protectionRadius?: number;
+  /** Rug risk reduction factor (0-1, e.g., 0.25 = 25% reduction) */
+  protectionBonus?: number;
+  /** Insurance radius in tiles (for insurance buildings) */
+  insuranceRadius?: number;
+  /** Insurance recovery factor (0-1, e.g., 0.5 = 50% value recovered) */
+  insuranceRecovery?: number;
 }
 
 // =============================================================================
@@ -279,6 +288,70 @@ export interface CryptoEconomyState {
   dailyServiceCost: number;
   /** Buildings damaged by rug pulls awaiting repair */
   damagedBuildings: DamagedBuilding[];
+}
+
+// =============================================================================
+// RUG PULL PROTECTION TYPES (Issue #57)
+// =============================================================================
+
+/** Pre-rug warning phase information */
+export interface RugWarning {
+  /** Placed building instance ID */
+  buildingId: string;
+  /** Building name for display */
+  buildingName: string;
+  /** Grid position X */
+  x: number;
+  /** Grid position Y */
+  y: number;
+  /** When warning started (timestamp) */
+  warningStart: number;
+  /** Countdown in seconds (player reaction time) */
+  countdown: number;
+  /** Warning severity level */
+  severity: 'low' | 'medium' | 'high';
+}
+
+/** Ruins left after a rug pull */
+export interface BuildingRuins {
+  /** Ruins instance ID */
+  id: string;
+  /** Original building definition ID */
+  originalBuildingId: string;
+  /** Original building name */
+  originalBuildingName: string;
+  /** Grid position X */
+  gridX: number;
+  /** Grid position Y */
+  gridY: number;
+  /** Original building cost (for rebuild calculation) */
+  originalCost: number;
+  /** When the rug occurred */
+  ruggedAt: number;
+  /** Whether insured (affects recovery amount) */
+  wasInsured: boolean;
+  /** Insurance payout received (if any) */
+  insurancePayout: number;
+}
+
+/** Audit report for a building */
+export interface AuditReport {
+  /** Building instance ID */
+  buildingId: string;
+  /** Building name */
+  buildingName: string;
+  /** Overall risk level */
+  riskLevel: 'safe' | 'caution' | 'danger';
+  /** Risk factors contributing to assessment */
+  factors: string[];
+  /** Recommendation text */
+  recommendation: string;
+  /** Effective rug risk after protection */
+  effectiveRugRisk: number;
+  /** Whether protected by auditor */
+  hasAuditorProtection: boolean;
+  /** Whether covered by insurance */
+  hasInsuranceCoverage: boolean;
 }
 
 // =============================================================================

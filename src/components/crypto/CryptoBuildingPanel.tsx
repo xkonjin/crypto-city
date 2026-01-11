@@ -166,6 +166,23 @@ function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCard
         </div>
       )}
       
+      {/* Protection & Insurance (Issue #57) */}
+      {effects && (effects.protectionRadius || effects.insuranceRadius) && (
+        <div className="text-xs border-t border-gray-700 pt-2 space-y-1 bg-emerald-900/20 p-2 rounded">
+          <div className="text-emerald-400 font-semibold">🛡️ Protection Building</div>
+          {effects.protectionRadius && (
+            <div className="text-gray-300">
+              Reduces rug risk by <span className="text-emerald-400 font-bold">{Math.round((effects.protectionBonus || 0) * 100)}%</span> for buildings within <span className="text-cyan-400">{effects.protectionRadius} tiles</span>
+            </div>
+          )}
+          {effects.insuranceRadius && (
+            <div className="text-gray-300">
+              Insures buildings within <span className="text-cyan-400">{effects.insuranceRadius} tiles</span> - recover <span className="text-amber-400 font-bold">{Math.round((effects.insuranceRecovery || 0) * 100)}%</span> value on rug
+            </div>
+          )}
+        </div>
+      )}
+      
       {/* Cost */}
       <div className="text-xs border-t border-gray-700 pt-2">
         <span className={canAfford ? 'text-amber-400' : 'text-red-400'}>

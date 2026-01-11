@@ -36,6 +36,13 @@ import {
   getComparativeRisk,
   formatComparativeRisk 
 } from './balanceConfig';
+import { 
+  DisasterManager, 
+  disasterManager as defaultDisasterManager,
+  DISASTERS,
+  type ActiveDisaster,
+  type DisasterManagerState,
+} from '../../../lib/disasters';
 
 // =============================================================================
 // CONFIGURATION CONSTANTS
@@ -232,7 +239,21 @@ export class CryptoEconomyManager {
   /** Base simulated sentiment (before blending) */
   private simulatedSentiment: number = 50;
   
-  constructor(initialState?: Partial<CryptoEconomyState>) {
+  // ---------------------------------------------------------------------------
+  // DISASTER SYSTEM INTEGRATION (Issue #67)
+  // ---------------------------------------------------------------------------
+  
+  /** Disaster manager instance */
+  private disasterManager: DisasterManager;
+  
+  /** Current game tick for disaster tracking */
+  private currentGameTick: number = 0;
+  
+  /** Listeners for disaster events */
+  private disasterListeners: Set<(disaster: ActiveDisaster, isStarting: boolean) => void> = new Set();
+  
+  constructor(initialState?: Partial<CryptoEconomyState>, disasterMgr?: DisasterManager) {
+    this.disasterManager = disasterMgr || defaultDisasterManager;
     this.state = {
       ...createInitialEconomyState(),
       ...initialState,
@@ -626,8 +647,17 @@ export class CryptoEconomyManager {
     const marketingBonus = this.getMarketingYieldBonus();
     adjustedYield *= (1 + marketingBonus);
     
+    // ==== DISASTER SYSTEM (Issue #67) ====
+    // Apply disaster yield multiplier (e.g., Market Crash = 0.5x, Bull Run = 2.0x)
+    const disasterYieldMultiplier = this.disasterManager.getYieldMultiplier();
+    adjustedYield *= disasterYieldMultiplier;
+    
+    // Apply disaster cost multiplier for maintenance
+    const disasterCostMultiplier = this.disasterManager.getCostMultiplier();
+    // ==== END DISASTER SYSTEM ====
+    
     // Calculate daily maintenance costs
-    const dailyMaintenanceCost = this.calculateMaintenanceCosts();
+    const dailyMaintenanceCost = this.calculateMaintenanceCosts() * disasterCostMultiplier;
     
     // Calculate daily service funding costs
     const dailyServiceCost = this.calculateServiceCosts();
@@ -800,7 +830,59 @@ export class CryptoEconomyManager {
     // Check for bankruptcy conditions
     this.checkBankruptcy();
     
+    // ==== DISASTER SYSTEM (Issue #67) ====
+    // Process disaster tick and apply effects
+    this.currentGameTick++;
+    this.processDisasterTick();
+    // ==== END DISASTER SYSTEM ====
+    
     this.notifyListeners();
+  }
+  
+  /**
+   * Process disaster tick - check for new disasters and apply effects
+   */
+  private processDisasterTick(): void {
+    const buildingIds = Array.from(this.placedBuildings.keys());
+    
+    const effects = this.disasterManager.tick(this.currentGameTick, buildingIds);
+    
+    // Apply treasury changes from disasters
+    if (effects.treasuryChange !== 0) {
+      this.state.treasury = Math.max(0, this.state.treasury + effects.treasuryChange);
+    }
+    
+    // Apply percentage treasury damage from active disasters
+    for (const active of this.disasterManager.getActiveDisasters()) {
+      if (active.disaster.effect.treasuryDamagePercent && active.startTick === this.currentGameTick) {
+        // Only apply on first tick of disaster
+        const damage = Math.floor(this.state.treasury * active.disaster.effect.treasuryDamagePercent);
+        this.state.treasury = Math.max(0, this.state.treasury - damage);
+        logger.info(`[CryptoEconomy] Disaster treasury damage: -$${damage}`);
+      }
+    }
+    
+    // Rug buildings from disasters
+    for (const buildingId of effects.buildingsToRug) {
+      this.damageBuilding(buildingId);
+      logger.info(`[CryptoEconomy] Building rugged by disaster: ${buildingId}`);
+    }
+    
+    // Release delayed yields
+    if (effects.delayedYieldsToRelease > 0) {
+      this.state.treasury += effects.delayedYieldsToRelease;
+      logger.info(`[CryptoEconomy] Delayed yields released: +$${effects.delayedYieldsToRelease}`);
+    }
+    
+    // Apply sentiment impact from active disasters
+    const sentimentImpact = this.disasterManager.getSentimentImpact();
+    if (sentimentImpact !== 0) {
+      // Apply gradual sentiment shift based on active disasters
+      const targetSentiment = Math.max(0, Math.min(100, 50 + sentimentImpact));
+      const currentSentiment = this.state.marketSentiment;
+      // Move toward target by 10% per tick
+      this.state.marketSentiment = currentSentiment + (targetSentiment - currentSentiment) * 0.1;
+    }
   }
   
   /**
@@ -1889,6 +1971,464 @@ export class CryptoEconomyManager {
   getBuildingUpgradeBonus(buildingId: string): number {
     const level = this.getBuildingUpgradeLevel(buildingId);
     return ECONOMY_CONFIG.UPGRADES.LEVEL_YIELD_BONUS[level];
+  }
+  
+  // ---------------------------------------------------------------------------
+  // DISASTER SYSTEM PUBLIC API (Issue #67)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Get the disaster manager instance
+   */
+  getDisasterManager(): DisasterManager {
+    return this.disasterManager;
+  }
+  
+  /**
+   * Get all currently active disasters
+   */
+  getActiveDisasters(): ActiveDisaster[] {
+    return this.disasterManager.getActiveDisasters();
+  }
+  
+  /**
+   * Check if a specific disaster is active
+   */
+  isDisasterActive(disasterId: string): boolean {
+    return this.disasterManager.isDisasterActive(disasterId);
+  }
+  
+  /**
+   * Get the disaster log for UI display
+   */
+  getDisasterLog() {
+    return this.disasterManager.getDisasterLog();
+  }
+  
+  /**
+   * Get combined yield multiplier from active disasters
+   * @returns Multiplier (e.g., 0.5 for Market Crash, 2.0 for Bull Run)
+   */
+  getDisasterYieldMultiplier(): number {
+    return this.disasterManager.getYieldMultiplier();
+  }
+  
+  /**
+   * Get yield multiplier for a specific building tier from active disasters
+   * (e.g., Institutional Buy-In gives +50% to institution tier)
+   */
+  getDisasterTierYieldMultiplier(tier: CryptoTier): number {
+    return this.disasterManager.getTierYieldMultiplier(tier);
+  }
+  
+  /**
+   * Get cost multiplier from active disasters
+   * @returns Multiplier (e.g., 1.5 for Gas Spike)
+   */
+  getDisasterCostMultiplier(): number {
+    return this.disasterManager.getCostMultiplier();
+  }
+  
+  /**
+   * Get prestige multiplier from active disasters
+   * @returns Multiplier (e.g., 2.0 for Halving Event)
+   */
+  getDisasterPrestigeMultiplier(): number {
+    return this.disasterManager.getPrestigeMultiplier();
+  }
+  
+  /**
+   * Check if yields are currently delayed (Network Congestion)
+   */
+  areYieldsDelayed(): boolean {
+    return this.disasterManager.areYieldsDelayed();
+  }
+  
+  /**
+   * Get list of buildings currently shut down by disasters
+   */
+  getShutdownBuildings(): string[] {
+    return this.disasterManager.getShutdownBuildings();
+  }
+  
+  /**
+   * Force trigger a disaster (for testing or scripted events)
+   */
+  forceDisaster(disasterId: string): ActiveDisaster | null {
+    const buildingIds = Array.from(this.placedBuildings.keys());
+    return this.disasterManager.forceDisaster(disasterId, buildingIds);
+  }
+  
+  /**
+   * Subscribe to disaster events
+   * @param callback - Called when a disaster starts or ends
+   * @returns Unsubscribe function
+   */
+  subscribeToDisasters(callback: (disaster: ActiveDisaster, isStarting: boolean) => void): () => void {
+    this.disasterListeners.add(callback);
+    // Also subscribe to the disaster manager
+    const unsubscribe = this.disasterManager.subscribe(callback);
+    return () => {
+      this.disasterListeners.delete(callback);
+      unsubscribe();
+    };
+  }
+  
+  /**
+   * Get disaster system stats for UI display
+   */
+  getDisasterStats(): {
+    activeDisasters: ActiveDisaster[];
+    totalDisasterCount: number;
+    totalPositiveEventCount: number;
+    yieldMultiplier: number;
+    costMultiplier: number;
+    prestigeMultiplier: number;
+    yieldsDelayed: boolean;
+    shutdownBuildingsCount: number;
+  } {
+    const state = this.disasterManager.getState();
+    return {
+      activeDisasters: state.activeDisasters,
+      totalDisasterCount: state.totalDisasterCount,
+      totalPositiveEventCount: state.totalPositiveEventCount,
+      yieldMultiplier: this.disasterManager.getYieldMultiplier(),
+      costMultiplier: this.disasterManager.getCostMultiplier(),
+      prestigeMultiplier: this.disasterManager.getPrestigeMultiplier(),
+      yieldsDelayed: this.disasterManager.areYieldsDelayed(),
+      shutdownBuildingsCount: this.disasterManager.getShutdownBuildings().length,
+    };
+  }
+  
+  /**
+   * Set current game tick for disaster synchronization
+   * Called by the game simulation to sync ticks
+   */
+  setCurrentGameTick(tick: number): void {
+    this.currentGameTick = tick;
+  }
+  
+  /**
+   * Get current game tick
+   */
+  getCurrentGameTick(): number {
+    return this.currentGameTick;
+  }
+  
+  // ---------------------------------------------------------------------------
+  // RUG PULL PROTECTION SYSTEM (Issue #57)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Calculate protection bonus for a building from nearby auditors
+   * @param building - The building to check protection for
+   * @returns Protection bonus (0-1, e.g., 0.25 = 25% risk reduction)
+   */
+  getProtectionBonus(building: PlacedCryptoBuilding): number {
+    let totalProtection = 0;
+    
+    for (const other of this.placedBuildings.values()) {
+      if (other.id === building.id) continue;
+      if (other.isDamaged) continue;
+      
+      const otherDef = getCryptoBuilding(other.buildingId);
+      if (!otherDef?.crypto?.effects?.protectionRadius) continue;
+      
+      const protectionRadius = otherDef.crypto.effects.protectionRadius;
+      const protectionBonus = otherDef.crypto.effects.protectionBonus || 0;
+      
+      // Calculate Chebyshev distance
+      const dx = Math.abs(other.gridX - building.gridX);
+      const dy = Math.abs(other.gridY - building.gridY);
+      const distance = Math.max(dx, dy);
+      
+      if (distance <= protectionRadius) {
+        // Closer = stronger protection (linear falloff)
+        const effectiveness = 1 - (distance / (protectionRadius + 1));
+        totalProtection += protectionBonus * effectiveness;
+      }
+    }
+    
+    // Cap at 75% protection (can never fully prevent rugs)
+    return Math.min(totalProtection, 0.75);
+  }
+  
+  /**
+   * Check if a building has insurance coverage from nearby insurance buildings
+   * @param building - The building to check insurance for
+   * @returns Insurance info { covered: boolean, recoveryRate: number }
+   */
+  getInsuranceCoverage(building: PlacedCryptoBuilding): { covered: boolean; recoveryRate: number } {
+    let maxRecovery = 0;
+    
+    for (const other of this.placedBuildings.values()) {
+      if (other.id === building.id) continue;
+      if (other.isDamaged) continue;
+      
+      const otherDef = getCryptoBuilding(other.buildingId);
+      if (!otherDef?.crypto?.effects?.insuranceRadius) continue;
+      
+      const insuranceRadius = otherDef.crypto.effects.insuranceRadius;
+      const insuranceRecovery = otherDef.crypto.effects.insuranceRecovery || 0;
+      
+      // Calculate Chebyshev distance
+      const dx = Math.abs(other.gridX - building.gridX);
+      const dy = Math.abs(other.gridY - building.gridY);
+      const distance = Math.max(dx, dy);
+      
+      if (distance <= insuranceRadius) {
+        maxRecovery = Math.max(maxRecovery, insuranceRecovery);
+      }
+    }
+    
+    return {
+      covered: maxRecovery > 0,
+      recoveryRate: maxRecovery,
+    };
+  }
+  
+  /**
+   * Calculate effective rug risk for a building after protection
+   * @param building - The building to check
+   * @returns Effective rug risk (reduced by protection)
+   */
+  getEffectiveRugRisk(building: PlacedCryptoBuilding): number {
+    const def = getCryptoBuilding(building.buildingId);
+    if (!def?.crypto?.effects) return 0;
+    
+    const baseRisk = def.crypto.effects.rugRisk;
+    const protectionBonus = this.getProtectionBonus(building);
+    const securityReduction = this.getSecurityRugReduction();
+    
+    // Apply all protection layers
+    const totalReduction = Math.min(protectionBonus + Math.max(0, securityReduction), 0.9);
+    return baseRisk * (1 - totalReduction);
+  }
+  
+  /**
+   * Generate an audit report for a placed building
+   * @param buildingId - Instance ID of the building
+   * @returns AuditReport or null if building not found
+   */
+  getAuditReport(buildingId: string): {
+    buildingId: string;
+    buildingName: string;
+    riskLevel: 'safe' | 'caution' | 'danger';
+    factors: string[];
+    recommendation: string;
+    effectiveRugRisk: number;
+    hasAuditorProtection: boolean;
+    hasInsuranceCoverage: boolean;
+  } | null {
+    const building = this.placedBuildings.get(buildingId);
+    if (!building) return null;
+    
+    const def = getCryptoBuilding(building.buildingId);
+    if (!def) return null;
+    
+    const baseRisk = def.crypto?.effects?.rugRisk || 0;
+    const protectionBonus = this.getProtectionBonus(building);
+    const insurance = this.getInsuranceCoverage(building);
+    const effectiveRisk = this.getEffectiveRugRisk(building);
+    
+    const factors: string[] = [];
+    
+    // Analyze risk factors
+    if (baseRisk >= 0.1) {
+      factors.push('Very high base rug risk');
+    } else if (baseRisk >= 0.05) {
+      factors.push('High base rug risk');
+    } else if (baseRisk >= 0.02) {
+      factors.push('Moderate base rug risk');
+    } else if (baseRisk > 0) {
+      factors.push('Low base rug risk');
+    } else {
+      factors.push('Zero base rug risk');
+    }
+    
+    if (protectionBonus > 0) {
+      factors.push(`Auditor protection: -${Math.round(protectionBonus * 100)}% risk`);
+    } else {
+      factors.push('No auditor nearby');
+    }
+    
+    if (insurance.covered) {
+      factors.push(`Insurance coverage: ${Math.round(insurance.recoveryRate * 100)}% recovery`);
+    } else {
+      factors.push('No insurance coverage');
+    }
+    
+    if (def.crypto?.tier === 'degen') {
+      factors.push('⚠️ Degen tier: contagion risk from nearby rugs');
+    }
+    
+    // Determine risk level
+    let riskLevel: 'safe' | 'caution' | 'danger';
+    if (effectiveRisk < 0.01) {
+      riskLevel = 'safe';
+    } else if (effectiveRisk < 0.05) {
+      riskLevel = 'caution';
+    } else {
+      riskLevel = 'danger';
+    }
+    
+    // Generate recommendation
+    let recommendation: string;
+    if (riskLevel === 'safe') {
+      recommendation = 'This building is well protected. Minimal intervention needed.';
+    } else if (riskLevel === 'caution') {
+      if (!protectionBonus) {
+        recommendation = 'Consider placing a Security Auditor nearby to reduce risk.';
+      } else if (!insurance.covered) {
+        recommendation = 'Adding Crypto Insurance would protect your investment.';
+      } else {
+        recommendation = 'Risk is moderate. Monitor market conditions.';
+      }
+    } else {
+      if (!protectionBonus && !insurance.covered) {
+        recommendation = 'HIGH RISK! Place both Auditor and Insurance buildings nearby immediately.';
+      } else if (!protectionBonus) {
+        recommendation = 'DANGER! Security Auditor needed to reduce rug risk.';
+      } else if (!insurance.covered) {
+        recommendation = 'HIGH RISK! Insurance recommended to protect investment.';
+      } else {
+        recommendation = 'Maximum protection applied but risk remains high due to building type.';
+      }
+    }
+    
+    return {
+      buildingId,
+      buildingName: def.name,
+      riskLevel,
+      factors,
+      recommendation,
+      effectiveRugRisk: effectiveRisk,
+      hasAuditorProtection: protectionBonus > 0,
+      hasInsuranceCoverage: insurance.covered,
+    };
+  }
+  
+  /**
+   * Process insurance payout when a building is rugged
+   * @param building - The rugged building
+   * @returns Payout amount (0 if not insured)
+   */
+  processInsurancePayout(building: PlacedCryptoBuilding): number {
+    const def = getCryptoBuilding(building.buildingId);
+    if (!def) return 0;
+    
+    const insurance = this.getInsuranceCoverage(building);
+    if (!insurance.covered) return 0;
+    
+    const payout = Math.floor(def.cost * insurance.recoveryRate);
+    this.state.treasury += payout;
+    
+    logger.info(`[CryptoEconomy] Insurance payout of $${payout} for ${def.name}`);
+    return payout;
+  }
+  
+  /**
+   * Get all buildings with protection effects (auditors, insurance)
+   * @returns Array of protection building info for visualization
+   */
+  getProtectionBuildings(): Array<{
+    id: string;
+    buildingId: string;
+    gridX: number;
+    gridY: number;
+    protectionRadius?: number;
+    insuranceRadius?: number;
+    type: 'auditor' | 'insurance';
+  }> {
+    const protectionBuildings: Array<{
+      id: string;
+      buildingId: string;
+      gridX: number;
+      gridY: number;
+      protectionRadius?: number;
+      insuranceRadius?: number;
+      type: 'auditor' | 'insurance';
+    }> = [];
+    
+    for (const building of this.placedBuildings.values()) {
+      if (building.isDamaged) continue;
+      
+      const def = getCryptoBuilding(building.buildingId);
+      if (!def?.crypto?.effects) continue;
+      
+      const effects = def.crypto.effects;
+      
+      if (effects.protectionRadius) {
+        protectionBuildings.push({
+          id: building.id,
+          buildingId: building.buildingId,
+          gridX: building.gridX,
+          gridY: building.gridY,
+          protectionRadius: effects.protectionRadius,
+          type: 'auditor',
+        });
+      }
+      
+      if (effects.insuranceRadius) {
+        protectionBuildings.push({
+          id: building.id,
+          buildingId: building.buildingId,
+          gridX: building.gridX,
+          gridY: building.gridY,
+          insuranceRadius: effects.insuranceRadius,
+          type: 'insurance',
+        });
+      }
+    }
+    
+    return protectionBuildings;
+  }
+  
+  /**
+   * Get protection stats summary for UI display
+   */
+  getProtectionStats(): {
+    auditorCount: number;
+    insuranceCount: number;
+    protectedBuildingsCount: number;
+    insuredBuildingsCount: number;
+    avgProtectionBonus: number;
+  } {
+    let auditorCount = 0;
+    let insuranceCount = 0;
+    let protectedCount = 0;
+    let insuredCount = 0;
+    let totalProtection = 0;
+    
+    const protectionBuildings = this.getProtectionBuildings();
+    for (const pb of protectionBuildings) {
+      if (pb.type === 'auditor') auditorCount++;
+      if (pb.type === 'insurance') insuranceCount++;
+    }
+    
+    for (const building of this.placedBuildings.values()) {
+      const protection = this.getProtectionBonus(building);
+      const insurance = this.getInsuranceCoverage(building);
+      
+      if (protection > 0) {
+        protectedCount++;
+        totalProtection += protection;
+      }
+      if (insurance.covered) {
+        insuredCount++;
+      }
+    }
+    
+    const buildingCount = this.placedBuildings.size;
+    const avgProtection = buildingCount > 0 ? totalProtection / buildingCount : 0;
+    
+    return {
+      auditorCount,
+      insuranceCount,
+      protectedBuildingsCount: protectedCount,
+      insuredBuildingsCount: insuredCount,
+      avgProtectionBonus: avgProtection,
+    };
   }
   
   // ---------------------------------------------------------------------------

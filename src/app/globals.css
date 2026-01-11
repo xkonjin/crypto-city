@@ -654,6 +654,12 @@ html, body {
   50% { opacity: 0.7; }
 }
 
+/* Disaster event flash - Issue #67 */
+@keyframes disasterFlash {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 /* Smoke particle floating animation */
 @keyframes rugSmokeFloat {
   0% {
