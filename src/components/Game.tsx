@@ -169,6 +169,11 @@ import { disasterManager, type ActiveDisaster } from "@/lib/disasters";
 // Import crypto building animations (Issue #27)
 import { CryptoParticleSystem } from "@/components/game/CryptoParticleSystem";
 
+// Import accessibility components (Issue #60)
+import { SkipLinks } from "@/components/game/SkipLinks";
+import { ScreenReaderAnnouncer } from "@/components/game/ScreenReaderAnnouncer";
+import { useAccessibility } from "@/hooks/useAccessibility";
+
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg("containers"), msg("bulk materials"), msg("oil")];
 
@@ -1283,6 +1288,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     return (
       <TooltipProvider>
         <div className="w-full h-full overflow-hidden bg-background flex flex-col">
+          {/* Skip Links for keyboard navigation - Mobile (Issue #60) */}
+          <SkipLinks />
+          
+          {/* Screen Reader Announcer - Mobile (Issue #60) */}
+          <ScreenReaderAnnouncer enabled={true} />
+          
           {/* Mobile Top Bar */}
           <MobileTopBar
             selectedTile={
@@ -1330,22 +1341,26 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             />
           )}
 
-          {/* Main canvas area - fills remaining space, with padding for top/bottom bars */}
-          <div
+          {/* Main canvas area - fills remaining space, with padding for top/bottom bars (Issue #60) */}
+          <main
+            role="main"
+            id="main-content"
             className="flex-1 relative overflow-hidden"
             style={{ paddingTop: "72px", paddingBottom: "76px" }}
           >
-            <ErrorBoundary>
-              <CanvasIsometricGrid
+            <div id="game-canvas">
+              <ErrorBoundary>
+                <CanvasIsometricGrid
                 overlayMode={overlayMode}
                 selectedTile={selectedTile}
                 setSelectedTile={setSelectedTile}
                 isMobile={true}
                 onViewportChange={setViewport}
                 onBargeDelivery={handleBargeDelivery}
-                selectedCryptoBuilding={selectedCryptoBuilding}
-              />
-            </ErrorBoundary>
+                  selectedCryptoBuilding={selectedCryptoBuilding}
+                />
+              </ErrorBoundary>
+            </div>
             {/* Crypto Building Particle System - Mobile (Issue #27) */}
             {viewport && (
               <CryptoParticleSystem
@@ -1401,14 +1416,16 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             <div className="absolute bottom-0 left-0 right-0 z-20">
               <NewsTicker events={cryptoEvents} className="text-xs" />
             </div>
-          </div>
+          </main>
 
-          {/* Mobile Bottom Toolbar */}
-          <MobileToolbar
+          {/* Mobile Bottom Toolbar (Issue #60) */}
+          <nav role="navigation" aria-label="Game tools" id="building-panel">
+            <MobileToolbar
             onOpenPanel={(panel) => setActivePanel(panel)}
-            overlayMode={overlayMode}
-            setOverlayMode={setOverlayMode}
-          />
+              overlayMode={overlayMode}
+              setOverlayMode={setOverlayMode}
+            />
+          </nav>
 
           {state.activePanel === "budget" && <BudgetPanel />}
           {state.activePanel === "statistics" && <StatisticsPanel />}
@@ -1553,8 +1570,14 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   return (
     <TooltipProvider>
       <div ref={gameContainerRef} data-testid="game-container" className="game-container w-full h-full min-h-[720px] overflow-hidden bg-background flex flex-col">
+        {/* Skip Links for keyboard navigation (Issue #60) */}
+        <SkipLinks />
+        
+        {/* Screen Reader Announcer (Issue #60) */}
+        <ScreenReaderAnnouncer enabled={true} />
+        
         {/* Crypto Treasury Panel - Top */}
-        <div className="relative z-50">
+        <header role="banner" className="relative z-50">
           <TreasuryPanel economyState={economyState} />
           {/* Notification Badge (Issue #65) */}
           <div className="absolute right-64 top-1/2 -translate-y-1/2">
@@ -1589,18 +1612,24 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               }
             `}
             title="Toggle Crypto Buildings Panel"
+            aria-label="Toggle Crypto Buildings Panel"
           >
             🏗️ Crypto Buildings
           </button>
-        </div>
+        </header>
 
         <div className="flex-1 flex overflow-hidden">
-          <Sidebar onExit={onExit} />
+          {/* Sidebar navigation (Issue #60) */}
+          <nav role="navigation" aria-label="Building tools" id="building-panel">
+            <Sidebar onExit={onExit} />
+          </nav>
 
-          <div className="flex-1 flex flex-col ml-56">
+          {/* Main content area (Issue #60) */}
+          <main role="main" id="main-content" className="flex-1 flex flex-col ml-56">
             <TopBar />
             <StatsPanel />
-            <div className="flex-1 relative overflow-visible">
+            {/* Game canvas container (Issue #60) */}
+            <div id="game-canvas" className="flex-1 relative overflow-visible">
               <ErrorBoundary>
                 <CanvasIsometricGrid
                   overlayMode={overlayMode}
@@ -1684,174 +1713,175 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                 </div>
               )}
             </div>
-          </div>
-
-          {state.activePanel === "budget" && <BudgetPanel />}
-          {state.activePanel === "statistics" && <StatisticsPanel />}
-          {state.activePanel === "advisors" && <AdvisorsPanel economyState={economyState} />}
-          {state.activePanel === "settings" && <SettingsPanel />}
-          {state.activePanel === "petitions" && <PetitionsPanel />}
-          {state.activePanel === "events" && <EventsPanel />}
-          {state.activePanel === "leaderboard" && <LeaderboardPanel />}
-          {state.activePanel === "referral" && <ReferralPanel />}
-          {state.activePanel === "challenges" && (
-            <ChallengesPanel
-              cryptoState={economyState}
-              challengeState={challengeState}
-              onClaimReward={(amount) => {
-                addMoney(amount);
-                cryptoEconomy.deposit(amount);
-              }}
-              onUpdateChallengeState={setChallengeState}
-            />
-          )}
-          {state.activePanel === "prestige" && (
-            <PrestigePanel
-              cryptoState={economyState}
-              prestigeState={prestigeState}
-              onUpdatePrestigeState={(newState) => {
-                setPrestigeState(newState);
-                savePrestigeState(newState);
-              }}
-              onPrestige={handlePrestige}
-              gameDays={economyState.gameDays}
-            />
-          )}
-          {state.activePanel === "milestones" && (
-            <MilestonePanel
-              cryptoState={economyState}
-              milestoneState={milestoneState}
-              onClaimReward={(amount) => {
-                addMoney(amount);
-                cryptoEconomy.deposit(amount);
-              }}
-              onUpdateMilestoneState={setMilestoneState}
-              onStartMission={handleStartMission}
-            />
-          )}
-          {state.activePanel === "reports" && (
-            <FinancialReportPanel
-              economyState={economyState}
-              buildings={cryptoEconomy.getPlacedBuildings()}
-            />
-          )}
-          {state.activePanel === "ordinances" && <OrdinancePanel />}
-
-          {/* Crypto Building Panel - shown via sidebar or toggle button */}
-          {(showCryptoBuildingPanel || state.activePanel === "crypto") && (
-            <div className="fixed right-4 top-20 z-40 w-80">
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setShowCryptoBuildingPanel(false);
-                    if (state.activePanel === "crypto") {
-                      setActivePanel("none");
-                    }
-                  }}
-                  className="absolute -top-2 -right-2 z-50 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full text-white text-xs flex items-center justify-center shadow-lg"
-                >
-                  ✕
-                </button>
-                <ErrorBoundary>
-                  <CryptoBuildingPanel
-                    selectedBuilding={selectedCryptoBuilding}
-                    onSelectBuilding={(buildingId) => {
-                      setSelectedCryptoBuilding(buildingId);
-                      setTool("select");
-                    }}
-                    treasury={economyState.treasury}
-                  />
-                </ErrorBoundary>
-              </div>
-            </div>
-          )}
-
-          <VinnieDialog
-            open={showVinnieDialog}
-            onOpenChange={setShowVinnieDialog}
-          />
-          <CommandMenu />
-
-          {/* Terminology onboarding for first-time players (Issue #64) */}
-          <TerminologyOnboarding />
-
-          {/* Tutorial system for new players */}
-          <Tutorial state={state} />
-
-          {/* Daily rewards system */}
-          <DailyRewards onClaimReward={(amount) => cryptoEconomy.deposit(amount)} />
-
-          {/* Cobie Narrator for sardonic tips and commentary */}
-          <CobieNarrator
-            message={cobieMessage}
-            isVisible={isCobieVisible}
-            onDismiss={onCobieDismiss}
-            onDisableCobie={onDisableCobie}
-          />
-
-          {/* Milestone Unlock Notification (Issue #56) */}
-          <UnlockNotification
-            milestone={pendingMilestone}
-            isVisible={showUnlockNotification}
-            onDismiss={handleUnlockNotificationDismiss}
-          />
-
-          {/* Game End Modal (Issues #29, #43) */}
-          {showGameEndModal && gameEndStats && (
-            <GameEndModal
-              isOpen={showGameEndModal}
-              isVictory={gameObjectives.isVictory}
-              endReason={gameObjectives.endReason || 'Unknown'}
-              endConditionId={gameObjectives.endConditionId || 'unknown'}
-              stats={gameEndStats}
-              onPlayAgain={handlePlayAgain}
-              onContinueSandbox={handleContinueSandbox}
-            />
-          )}
-
-          {/* Achievement Toast and Share Dialog (Issue #39) */}
-          <AchievementToast
-            achievement={pendingAchievement}
-            isVisible={showAchievementToast}
-            onDismiss={handleAchievementToastDismiss}
-            onShare={handleAchievementShare}
-          />
-          <AchievementShareDialog
-            achievement={pendingAchievement}
-            stats={{
-              treasury: state.stats.money,
-              population: state.stats.population,
-              days: state.day,
-            }}
-            isOpen={showAchievementShareDialog}
-            onClose={handleAchievementShareDialogClose}
-          />
-
-          {/* Rug Pull Animation and Toast (Issue #47) */}
-          <RugPullAnimation
-            event={activeRugPull}
-            screenPosition={rugPullScreenPosition}
-            onComplete={handleRugPullAnimationComplete}
-            onScreenShake={handleScreenShake}
-          />
-          <RugPullToast
-            event={activeRugPull}
-            isVisible={showRugPullToast}
-            onDismiss={handleRugPullToastDismiss}
-          />
-
-          {/* Notification Center and Toast (Issue #65) */}
-          <NotificationCenter
-            isOpen={showNotificationCenter}
-            onClose={() => setShowNotificationCenter(false)}
-          />
-          <NotificationToast
-            notification={notificationToast}
-            isVisible={showNotificationToast}
-            onDismiss={handleNotificationToastDismiss}
-            onOpenCenter={handleOpenNotificationCenter}
-          />
+          </main>
         </div>
+
+        {state.activePanel === "budget" && <BudgetPanel />}
+        {state.activePanel === "statistics" && <StatisticsPanel />}
+        {state.activePanel === "advisors" && <AdvisorsPanel economyState={economyState} />}
+        {state.activePanel === "settings" && <SettingsPanel />}
+        {state.activePanel === "petitions" && <PetitionsPanel />}
+        {state.activePanel === "events" && <EventsPanel />}
+        {state.activePanel === "leaderboard" && <LeaderboardPanel />}
+        {state.activePanel === "referral" && <ReferralPanel />}
+        {state.activePanel === "challenges" && (
+          <ChallengesPanel
+            cryptoState={economyState}
+            challengeState={challengeState}
+            onClaimReward={(amount) => {
+              addMoney(amount);
+              cryptoEconomy.deposit(amount);
+            }}
+            onUpdateChallengeState={setChallengeState}
+          />
+        )}
+        {state.activePanel === "prestige" && (
+          <PrestigePanel
+            cryptoState={economyState}
+            prestigeState={prestigeState}
+            onUpdatePrestigeState={(newState) => {
+              setPrestigeState(newState);
+              savePrestigeState(newState);
+            }}
+            onPrestige={handlePrestige}
+            gameDays={economyState.gameDays}
+          />
+        )}
+        {state.activePanel === "milestones" && (
+          <MilestonePanel
+            cryptoState={economyState}
+            milestoneState={milestoneState}
+            onClaimReward={(amount) => {
+              addMoney(amount);
+              cryptoEconomy.deposit(amount);
+            }}
+            onUpdateMilestoneState={setMilestoneState}
+            onStartMission={handleStartMission}
+          />
+        )}
+        {state.activePanel === "reports" && (
+          <FinancialReportPanel
+            economyState={economyState}
+            buildings={cryptoEconomy.getPlacedBuildings()}
+          />
+        )}
+        {state.activePanel === "ordinances" && <OrdinancePanel />}
+
+        {/* Crypto Building Panel - shown via sidebar or toggle button */}
+        {(showCryptoBuildingPanel || state.activePanel === "crypto") && (
+          <aside role="complementary" aria-label="Crypto Buildings" className="fixed right-4 top-20 z-40 w-80">
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowCryptoBuildingPanel(false);
+                  if (state.activePanel === "crypto") {
+                    setActivePanel("none");
+                  }
+                }}
+                className="absolute -top-2 -right-2 z-50 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full text-white text-xs flex items-center justify-center shadow-lg"
+                aria-label="Close crypto buildings panel"
+              >
+                ✕
+              </button>
+              <ErrorBoundary>
+                <CryptoBuildingPanel
+                  selectedBuilding={selectedCryptoBuilding}
+                  onSelectBuilding={(buildingId) => {
+                    setSelectedCryptoBuilding(buildingId);
+                    setTool("select");
+                  }}
+                  treasury={economyState.treasury}
+                />
+              </ErrorBoundary>
+            </div>
+          </aside>
+        )}
+
+        <VinnieDialog
+          open={showVinnieDialog}
+          onOpenChange={setShowVinnieDialog}
+        />
+        <CommandMenu />
+
+        {/* Terminology onboarding for first-time players (Issue #64) */}
+        <TerminologyOnboarding />
+
+        {/* Tutorial system for new players */}
+        <Tutorial state={state} />
+
+        {/* Daily rewards system */}
+        <DailyRewards onClaimReward={(amount) => cryptoEconomy.deposit(amount)} />
+
+        {/* Cobie Narrator for sardonic tips and commentary */}
+        <CobieNarrator
+          message={cobieMessage}
+          isVisible={isCobieVisible}
+          onDismiss={onCobieDismiss}
+          onDisableCobie={onDisableCobie}
+        />
+
+        {/* Milestone Unlock Notification (Issue #56) */}
+        <UnlockNotification
+          milestone={pendingMilestone}
+          isVisible={showUnlockNotification}
+          onDismiss={handleUnlockNotificationDismiss}
+        />
+
+        {/* Game End Modal (Issues #29, #43) */}
+        {showGameEndModal && gameEndStats && (
+          <GameEndModal
+            isOpen={showGameEndModal}
+            isVictory={gameObjectives.isVictory}
+            endReason={gameObjectives.endReason || 'Unknown'}
+            endConditionId={gameObjectives.endConditionId || 'unknown'}
+            stats={gameEndStats}
+            onPlayAgain={handlePlayAgain}
+            onContinueSandbox={handleContinueSandbox}
+          />
+        )}
+
+        {/* Achievement Toast and Share Dialog (Issue #39) */}
+        <AchievementToast
+          achievement={pendingAchievement}
+          isVisible={showAchievementToast}
+          onDismiss={handleAchievementToastDismiss}
+          onShare={handleAchievementShare}
+        />
+        <AchievementShareDialog
+          achievement={pendingAchievement}
+          stats={{
+            treasury: state.stats.money,
+            population: state.stats.population,
+            days: state.day,
+          }}
+          isOpen={showAchievementShareDialog}
+          onClose={handleAchievementShareDialogClose}
+        />
+
+        {/* Rug Pull Animation and Toast (Issue #47) */}
+        <RugPullAnimation
+          event={activeRugPull}
+          screenPosition={rugPullScreenPosition}
+          onComplete={handleRugPullAnimationComplete}
+          onScreenShake={handleScreenShake}
+        />
+        <RugPullToast
+          event={activeRugPull}
+          isVisible={showRugPullToast}
+          onDismiss={handleRugPullToastDismiss}
+        />
+
+        {/* Notification Center and Toast (Issue #65) */}
+        <NotificationCenter
+          isOpen={showNotificationCenter}
+          onClose={() => setShowNotificationCenter(false)}
+        />
+        <NotificationToast
+          notification={notificationToast}
+          isVisible={showNotificationToast}
+          onDismiss={handleNotificationToastDismiss}
+          onOpenCenter={handleOpenNotificationCenter}
+        />
 
         {/* Crypto News Ticker - Bottom */}
         <NewsTicker events={cryptoEvents} className="z-50" />

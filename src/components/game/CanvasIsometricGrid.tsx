@@ -3219,6 +3219,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         width={canvasSize.width}
         height={canvasSize.height}
         className="absolute top-0 left-0"
+        tabIndex={0}
+        role="application"
+        aria-label="Isometric city grid. Use arrow keys to navigate, Enter or Space to select, Escape to cancel."
       />
       {/* PERF: Separate canvas for hover/selection highlights - avoids full redraw on mouse move */}
       <canvas
