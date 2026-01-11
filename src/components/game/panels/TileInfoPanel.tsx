@@ -7,6 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CloseIcon } from '@/components/ui/Icons';
+import { 
+  getBuildingDisplayName, 
+  getBuildingLore,
+  getBuildingIcon,
+  getBuildingCategory,
+  getCategoryDisplayInfo,
+} from '@/games/isocity/types/buildingDisplayNames';
+import type { BuildingType } from '@/games/isocity/types/buildings';
 
 interface TileInfoPanelProps {
   tile: Tile;
@@ -30,22 +38,48 @@ export function TileInfoPanel({
 }: TileInfoPanelProps) {
   const { x, y } = tile;
   
+  // Get crypto-themed display info
+  const buildingType = tile.building.type as BuildingType;
+  const displayName = getBuildingDisplayName(buildingType);
+  const lore = getBuildingLore(buildingType);
+  const icon = getBuildingIcon(buildingType);
+  const category = getBuildingCategory(buildingType);
+  const categoryInfo = getCategoryDisplayInfo(category);
+  
   return (
     <Card 
       className={`${isMobile ? 'fixed left-0 right-0 w-full rounded-none border-x-0 border-t border-b z-30' : 'absolute top-4 right-4 w-72'}`} 
       style={isMobile ? { top: 'calc(72px + env(safe-area-inset-top, 0px))' } : undefined}
     >
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-sm font-sans">Tile ({x}, {y})</CardTitle>
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{icon}</span>
+          <CardTitle className="text-sm font-sans">{displayName}</CardTitle>
+        </div>
         <Button variant="ghost" size="icon-sm" onClick={onClose}>
           <CloseIcon size={14} />
         </Button>
       </CardHeader>
       
       <CardContent className="space-y-3 text-sm">
+        {/* Lore text */}
+        {lore && (
+          <p className="text-xs text-muted-foreground italic border-l-2 border-amber-500/50 pl-2 py-1">
+            {lore}
+          </p>
+        )}
+        
+        <Separator />
+        
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Building</span>
-          <span className="capitalize">{tile.building.type.replace(/_/g, ' ')}</span>
+          <span className="text-muted-foreground">District</span>
+          <Badge variant="outline" className="text-xs">
+            {categoryInfo?.icon} {categoryInfo?.displayName}
+          </Badge>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Coordinates</span>
+          <span className="font-mono text-xs">({x}, {y})</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Zone</span>

@@ -7,7 +7,7 @@ interface LoadingScreenProps {
   onComplete: () => void;
 }
 
-// Crypto-themed loading messages
+// Crypto-themed loading messages with cultural references
 const LOADING_MESSAGES = [
   'Syncing blockchain...',
   'Loading DeFi protocols...',
@@ -19,6 +19,17 @@ const LOADING_MESSAGES = [
   'WAGMI...',
   'Preparing rug protection...',
   'Compiling yield strategies...',
+  // Cultural references
+  'GM frens...',
+  'Checking if this is financial advice... (it\'s not)',
+  'Verifying you\'re not getting goxed...',
+  'Auditing smart contracts... probably...',
+  'Calculating diamond hand strength...',
+  'Consulting the Cobie oracle...',
+  'Loading "Fallen Protocols" museum exhibits...',
+  'Teaching NPCs to say "ser"...',
+  'Hiding seed phrases under mattresses...',
+  'Scheduling boating accidents...',
 ];
 
 export function LoadingScreen({ onComplete }: LoadingScreenProps) {

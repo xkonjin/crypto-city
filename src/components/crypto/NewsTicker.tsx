@@ -52,7 +52,12 @@ interface NewsTickerProps {
 // CONSTANTS
 // =============================================================================
 
+// Import sardonic headlines from our lore system
+import { NEWS_HEADLINES, getNewsHeadline, type MarketCycle } from '@/games/isocity/types/cryptoCultureLore';
+
+// Generate headlines from lore system (more variety)
 const DEFAULT_HEADLINES = [
+  // Base headlines that always work
   '📊 Markets are crabbing sideways...',
   '☕ GM to all the degens out there',
   '💎 Diamond hands stay winning',
@@ -61,6 +66,8 @@ const DEFAULT_HEADLINES = [
   '🌙 Moon soon? Maybe. Probably. Eventually.',
   '🔗 Cross-chain activity increasing',
   '💰 DeFi TVL continues to grow',
+  // Sardonic headlines from our lore system
+  ...NEWS_HEADLINES.filter(h => h.cycle === 'any').map(h => `📰 ${h.headline} — ${h.source}`),
 ];
 
 const EVENT_ICONS: Record<CryptoEventType, string> = {
