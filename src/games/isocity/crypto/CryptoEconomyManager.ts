@@ -228,6 +228,8 @@ export function createInitialEconomyState(): CryptoEconomyState {
     activeTrades: [],
     activeYieldBoosts: [],
     repairMiniGame: null,
+    // === ORDINANCES SYSTEM (Issue #69) ===
+    dailyOrdinanceCost: 0,
   };
 }
 
@@ -313,6 +315,13 @@ export class CryptoEconomyManager {
   
   /** Listeners for disaster events */
   private disasterListeners: Set<(disaster: ActiveDisaster, isStarting: boolean) => void> = new Set();
+  
+  // ---------------------------------------------------------------------------
+  // ORDINANCES SYSTEM INTEGRATION (Issue #69)
+  // ---------------------------------------------------------------------------
+  
+  /** Ordinance manager instance */
+  private ordinanceManager: import('../../../lib/ordinances').OrdinanceManager | null = null;
   
   constructor(initialState?: Partial<CryptoEconomyState>, disasterMgr?: DisasterManager) {
     this.disasterManager = disasterMgr || defaultDisasterManager;
@@ -733,11 +742,25 @@ export class CryptoEconomyManager {
     const disasterCostMultiplier = this.disasterManager.getCostMultiplier();
     // ==== END DISASTER SYSTEM ====
     
-    // Calculate daily maintenance costs
-    const dailyMaintenanceCost = this.calculateMaintenanceCosts() * disasterCostMultiplier;
+    // ==== ORDINANCES SYSTEM (Issue #69) ====
+    // Apply ordinance yield modifier
+    const ordinanceYieldModifier = this.getOrdinanceYieldModifier();
+    adjustedYield *= (1 + ordinanceYieldModifier);
+    
+    // Get ordinance maintenance modifier
+    const ordinanceMaintenanceModifier = this.getOrdinanceMaintenanceModifier();
+    // ==== END ORDINANCES SYSTEM ====
+    
+    // Calculate daily maintenance costs (apply ordinance modifier)
+    const dailyMaintenanceCost = this.calculateMaintenanceCosts() * disasterCostMultiplier * (1 + ordinanceMaintenanceModifier);
     
     // Calculate daily service funding costs
     const dailyServiceCost = this.calculateServiceCosts();
+    
+    // ==== ORDINANCES SYSTEM (Issue #69) ====
+    // Calculate daily ordinance costs
+    const dailyOrdinanceCost = this.getOrdinanceDailyCost();
+    // ==== END ORDINANCES SYSTEM ====
     // ==== END MONEY SINKS ====
     
     // Update state
@@ -749,6 +772,7 @@ export class CryptoEconomyManager {
       lastUpdate: Date.now(),
       dailyMaintenanceCost,
       dailyServiceCost,
+      dailyOrdinanceCost,
     };
     
     this.notifyListeners();
@@ -874,7 +898,13 @@ export class CryptoEconomyManager {
     // Calculate costs for this tick
     const maintenanceCostThisTick = (this.state.dailyMaintenanceCost / ticksPerDay) * tickFraction * speedMultiplier;
     const serviceCostThisTick = (this.state.dailyServiceCost / ticksPerDay) * tickFraction * speedMultiplier;
-    const totalCostsThisTick = maintenanceCostThisTick + serviceCostThisTick;
+    
+    // ==== ORDINANCES SYSTEM (Issue #69) ====
+    // Calculate ordinance costs for this tick
+    const ordinanceCostThisTick = (this.state.dailyOrdinanceCost / ticksPerDay) * tickFraction * speedMultiplier;
+    // ==== END ORDINANCES SYSTEM ====
+    
+    const totalCostsThisTick = maintenanceCostThisTick + serviceCostThisTick + ordinanceCostThisTick;
     
     // Net change: yield - costs
     const netChangeThisTick = yieldThisTick - totalCostsThisTick;
@@ -1502,6 +1532,108 @@ export class CryptoEconomyManager {
    */
   getPrestigeRugResistance(): number {
     return this.prestigeRugResistance;
+  }
+  
+  // ---------------------------------------------------------------------------
+  // ORDINANCES SYSTEM (Issue #69)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Set the ordinance manager instance
+   * @param manager - OrdinanceManager instance
+   */
+  setOrdinanceManager(manager: import('../../../lib/ordinances').OrdinanceManager): void {
+    this.ordinanceManager = manager;
+    this.recalculateEconomy();
+  }
+  
+  /**
+   * Get the ordinance manager instance
+   */
+  getOrdinanceManager(): import('../../../lib/ordinances').OrdinanceManager | null {
+    return this.ordinanceManager;
+  }
+  
+  /**
+   * Get yield modifier from active ordinances
+   * @returns Multiplier (e.g., 0.1 for +10%)
+   */
+  getOrdinanceYieldModifier(): number {
+    if (!this.ordinanceManager) return 0;
+    const effects = this.ordinanceManager.getActiveEffects();
+    return effects.yieldModifier || 0;
+  }
+  
+  /**
+   * Get risk modifier from active ordinances
+   * @returns Modifier (e.g., -0.15 for -15% rug risk)
+   */
+  getOrdinanceRiskModifier(): number {
+    if (!this.ordinanceManager) return 0;
+    const effects = this.ordinanceManager.getActiveEffects();
+    return effects.riskModifier || 0;
+  }
+  
+  /**
+   * Get maintenance modifier from active ordinances
+   * @returns Modifier (e.g., -0.3 for -30% maintenance)
+   */
+  getOrdinanceMaintenanceModifier(): number {
+    if (!this.ordinanceManager) return 0;
+    const effects = this.ordinanceManager.getActiveEffects();
+    return effects.maintenanceModifier || 0;
+  }
+  
+  /**
+   * Get daily cost from active ordinances
+   */
+  getOrdinanceDailyCost(): number {
+    if (!this.ordinanceManager) return 0;
+    return this.ordinanceManager.getDailyCost();
+  }
+  
+  /**
+   * Check if buildings should be auto-insured (from ordinance)
+   */
+  shouldAutoInsureBuildings(): boolean {
+    if (!this.ordinanceManager) return false;
+    const effects = this.ordinanceManager.getActiveEffects();
+    return effects.autoInsure === true;
+  }
+  
+  /**
+   * Check if degen buildings require approval (from ordinance)
+   */
+  requiresDegenApproval(): boolean {
+    if (!this.ordinanceManager) return false;
+    const effects = this.ordinanceManager.getActiveEffects();
+    return effects.requireApproval === true;
+  }
+  
+  /**
+   * Get protection bonus from ordinances (for all buildings)
+   */
+  getOrdinanceProtectionBonus(): number {
+    if (!this.ordinanceManager) return 0;
+    const effects = this.ordinanceManager.getActiveEffects();
+    return effects.protectionBonus || 0;
+  }
+  
+  /**
+   * Get combined effects from all active ordinances
+   */
+  getOrdinanceEffects(): import('../../../lib/ordinances').OrdinanceEffect {
+    if (!this.ordinanceManager) {
+      return {
+        yieldModifier: 0,
+        riskModifier: 0,
+        happinessModifier: 0,
+        costModifier: 0,
+        maintenanceModifier: 0,
+        populationGrowth: 0,
+      };
+    }
+    return this.ordinanceManager.getActiveEffects();
   }
   
   // ---------------------------------------------------------------------------

@@ -52,6 +52,7 @@ import {
   PrestigePanel,
   MilestonePanel,
   FinancialReportPanel,
+  OrdinancePanel,
 } from "@/components/game/panels";
 import { MiniMap } from "@/components/game/MiniMap";
 import { TopBar, StatsPanel } from "@/components/game/TopBar";
@@ -1457,6 +1458,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               buildings={cryptoEconomy.getPlacedBuildings()}
             />
           )}
+          {state.activePanel === "ordinances" && <OrdinancePanel />}
 
           <VinnieDialog
             open={showVinnieDialog}
@@ -1733,6 +1735,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               buildings={cryptoEconomy.getPlacedBuildings()}
             />
           )}
+          {state.activePanel === "ordinances" && <OrdinancePanel />}
 
           {/* Crypto Building Panel - shown via sidebar or toggle button */}
           {(showCryptoBuildingPanel || state.activePanel === "crypto") && (

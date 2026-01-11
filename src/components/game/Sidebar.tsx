@@ -35,6 +35,7 @@ const UI_LABELS = {
   prestige: msg('Prestige'),
   milestones: msg('Milestones'),
   reports: msg('Reports'),
+  ordinances: msg('Ordinances'),
 };
 import {
   BudgetIcon,
@@ -42,7 +43,7 @@ import {
   AdvisorIcon,
   SettingsIcon,
 } from '@/components/ui/Icons';
-import { Trophy, UserPlus, Target, Sparkles, Flag, FileBarChart } from 'lucide-react';
+import { Trophy, UserPlus, Target, Sparkles, Flag, FileBarChart, Scroll } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { openCommandMenu } from '@/components/ui/CommandMenu';
@@ -734,6 +735,7 @@ export const Sidebar = React.memo(function Sidebar({ onExit }: { onExit?: () => 
             { panel: 'advisors' as const, icon: <AdvisorIcon size={16} />, labelKey: 'advisors' as const },
             { panel: 'challenges' as const, icon: <Target size={16} />, labelKey: 'challenges' as const },
             { panel: 'milestones' as const, icon: <Flag size={16} />, labelKey: 'milestones' as const },
+            { panel: 'ordinances' as const, icon: <Scroll size={16} />, labelKey: 'ordinances' as const },
             { panel: 'prestige' as const, icon: <Sparkles size={16} />, labelKey: 'prestige' as const },
             { panel: 'leaderboard' as const, icon: <Trophy size={16} />, labelKey: 'leaderboard' as const },
             { panel: 'referral' as const, icon: <UserPlus size={16} />, labelKey: 'referral' as const },

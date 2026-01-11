@@ -399,6 +399,9 @@ export interface CryptoEconomyState {
   activeYieldBoosts: ActiveYieldBoost[];
   /** Current repair mini-game state (null if not active) */
   repairMiniGame: RepairMiniGame | null;
+  // === ORDINANCES SYSTEM (Issue #69) ===
+  /** Daily cost from active ordinances */
+  dailyOrdinanceCost: number;
 }
 
 // =============================================================================

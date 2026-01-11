@@ -12,3 +12,4 @@ export { ChallengesPanel } from "./ChallengesPanel";
 export { PrestigePanel } from "./PrestigePanel";
 export { MilestonePanel } from "./MilestonePanel";
 export { FinancialReportPanel } from "./FinancialReportPanel";
+export { OrdinancePanel } from "./OrdinancePanel";

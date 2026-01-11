@@ -1,11 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { msg, useMessages } from 'gt-next';
 import { useGame } from '@/context/GameContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
+import { cryptoEconomy, CryptoEconomyState } from '@/games/isocity/crypto';
+import { getOrdinanceManager } from '@/lib/ordinances';
 
 // Translatable UI labels
 const UI_LABELS = {
@@ -17,12 +19,35 @@ const UI_LABELS = {
   taxRevenue: msg('Tax Revenue'),
   cryptoTax: msg('Crypto Tax'),
   totalIncome: msg('Total Income'),
+  cryptoExpenses: msg('Crypto Expenses'),
+  maintenance: msg('Maintenance'),
+  services: msg('Services'),
+  ordinances: msg('Ordinances'),
 };
 
 export function BudgetPanel() {
   const { state, setActivePanel, setBudgetFunding } = useGame();
   const { budget, stats } = state;
   const m = useMessages();
+  
+  // Subscribe to crypto economy state
+  const [economyState, setEconomyState] = useState<CryptoEconomyState>(
+    cryptoEconomy.getState()
+  );
+  
+  useEffect(() => {
+    const unsubscribe = cryptoEconomy.subscribe(setEconomyState);
+    return unsubscribe;
+  }, []);
+  
+  // Get ordinance manager for costs
+  const ordinanceManager = useMemo(() => getOrdinanceManager(), []);
+  const ordinanceDailyCost = ordinanceManager.getDailyCost();
+  
+  // Crypto economy costs
+  const maintenanceCost = economyState.dailyMaintenanceCost || 0;
+  const serviceCost = economyState.dailyServiceCost || 0;
+  const totalCryptoExpenses = maintenanceCost + serviceCost + ordinanceDailyCost;
   
   const categories = [
     { key: 'police', ...budget.police },
@@ -61,6 +86,33 @@ export function BudgetPanel() {
               </div>
             </div>
           </div>
+          
+          {/* Crypto Expenses Section (only show if there are crypto expenses) */}
+          {totalCryptoExpenses > 0 && (
+            <div className="pb-4 border-b border-border">
+              <div className="text-muted-foreground text-xs mb-2 font-medium">{m(UI_LABELS.cryptoExpenses)}</div>
+              <div className="space-y-1 text-sm">
+                {maintenanceCost > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{m(UI_LABELS.maintenance)}</span>
+                    <span className="text-red-400 font-mono">-${maintenanceCost.toLocaleString()}/day</span>
+                  </div>
+                )}
+                {serviceCost > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{m(UI_LABELS.services)}</span>
+                    <span className="text-red-400 font-mono">-${serviceCost.toLocaleString()}/day</span>
+                  </div>
+                )}
+                {ordinanceDailyCost > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{m(UI_LABELS.ordinances)}</span>
+                    <span className="text-amber-400 font-mono">-${ordinanceDailyCost.toLocaleString()}/day</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           
           {/* Summary Stats */}
           <div className="grid grid-cols-3 gap-4 pb-4 border-b border-border">
