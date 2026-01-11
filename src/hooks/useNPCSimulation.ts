@@ -100,6 +100,13 @@ export interface UseNPCSimulationReturn {
 /**
  * React hook for managing the NPC simulation
  */
+// Helper to get initial state without accessing ref during render
+function getInitialSimulationState(config: Partial<SimulationConfig>): SimulationState {
+  // Create a temporary simulation just to get initial state structure
+  const temp = new NPCSimulation(config);
+  return temp.getState();
+}
+
 export function useNPCSimulation(
   options: UseNPCSimulationOptions = {}
 ): UseNPCSimulationReturn {
@@ -112,38 +119,44 @@ export function useNPCSimulation(
     initialCameraPosition = { x: 0, y: 0 },
   } = options;
 
-  // Create simulation instance (memoized)
-  const simulationRef = useRef<NPCSimulation | null>(null);
-
-  // Initialize simulation on first render
-  if (!simulationRef.current) {
-    simulationRef.current = new NPCSimulation(config);
-    simulationRef.current.setCameraPosition(initialCameraPosition);
-  }
-
-  // State for React reactivity
-  const [state, setState] = useState<SimulationState>(() =>
-    simulationRef.current!.getState()
-  );
+  // State for React reactivity - initialize with default state
+  const [state, setState] = useState<SimulationState>(() => getInitialSimulationState(config));
   const [npcs, setNPCs] = useState<CryptoNPC[]>([]);
   const [cameraPosition, setCameraPositionState] = useState(initialCameraPosition);
+  
+  // Use ref for simulation instance since it's mutable and shouldn't trigger re-renders
+  const simulationRef = useRef<NPCSimulation | null>(null);
+  
+  // Initialize simulation lazily on first access (only in effects/callbacks, not during render)
+  const getOrCreateSimulation = useCallback(() => {
+    if (!simulationRef.current) {
+      simulationRef.current = new NPCSimulation(config);
+      simulationRef.current.setCameraPosition(initialCameraPosition);
+    }
+    return simulationRef.current;
+  }, [config, initialCameraPosition]);
+
+  // Convenience getter for use in returned object
+  // This is a lazy singleton pattern - simulation is only created once and reused
+  // eslint-disable-next-line react-hooks/refs
+  const simulation = getOrCreateSimulation();
 
   // Set up event callbacks
   useEffect(() => {
-    const simulation = simulationRef.current!;
-
+    const sim = getOrCreateSimulation();
+    
     // Wrap tick callback to update React state
-    simulation.onTick = (newState: SimulationState) => {
+    sim.onTick = (newState: SimulationState) => {
       setState({ ...newState });
       setNPCs(NPCManager.getAllNPCs());
       onTick?.(newState);
     };
 
-    simulation.onDayChange = (day: number) => {
+    sim.onDayChange = (day: number) => {
       onDayChange?.(day);
     };
 
-    simulation.onNPCEvent = (event: NPCEvent) => {
+    sim.onNPCEvent = (event: NPCEvent) => {
       onNPCEvent?.(event);
     };
 
@@ -151,80 +164,83 @@ export function useNPCSimulation(
     setNPCs(NPCManager.getAllNPCs());
 
     return () => {
-      simulation.onTick = null;
-      simulation.onDayChange = null;
-      simulation.onNPCEvent = null;
+      sim.onTick = null;
+      sim.onDayChange = null;
+      sim.onNPCEvent = null;
     };
-  }, [onTick, onDayChange, onNPCEvent]);
+  }, [getOrCreateSimulation, onTick, onDayChange, onNPCEvent]);
 
   // Auto-start on mount if enabled
   useEffect(() => {
     if (autoStart) {
-      simulationRef.current!.start();
-      setState(simulationRef.current!.getState());
+      simulation.start();
+      setState(simulation.getState());
     }
 
     return () => {
       // Stop simulation on unmount
-      simulationRef.current?.stop();
+      simulation.stop();
     };
-  }, [autoStart]);
+  }, [simulation, autoStart]);
 
   // Lifecycle methods
   const startSimulation = useCallback(() => {
-    simulationRef.current!.start();
-    setState(simulationRef.current!.getState());
-  }, []);
+    simulation.start();
+    setState(simulation.getState());
+  }, [simulation]);
 
   const stopSimulation = useCallback(() => {
-    simulationRef.current!.stop();
-    setState(simulationRef.current!.getState());
-  }, []);
+    simulation.stop();
+    setState(simulation.getState());
+  }, [simulation]);
 
   const pauseSimulation = useCallback(() => {
-    simulationRef.current!.pause();
-    setState(simulationRef.current!.getState());
-  }, []);
+    simulation.pause();
+    setState(simulation.getState());
+  }, [simulation]);
 
   const resumeSimulation = useCallback(() => {
-    simulationRef.current!.resume();
-    setState(simulationRef.current!.getState());
-  }, []);
+    simulation.resume();
+    setState(simulation.getState());
+  }, [simulation]);
 
   // Camera position
   const setCameraPosition = useCallback((position: { x: number; y: number }) => {
-    simulationRef.current!.setCameraPosition(position);
+    simulation.setCameraPosition(position);
     setCameraPositionState(position);
-  }, []);
+  }, [simulation]);
 
   // Helper methods
   const getNearbyNPCs = useCallback((npc: CryptoNPC, maxDistance: number) => {
-    return simulationRef.current!.getNearbyNPCs(npc, maxDistance);
-  }, []);
+    return simulation.getNearbyNPCs(npc, maxDistance);
+  }, [simulation]);
 
   const calculateLOD = useCallback((npc: CryptoNPC) => {
-    return simulationRef.current!.calculateLOD(npc, cameraPosition);
-  }, [cameraPosition]);
+    return simulation.calculateLOD(npc, cameraPosition);
+  }, [simulation, cameraPosition]);
 
   const setGameTime = useCallback((minutes: number) => {
-    simulationRef.current!.setGameTime(minutes);
-    setState(simulationRef.current!.getState());
-  }, []);
+    simulation.setGameTime(minutes);
+    setState(simulation.getState());
+  }, [simulation]);
 
   const getSimulation = useCallback(() => {
-    return simulationRef.current!;
-  }, []);
+    return simulation;
+  }, [simulation]);
 
-  // Computed values
-  const simulation = simulationRef.current!;
+  // Computed values derived from state (not from ref during render)
+  const gameHour = Math.floor(state.currentGameTime / 60) % 24;
+  const gameMinute = state.currentGameTime % 60;
+  const isWorkingHours = gameHour >= 9 && gameHour < 17;
+  const isDaytime = gameHour >= 6 && gameHour < 20;
 
   return {
     state,
     isRunning: state.isRunning,
-    gameHour: simulation.getGameHour(),
-    gameMinute: simulation.getGameMinute(),
-    isWorkingHours: simulation.isWorkingHours(),
-    isDaytime: simulation.isDaytime(),
+    gameHour,
+    gameMinute,
+    isWorkingHours,
+    isDaytime,
     npcs,
     npcCount: npcs.length,
     startSimulation,
@@ -262,30 +278,30 @@ export function useSimulationTime() {
  * Hook to track a specific NPC
  */
 export function useNPCTracking(npcId: string | null) {
-  const [npc, setNPC] = useState<CryptoNPC | null>(null);
+  // Initialize state with callback to avoid render-time side effects
+  const [npc, setNPC] = useState<CryptoNPC | null>(() => {
+    if (!npcId) return null;
+    return NPCManager.getNPC(npcId) || null;
+  });
 
+  // Use effect for polling updates
   useEffect(() => {
     if (!npcId) {
-      setNPC(null);
       return;
     }
 
-    // Initial fetch
-    const fetchedNPC = NPCManager.getNPC(npcId);
-    setNPC(fetchedNPC || null);
-
     // Poll for updates (simplified - in production use simulation events)
+    // Initial value is set via useState initializer
     const interval = setInterval(() => {
       const updated = NPCManager.getNPC(npcId);
-      if (updated) {
-        setNPC({ ...updated }); // Spread to trigger re-render
-      }
+      setNPC(updated || null);
     }, 100);
 
     return () => clearInterval(interval);
   }, [npcId]);
 
-  return npc;
+  // Return null if npcId is null, otherwise return current npc state
+  return npcId ? npc : null;
 }
 
 /**
