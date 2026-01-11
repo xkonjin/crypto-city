@@ -2711,6 +2711,37 @@ export const STABLECOIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       },
     },
   },
+  // === PORTFOLIO BALANCING: Safe Haven Building (Issue #62) ===
+  'stablecoin_reserve': {
+    id: 'stablecoin_reserve',
+    name: 'Stablecoin Reserve',
+    category: 'stablecoin',
+    footprint: { width: 2, height: 2 },
+    icon: '🏦',
+    isProcedural: true,
+    cost: 8000,
+    crypto: {
+      tier: 'retail',
+      protocol: 'Multi-Collateral',
+      chain: 'ethereum',
+      launchYear: 2024,
+      tvlTier: 'medium',
+      description: 'A diversified stablecoin reserve. Low yield but immune to market sentiment swings. The ultimate safe haven.',
+      effects: {
+        yieldRate: 3, // Low yield
+        stakingBonus: 1.0,
+        volatility: 0.01, // Very low volatility
+        rugRisk: 0.002, // Very low risk
+        populationBoost: 20,
+        happinessEffect: 10,
+        zoneRadius: 4,
+        chainSynergy: ['ethereum', 'arbitrum', 'base', 'polygon'],
+        categorySynergy: ['stablecoin', 'defi'],
+        // Portfolio balancing: Sentiment immune (Issue #62)
+        sentimentImmune: true,
+      },
+    },
+  },
 };
 
 // =============================================================================

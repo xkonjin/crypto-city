@@ -606,7 +606,8 @@ export interface GameState {
     | "leaderboard"
     | "referral"
     | "challenges"
-    | "prestige";
+    | "prestige"
+    | "milestones";
   disastersEnabled: boolean;
   adjacentCities: AdjacentCity[];
   waterBodies: WaterBody[];

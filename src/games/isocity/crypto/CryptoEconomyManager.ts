@@ -599,6 +599,7 @@ export class CryptoEconomyManager {
    */
   private recalculateEconomy(): void {
     let totalYieldRate = 0;
+    let sentimentImmuneYieldRate = 0; // Issue #62: Stablecoin yields unaffected by sentiment
     let totalTVL = 0;
     let buildingCount = 0;
     
@@ -665,16 +666,24 @@ export class CryptoEconomyManager {
       }
       // ==== END REAL WORLD DATA ADJUSTMENT ====
       
-      totalYieldRate += buildingYield;
+      // ==== PORTFOLIO BALANCING (Issue #62) ====
+      // Track sentiment-immune buildings (stablecoins) separately
+      if (effects.sentimentImmune) {
+        sentimentImmuneYieldRate += buildingYield;
+      } else {
+        totalYieldRate += buildingYield;
+      }
+      // ==== END PORTFOLIO BALANCING ====
       
       // TVL contribution based on tier
       const tvlMultiplier = CRYPTO_TIER_MULTIPLIERS[def.crypto.tier];
       totalTVL += ECONOMY_CONFIG.TVL_PER_BUILDING_BASE * tvlMultiplier;
     }
     
-    // Apply sentiment modifier to yield
+    // Apply sentiment modifier to yield (NOT to sentiment-immune buildings)
     const sentimentMultiplier = this.getSentimentMultiplier();
-    let adjustedYield = totalYieldRate * sentimentMultiplier;
+    // Sentiment-affected yield + sentiment-immune yield (no multiplier)
+    let adjustedYield = (totalYieldRate * sentimentMultiplier) + sentimentImmuneYieldRate;
     
     // ==== GLOBAL REAL YIELD ADJUSTMENT ====
     // Apply global yield multiplier from real DeFi data
@@ -703,6 +712,12 @@ export class CryptoEconomyManager {
     const institutionStabilityBonus = this.getInstitutionStabilityBonus();
     adjustedYield *= (1 + institutionStabilityBonus);
     // ==== END INSTITUTION STABILITY BONUS ====
+    
+    // ==== PORTFOLIO BALANCING (Issue #62) ====
+    // Apply portfolio diversity bonus from spreading across chains/tiers
+    const portfolioDiversityBonus = this.getPortfolioDiversityBonus();
+    adjustedYield *= (1 + portfolioDiversityBonus);
+    // ==== END PORTFOLIO BALANCING ====
     
     // ==== MONEY SINKS (Issue #54) ====
     // Apply marketing service funding bonus to yields
@@ -1603,6 +1618,65 @@ export class CryptoEconomyManager {
    */
   hasStabilityBonus(): boolean {
     return this.getInstitutionCount() >= BALANCE_CONFIG.INSTITUTION_STABILITY_THRESHOLD;
+  }
+  
+  // ---------------------------------------------------------------------------
+  // PORTFOLIO BALANCING (Issue #62)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Get the portfolio diversity bonus from spreading across chains/tiers
+   * Uses the calculateDiversityBonus function from portfolio.ts
+   */
+  getPortfolioDiversityBonus(): number {
+    const buildings = this.getPlacedBuildings();
+    if (buildings.length === 0) return 0;
+    
+    // Use dynamic import pattern to avoid circular dependencies
+    const portfolioModule = require('../../../lib/portfolio');
+    const bonus = portfolioModule.calculateDiversityBonus(buildings);
+    return bonus.totalBonus;
+  }
+  
+  /**
+   * Get full portfolio analysis for UI display
+   */
+  getPortfolioAnalysis(): {
+    chainDiversity: number;
+    tierBalance: number;
+    riskExposure: number;
+    diversityBonus: number;
+    chainCount: number;
+    tierCount: number;
+    isBalanced: boolean;
+  } {
+    const buildings = this.getPlacedBuildings();
+    if (buildings.length === 0) {
+      return {
+        chainDiversity: 0,
+        tierBalance: 0,
+        riskExposure: 0,
+        diversityBonus: 0,
+        chainCount: 0,
+        tierCount: 0,
+        isBalanced: true,
+      };
+    }
+    
+    // Use dynamic import pattern to avoid circular dependencies
+    const portfolioModule = require('../../../lib/portfolio');
+    const portfolio = portfolioModule.analyzePortfolio(buildings);
+    const bonus = portfolioModule.calculateDiversityBonus(buildings);
+    
+    return {
+      chainDiversity: portfolio.chainDiversity,
+      tierBalance: portfolio.tierBalance,
+      riskExposure: portfolio.riskExposure,
+      diversityBonus: bonus.totalBonus,
+      chainCount: bonus.chainCount,
+      tierCount: bonus.tierCount,
+      isBalanced: bonus.isBalanced,
+    };
   }
   
   /**

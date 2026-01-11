@@ -98,6 +98,9 @@ export interface CryptoEffects {
   insuranceRadius?: number;
   /** Insurance recovery factor (0-1, e.g., 0.5 = 50% value recovered) */
   insuranceRecovery?: number;
+  // === PORTFOLIO BALANCING (Issue #62) ===
+  /** Whether this building is immune to sentiment swings (stablecoins) */
+  sentimentImmune?: boolean;
 }
 
 // =============================================================================

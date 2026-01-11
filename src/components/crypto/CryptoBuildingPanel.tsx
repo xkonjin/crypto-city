@@ -31,6 +31,7 @@ interface CryptoBuildingPanelProps {
   selectedBuilding: string | null;
   onSelectBuilding: (buildingId: string, offer?: TimeLimitedOffer) => void;
   treasury: number;
+  onOpenPortfolio?: () => void; // Issue #62: Portfolio analytics button
   className?: string;
 }
 
@@ -142,6 +143,19 @@ function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCard
               <span className="text-pink-400">+{effects.happinessEffect}</span>
             </div>
           )}
+        </div>
+      )}
+      
+      {/* Sentiment Immune Flag (Issue #62) */}
+      {effects?.sentimentImmune && (
+        <div className="text-xs border-t border-gray-700 pt-2">
+          <div className="flex items-center gap-1 text-emerald-400">
+            <span>🛡️</span>
+            <span>Sentiment Immune</span>
+          </div>
+          <div className="text-gray-500 text-[10px]">
+            Yields unaffected by market sentiment swings
+          </div>
         </div>
       )}
       
@@ -260,6 +274,7 @@ export default function CryptoBuildingPanel({
   selectedBuilding,
   onSelectBuilding,
   treasury,
+  onOpenPortfolio,
   className = '',
 }: CryptoBuildingPanelProps) {
   const [activeCategory, setActiveCategory] = useState<CryptoCategory>('defi');
@@ -272,7 +287,21 @@ export default function CryptoBuildingPanel({
       <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-3 border-b border-gray-700/50">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-lg">Crypto Buildings</h3>
-          <span className="text-xs text-gray-400">{CRYPTO_BUILDING_COUNT} total</span>
+          <div className="flex items-center gap-2">
+            {/* Portfolio Analytics Button (Issue #62) */}
+            {onOpenPortfolio && (
+              <button
+                onClick={onOpenPortfolio}
+                className="px-2 py-1 text-xs bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 rounded transition-colors flex items-center gap-1"
+                title="Portfolio Analytics"
+                data-testid="portfolio-analytics"
+              >
+                <span>📊</span>
+                <span>Portfolio</span>
+              </button>
+            )}
+            <span className="text-xs text-gray-400">{CRYPTO_BUILDING_COUNT} total</span>
+          </div>
         </div>
       </div>
       

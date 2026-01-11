@@ -10,3 +10,4 @@ export { LeaderboardPanel } from "./LeaderboardPanel";
 export { ReferralPanel } from "./ReferralPanel";
 export { ChallengesPanel } from "./ChallengesPanel";
 export { PrestigePanel } from "./PrestigePanel";
+export { MilestonePanel } from "./MilestonePanel";

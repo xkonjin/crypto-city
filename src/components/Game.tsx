@@ -49,6 +49,7 @@ import {
   ReferralPanel,
   ChallengesPanel,
   PrestigePanel,
+  MilestonePanel,
 } from "@/components/game/panels";
 import { MiniMap } from "@/components/game/MiniMap";
 import { TopBar, StatsPanel } from "@/components/game/TopBar";
@@ -114,6 +115,24 @@ import {
   getTotalYieldMultiplier,
   getTotalRugResistance,
 } from "@/lib/prestige";
+
+// Import milestones system (Issue #56)
+import {
+  MilestoneState,
+  loadMilestoneState,
+  saveMilestoneState,
+  createInitialMilestoneState,
+  updateMilestonesProgress,
+  updateMissionProgress,
+  startMission,
+  recordRugPullSurvived,
+  claimMissionReward,
+  applyMissionPenalty,
+  clearActiveMission,
+  MILESTONES,
+} from "@/lib/milestones";
+import { UnlockNotification } from "@/components/game/UnlockNotification";
+import { StoryMissionModal } from "@/components/game/StoryMissionModal";
 
 // Import rug pull animation system (Issue #47)
 import { RugPullAnimation } from "@/components/game/RugPullAnimation";
@@ -224,6 +243,15 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     cryptoEconomy.setPrestigeRugResistance(rugResistance);
   }, [prestigeState]);
   // ==== END PRESTIGE STATE ====
+
+  // ==== MILESTONES STATE (Issue #56) ====
+  const [milestoneState, setMilestoneState] = useState<MilestoneState>(() => 
+    typeof window !== 'undefined' ? loadMilestoneState() : createInitialMilestoneState()
+  );
+  const [pendingMilestone, setPendingMilestone] = useState<typeof MILESTONES[0] | null>(null);
+  const [showUnlockNotification, setShowUnlockNotification] = useState(false);
+  const previousMilestoneProgressRef = useRef<Map<string, boolean>>(new Map());
+  // ==== END MILESTONES STATE ====
 
   // Real-world crypto data integration - triggers events from actual market data
   const { data: realCryptoData, blendedData, isOnline, hasData: hasRealData } = useRealCryptoData({
@@ -451,6 +479,96 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Only need to track challengeState changes
   }, [challengeState.rugPullsSurvived]);
   // ==== END WEEKLY CHALLENGES TRACKING ====
+
+  // ==== MILESTONES TRACKING (Issue #56) ====
+  // Update milestone progress and track completions
+  useEffect(() => {
+    // Update all milestone progress
+    const updatedState = updateMilestonesProgress(
+      milestoneState,
+      state,
+      economyState
+    );
+    
+    // Check if a new day has passed for story missions
+    if (state.day !== previousDayForChallengesRef.current && updatedState.activeMission) {
+      const daysPassed = 1;
+      const withMissionProgress = updateMissionProgress(updatedState, state, economyState, daysPassed);
+      
+      // Only update if progress changed
+      if (JSON.stringify(withMissionProgress) !== JSON.stringify(milestoneState)) {
+        setMilestoneState(withMissionProgress);
+        saveMilestoneState(withMissionProgress);
+      }
+    } else {
+      // Check for newly completed milestones
+      let hasNewCompletions = false;
+      for (const mp of updatedState.milestones) {
+        const wasCompleted = previousMilestoneProgressRef.current.get(mp.milestoneId);
+        if (mp.completed && !wasCompleted && !mp.claimed) {
+          hasNewCompletions = true;
+          // Show notification for first newly completed milestone
+          const milestone = MILESTONES.find(m => m.id === mp.milestoneId);
+          if (milestone && !showUnlockNotification) {
+            setPendingMilestone(milestone);
+            setShowUnlockNotification(true);
+          }
+        }
+        previousMilestoneProgressRef.current.set(mp.milestoneId, mp.completed);
+      }
+      
+      // Only update if progress changed
+      const hasProgressChanged = updatedState.milestones.some(
+        (m, i) => m.progress !== milestoneState.milestones[i]?.progress
+      );
+      
+      if (hasProgressChanged || hasNewCompletions) {
+        setMilestoneState(updatedState);
+        saveMilestoneState(updatedState);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only trigger on specific state changes
+  }, [state.day, state.stats.population, state.stats.happiness, economyState.tvl, economyState.buildingCount, economyState.treasury, economyState.gameDays]);
+  
+  // Handle rug pull events for milestones
+  useEffect(() => {
+    const handleRugPullForMilestone = () => {
+      const updatedState = recordRugPullSurvived(milestoneState);
+      setMilestoneState(updatedState);
+      saveMilestoneState(updatedState);
+    };
+    
+    const unsubscribe = cryptoEventManager.subscribe((events) => {
+      const latestEvent = events[0];
+      if (latestEvent?.type === 'rug_pull') {
+        handleRugPullForMilestone();
+      }
+    });
+    
+    return () => {
+      unsubscribe();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only need to track milestoneState.rugPullsSurvived
+  }, [milestoneState.rugPullsSurvived]);
+  
+  // Handle unlock notification dismiss
+  const handleUnlockNotificationDismiss = useCallback(() => {
+    setShowUnlockNotification(false);
+    setPendingMilestone(null);
+  }, []);
+  
+  // Handle starting a story mission
+  const handleStartMission = useCallback((missionId: string) => {
+    const updatedState = startMission(milestoneState, missionId);
+    setMilestoneState(updatedState);
+    saveMilestoneState(updatedState);
+    addNotification(
+      'Mission Started!',
+      'Your new mission has begun. Check the milestones panel for details.',
+      'flag'
+    );
+  }, [milestoneState, addNotification]);
+  // ==== END MILESTONES TRACKING ====
 
   // ==== ACHIEVEMENT UNLOCK TRACKING (Issue #39) ====
   // Track when new achievements are unlocked and show toast
@@ -1148,6 +1266,18 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               gameDays={economyState.gameDays}
             />
           )}
+          {state.activePanel === "milestones" && (
+            <MilestonePanel
+              cryptoState={economyState}
+              milestoneState={milestoneState}
+              onClaimReward={(amount) => {
+                addMoney(amount);
+                cryptoEconomy.deposit(amount);
+              }}
+              onUpdateMilestoneState={setMilestoneState}
+              onStartMission={handleStartMission}
+            />
+          )}
 
           <VinnieDialog
             open={showVinnieDialog}
@@ -1166,6 +1296,13 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             isVisible={isCobieVisible}
             onDismiss={onCobieDismiss}
             onDisableCobie={onDisableCobie}
+          />
+
+          {/* Milestone Unlock Notification (Issue #56) */}
+          <UnlockNotification
+            milestone={pendingMilestone}
+            isVisible={showUnlockNotification}
+            onDismiss={handleUnlockNotificationDismiss}
           />
 
           {/* Game End Modal (Issues #29, #43) */}
@@ -1380,6 +1517,18 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               gameDays={economyState.gameDays}
             />
           )}
+          {state.activePanel === "milestones" && (
+            <MilestonePanel
+              cryptoState={economyState}
+              milestoneState={milestoneState}
+              onClaimReward={(amount) => {
+                addMoney(amount);
+                cryptoEconomy.deposit(amount);
+              }}
+              onUpdateMilestoneState={setMilestoneState}
+              onStartMission={handleStartMission}
+            />
+          )}
 
           {/* Crypto Building Panel - shown via sidebar or toggle button */}
           {(showCryptoBuildingPanel || state.activePanel === "crypto") && (
@@ -1428,6 +1577,13 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             isVisible={isCobieVisible}
             onDismiss={onCobieDismiss}
             onDisableCobie={onDisableCobie}
+          />
+
+          {/* Milestone Unlock Notification (Issue #56) */}
+          <UnlockNotification
+            milestone={pendingMilestone}
+            isVisible={showUnlockNotification}
+            onDismiss={handleUnlockNotificationDismiss}
           />
 
           {/* Game End Modal (Issues #29, #43) */}
