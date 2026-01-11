@@ -177,6 +177,9 @@ import { useAccessibility } from "@/hooks/useAccessibility";
 // Import asset preloader (Issues #71, #74, #76, #79)
 import { LoadingScreen } from "@/components/game/LoadingScreen";
 
+// Import Building Codex (Issue #83)
+import { BuildingCodex } from "@/components/game/BuildingCodex";
+
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg("containers"), msg("bulk materials"), msg("oil")];
 
@@ -259,6 +262,10 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   // ==== ASSET LOADING STATE (Issues #71, #74, #76, #79) ====
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   // ==== END ASSET LOADING STATE ====
+
+  // ==== BUILDING CODEX STATE (Issue #83) ====
+  const [showCodex, setShowCodex] = useState(false);
+  // ==== END BUILDING CODEX STATE ====
 
   // ==== WEEKLY CHALLENGES STATE (Issue #40) ====
   const [challengeState, setChallengeState] = useState<ChallengeState>(() => 
@@ -1130,6 +1137,10 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         // Toggle pause/unpause: if paused (speed 0), resume to normal (speed 1)
         // If running, pause (speed 0)
         setSpeed(state.speed === 0 ? 1 : 0);
+      } else if (e.key === "c" || e.key === "C") {
+        e.preventDefault();
+        // Toggle Building Codex (Issue #83)
+        setShowCodex(prev => !prev);
       }
     };
 
@@ -1895,6 +1906,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           isVisible={showNotificationToast}
           onDismiss={handleNotificationToastDismiss}
           onOpenCenter={handleOpenNotificationCenter}
+        />
+
+        {/* Building Codex (Issue #83) */}
+        <BuildingCodex
+          isOpen={showCodex}
+          onClose={() => setShowCodex(false)}
         />
 
         {/* Crypto News Ticker - Bottom */}
