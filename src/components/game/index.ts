@@ -15,6 +15,7 @@ export * from './trafficSystem';
 export * from './incidentData';
 export * from './pedestrianSystem';
 export * from './synergySystem';
+export * from './canvasOptimization';
 export { Sidebar } from './Sidebar';
 export { OverlayModeToggle } from './OverlayModeToggle';
 export { MiniMap } from './MiniMap';

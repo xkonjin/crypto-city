@@ -94,6 +94,18 @@ import {
 } from '@/components/game/bridgeDrawing';
 import { CrimeType, getCrimeName, getCrimeDescription, getFireDescriptionForTile, getFireNameForTile } from '@/components/game/incidentData';
 import {
+  getVisibleTileRange,
+  createRenderMetrics,
+  updateRenderMetrics,
+  createDirtyRegion,
+  requestFullRedraw,
+  clearDirtyRegion,
+  hasDirtyTiles,
+  type RenderMetrics,
+  type DirtyRegion,
+  type Viewport,
+} from '@/components/game/canvasOptimization';
+import {
   drawRailTrack,
   drawRailTracksOnly,
   countRailTiles,
@@ -255,6 +267,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   // Performance: Cache road merge analysis (expensive calculation done per-road-tile)
   const roadAnalysisCacheRef = useRef<Map<string, ReturnType<typeof analyzeMergedRoad>>>(new Map());
   const roadAnalysisCacheVersionRef = useRef(-1);
+
+  // PERF: Render metrics for performance monitoring (Issue #32)
+  const renderMetricsRef = useRef<RenderMetrics>(createRenderMetrics());
+  const dirtyRegionRef = useRef<DirtyRegion>(createDirtyRegion());
 
   // PERF: Cache background gradient - only recreate when canvas height changes
   const bgGradientCacheRef = useRef<{ gradient: CanvasGradient | null; height: number }>({ gradient: null, height: 0 });
@@ -1001,7 +1017,18 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       ctx.scale(dpr * zoom, dpr * zoom);
       ctx.translate(offset.x / zoom, offset.y / zoom);
     
+    // PERF: Use optimized viewport culling utility (Issue #32)
     // Calculate visible tile range for culling (account for DPR in canvas size)
+    const viewport: Viewport = {
+      x: offset.x,
+      y: offset.y,
+      width: canvas.width / dpr,
+      height: canvas.height / dpr,
+    };
+    const visibleRange = getVisibleTileRange(viewport, zoom, gridSize);
+    const { minSum: visibleMinSum, maxSum: visibleMaxSum } = visibleRange;
+    
+    // Also compute view bounds for per-tile culling
     const viewWidth = canvas.width / (dpr * zoom);
     const viewHeight = canvas.height / (dpr * zoom);
     const viewLeft = -offset.x / zoom - TILE_WIDTH;
@@ -1009,11 +1036,10 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const viewRight = viewWidth - offset.x / zoom + TILE_WIDTH;
     const viewBottom = viewHeight - offset.y / zoom + TILE_HEIGHT * 2;
     
-    // PERF: Pre-compute visible diagonal range to skip entire rows of tiles
-    // In isometric rendering, screenY = (x + y) * (TILE_HEIGHT / 2), so sum = x + y = screenY * 2 / TILE_HEIGHT
-    // Add padding for tall buildings that may extend above their tile position
-    const visibleMinSum = Math.max(0, Math.floor((viewTop - TILE_HEIGHT * 6) * 2 / TILE_HEIGHT));
-    const visibleMaxSum = Math.min(gridSize * 2 - 2, Math.ceil((viewBottom + TILE_HEIGHT) * 2 / TILE_HEIGHT));
+    // PERF: Track render metrics
+    const frameStartTime = performance.now();
+    let tilesRendered = 0;
+    let drawCalls = 0;
     
     // PERF: Use cached render queue arrays to avoid GC pressure
     // Clear arrays by setting length = 0 (much faster than recreating)
@@ -1670,6 +1696,9 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           continue;
         }
         
+        // PERF: Track tiles rendered for metrics
+        tilesRendered++;
+        
         const tile = grid[y][x];
         
         // PERF: Hover and selection highlights are now rendered on a separate canvas layer
@@ -2183,6 +2212,16 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
     
     ctx.restore();
+    
+    // PERF: Update render metrics (Issue #32)
+    const frameEndTime = performance.now();
+    const frameTime = frameEndTime - frameStartTime;
+    updateRenderMetrics(renderMetricsRef.current, frameTime, tilesRendered, drawCalls);
+    
+    // Expose metrics on window for debugging/testing
+    if (typeof window !== 'undefined') {
+      (window as unknown as { __RENDER_METRICS__: RenderMetrics }).__RENDER_METRICS__ = renderMetricsRef.current;
+    }
     }); // End requestAnimationFrame callback
     
     // PERF: Cleanup - cancel pending render on unmount or deps change

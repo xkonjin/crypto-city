@@ -117,6 +117,9 @@ import {
 } from "@/lib/rugPullEffect";
 import { useSound } from "@/hooks/useSound";
 
+// Import crypto building animations (Issue #27)
+import { CryptoParticleSystem } from "@/components/game/CryptoParticleSystem";
+
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg("containers"), msg("bulk materials"), msg("oil")];
 
@@ -953,9 +956,19 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               selectedTile={selectedTile}
               setSelectedTile={setSelectedTile}
               isMobile={true}
+              onViewportChange={setViewport}
               onBargeDelivery={handleBargeDelivery}
               selectedCryptoBuilding={selectedCryptoBuilding}
             />
+            {/* Crypto Building Particle System - Mobile (Issue #27) */}
+            {viewport && (
+              <CryptoParticleSystem
+                enabled={true}
+                offset={viewport.offset}
+                zoom={viewport.zoom}
+                containerSize={viewport.canvasSize}
+              />
+            )}
 
             {/* Multiplayer Players Indicator - Mobile */}
             {isMultiplayer && (
@@ -1167,6 +1180,15 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                 onBargeDelivery={handleBargeDelivery}
                 selectedCryptoBuilding={selectedCryptoBuilding}
               />
+              {/* Crypto Building Particle System (Issue #27) */}
+              {viewport && (
+                <CryptoParticleSystem
+                  enabled={true}
+                  offset={viewport.offset}
+                  zoom={viewport.zoom}
+                  containerSize={viewport.canvasSize}
+                />
+              )}
               <OverlayModeToggle
                 overlayMode={overlayMode}
                 setOverlayMode={setOverlayMode}
