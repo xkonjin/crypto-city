@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronRight, ChevronLeft, X, Lightbulb, CheckCircle2 } from 'lucide-react';
+import { msg, useGT } from 'gt-next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { GameState, Tool } from '@/types/game';
@@ -17,21 +18,22 @@ export interface TutorialStep {
   highlightTool?: Tool;
 }
 
+// Tutorial step definitions using msg() for i18n
 const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to Crypto City!',
-    description: "You're the mayor of a crypto-themed city. Build infrastructure, grow your population, and earn crypto yields!",
-    objective: 'Click Next to continue',
-    tip: "Your goals: Grow population to 10,000+, maintain positive treasury, and achieve 70%+ happiness. The Fear & Greed meter affects all crypto yields!",
+    title: msg("Welcome to Crypto City!"),
+    description: msg("You're the mayor of a crypto-themed city. Build infrastructure, grow your population, and earn crypto yields!"),
+    objective: msg('Click Next to continue'),
+    tip: msg("Your goals: Grow population to 10,000+, maintain positive treasury, and achieve 70%+ happiness. The Fear & Greed meter affects all crypto yields!"),
     isComplete: () => true,
   },
   {
     id: 'zone-residential',
-    title: 'Step 1: Zone Residential Areas',
-    description: "Residential zones (green) are where citizens live. More residents = more tax income and workers for your crypto empire.",
-    objective: 'Place at least 4 residential zone tiles',
-    tip: "WHY: Population drives everything - taxes, workers, and crypto building effectiveness. Start near the center where land value is highest!",
+    title: msg('Step 1: Zone Residential Areas'),
+    description: msg("Residential zones (green) are where citizens live. More residents = more tax income and workers for your crypto empire."),
+    objective: msg('Place at least 4 residential zone tiles'),
+    tip: msg("WHY: Population drives everything - taxes, workers, and crypto building effectiveness. Start near the center where land value is highest!"),
     isComplete: (state) => {
       let count = 0;
       for (let y = 0; y < state.gridSize; y++) {
@@ -45,10 +47,10 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 'build-road',
-    title: 'Step 2: Build Roads',
-    description: "Roads connect zones to the city network. Without road access, zones can't develop into buildings.",
-    objective: 'Build a road connecting to your zones',
-    tip: "WHY: Buildings check for road adjacency before growing. No road = no development. Roads also affect land value and traffic flow.",
+    title: msg('Step 2: Build Roads'),
+    description: msg("Roads connect zones to the city network. Without road access, zones can't develop into buildings."),
+    objective: msg('Build a road connecting to your zones'),
+    tip: msg("WHY: Buildings check for road adjacency before growing. No road = no development. Roads also affect land value and traffic flow."),
     isComplete: (state) => {
       let hasRoad = false;
       for (let y = 0; y < state.gridSize; y++) {
@@ -66,10 +68,10 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 'build-power',
-    title: 'Step 3: Power Your City',
-    description: "Power plants supply electricity in a radius around them. Unpowered buildings don't function.",
-    objective: 'Build a Power Plant',
-    tip: "WHY: No power = no zone development, no crypto yields, unhappy citizens. Power plants also affect crypto building output!",
+    title: msg('Step 3: Power Your City'),
+    description: msg("Power plants supply electricity in a radius around them. Unpowered buildings don't function."),
+    objective: msg('Build a Power Plant'),
+    tip: msg("WHY: No power = no zone development, no crypto yields, unhappy citizens. Power plants also affect crypto building output!"),
     isComplete: (state) => {
       for (let y = 0; y < state.gridSize; y++) {
         for (let x = 0; x < state.gridSize; x++) {
@@ -82,10 +84,10 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 'build-water',
-    title: 'Step 4: Water Supply',
-    description: "Water towers provide water service. Like power, buildings need water to develop and function.",
-    objective: 'Build a Water Tower',
-    tip: "WHY: Water affects health, happiness, and building growth. Place strategically to maximize coverage radius.",
+    title: msg('Step 4: Water Supply'),
+    description: msg("Water towers provide water service. Like power, buildings need water to develop and function."),
+    objective: msg('Build a Water Tower'),
+    tip: msg("WHY: Water affects health, happiness, and building growth. Place strategically to maximize coverage radius."),
     isComplete: (state) => {
       for (let y = 0; y < state.gridSize; y++) {
         for (let x = 0; x < state.gridSize; x++) {
@@ -98,10 +100,10 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 'zone-commercial',
-    title: 'Step 5: Add Commerce',
-    description: "Commercial zones (blue) create jobs AND generate sales tax when citizens shop. They buffer industrial pollution too!",
-    objective: 'Place at least 2 commercial zone tiles',
-    tip: "WHY: Jobs attract more residents. Sales tax boosts income. Pro tip: Place commercial between residential and industrial - it buffers pollution!",
+    title: msg('Step 5: Add Commerce'),
+    description: msg("Commercial zones (blue) create jobs AND generate sales tax when citizens shop. They buffer industrial pollution too!"),
+    objective: msg('Place at least 2 commercial zone tiles'),
+    tip: msg("WHY: Jobs attract more residents. Sales tax boosts income. Pro tip: Place commercial between residential and industrial - it buffers pollution!"),
     isComplete: (state) => {
       let count = 0;
       for (let y = 0; y < state.gridSize; y++) {
@@ -115,18 +117,18 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 'crypto-intro',
-    title: 'Step 6: The Crypto Economy',
-    description: "Crypto buildings generate passive yield for your treasury - like staking rewards for your city. But watch the Risk meter!",
-    objective: 'Open the Crypto Buildings panel',
-    tip: "WHY: Crypto yields can multiply your income but HIGH-RISK buildings can 'rug' (get destroyed). Start with LOW risk buildings, diversify across chains!",
+    title: msg('Step 6: The Crypto Economy'),
+    description: msg("Crypto buildings generate passive yield for your treasury - like staking rewards for your city. But watch the Risk meter!"),
+    objective: msg('Open the Crypto Buildings panel'),
+    tip: msg("WHY: Crypto yields can multiply your income but HIGH-RISK buildings can 'rug' (get destroyed). Start with LOW risk buildings, diversify across chains!"),
     isComplete: (state) => state.activePanel === 'crypto',
   },
   {
     id: 'complete',
-    title: 'Tutorial Complete!',
-    description: "You know the basics! Watch the Fear & Greed meter - it affects ALL crypto yields. Diversify your buildings and survive the rug pulls!",
-    objective: 'Start building your crypto empire',
-    tip: "Remember: Treasury at $0 triggers bankruptcy (buildings decay). Daily rewards help - come back every day for streak bonuses!",
+    title: msg('Tutorial Complete!'),
+    description: msg("You know the basics! Watch the Fear & Greed meter - it affects ALL crypto yields. Diversify your buildings and survive the rug pulls!"),
+    objective: msg('Start building your crypto empire'),
+    tip: msg("Remember: Treasury at $0 triggers bankruptcy (buildings decay). Daily rewards help - come back every day for streak bonuses!"),
     isComplete: () => true,
   },
 ];
@@ -140,6 +142,7 @@ interface TutorialProps {
 }
 
 export function Tutorial({ state, onHighlightTool }: TutorialProps) {
+  const gt = useGT();
   const [currentStep, setCurrentStep] = useState(0);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -244,7 +247,7 @@ export function Tutorial({ state, onHighlightTool }: TutorialProps) {
       <button
         onClick={handleRestart}
         className="fixed bottom-4 right-4 z-50 w-10 h-10 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center text-white shadow-lg transition-colors"
-        title="Restart Tutorial"
+        title={gt("Restart Tutorial")}
       >
         <Lightbulb className="w-5 h-5" />
       </button>
@@ -263,7 +266,7 @@ export function Tutorial({ state, onHighlightTool }: TutorialProps) {
         className="fixed bottom-20 left-4 z-40 px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-2 text-white shadow-lg transition-colors"
       >
         <Lightbulb className="w-4 h-4" />
-        <span className="text-sm">Tutorial ({currentStep + 1}/{TUTORIAL_STEPS.length})</span>
+        <span className="text-sm">{gt("Tutorial")} ({currentStep + 1}/{TUTORIAL_STEPS.length})</span>
       </button>
     );
   }
@@ -274,21 +277,21 @@ export function Tutorial({ state, onHighlightTool }: TutorialProps) {
       <div className="px-4 py-3 bg-blue-600 text-white flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Lightbulb className="w-5 h-5" />
-          <span className="font-semibold text-sm">Tutorial</span>
+          <span className="font-semibold text-sm">{gt("Tutorial")}</span>
           <span className="text-xs opacity-75">({currentStep + 1}/{TUTORIAL_STEPS.length})</span>
         </div>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setIsMinimized(true)}
             className="p-1 hover:bg-white/20 rounded transition-colors"
-            title="Minimize"
+            title={gt("Minimize")}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
           <button
             onClick={handleDismiss}
             className="p-1 hover:bg-white/20 rounded transition-colors"
-            title="Dismiss Tutorial"
+            title={gt("Dismiss Tutorial")}
           >
             <X className="w-4 h-4" />
           </button>
@@ -336,7 +339,7 @@ export function Tutorial({ state, onHighlightTool }: TutorialProps) {
           disabled={isFirstStep}
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
-          Back
+          {gt("Back")}
         </Button>
         
         {isLastStep ? (
@@ -344,7 +347,7 @@ export function Tutorial({ state, onHighlightTool }: TutorialProps) {
             size="sm"
             onClick={handleDismiss}
           >
-            Finish
+            {gt("Finish")}
           </Button>
         ) : (
           <Button
@@ -352,7 +355,7 @@ export function Tutorial({ state, onHighlightTool }: TutorialProps) {
             onClick={handleNext}
             disabled={!isStepComplete && step.id !== 'welcome'}
           >
-            {step.id === 'welcome' ? 'Start' : 'Next'}
+            {step.id === 'welcome' ? gt('Start') : gt('Next')}
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         )}

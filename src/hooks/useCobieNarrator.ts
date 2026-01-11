@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { msg } from 'gt-next';
 import { GameState } from '@/types/game';
 import { CryptoEvent, CryptoEconomyState, CryptoCategory } from '@/games/isocity/crypto/types';
 import { translateMessage as translateTerminology, getMode } from '@/lib/terminology';
@@ -28,27 +29,27 @@ export interface CobieMessage {
 const SENTIMENT_REACTIONS = {
   // Sentiment drops 10+ points
   sentimentDrop: [
-    "Market's getting shaky. The probability of a smooth ride just went down.",
-    "Sentiment tanking. This is where diamond hands get tested.",
-    "Fear creeping in. Historically, this is when opportunities appear. Historically.",
+    msg("Market's getting shaky. The probability of a smooth ride just went down."),
+    msg("Sentiment tanking. This is where diamond hands get tested."),
+    msg("Fear creeping in. Historically, this is when opportunities appear. Historically."),
   ],
   // Sentiment rises 10+ points
   sentimentRise: [
-    "Bulls are back, baby! Or at least, they think they are.",
-    "Sentiment pumping. Enjoy it while it lasts.",
-    "Green candles everywhere. Everyone's a genius again.",
+    msg("Bulls are back, baby! Or at least, they think they are."),
+    msg("Sentiment pumping. Enjoy it while it lasts."),
+    msg("Green candles everywhere. Everyone's a genius again."),
   ],
   // Extreme fear (0-20)
   extremeFear: [
-    "Now THIS is a buying opportunity... if you have the stomach.",
-    "Maximum fear. The metagame says this is when you're supposed to be greedy. Do with that what you will.",
-    "Extreme fear zone. Either the bottom is in or we're going lower. Helpful, I know.",
+    msg("Now THIS is a buying opportunity... if you have the stomach."),
+    msg("Maximum fear. The metagame says this is when you're supposed to be greedy. Do with that what you will."),
+    msg("Extreme fear zone. Either the bottom is in or we're going lower. Helpful, I know."),
   ],
   // Extreme greed (80-100)
   extremeGreed: [
-    "Everyone's a genius in a bull market. Don't let it go to your head.",
-    "Extreme greed. Historically, this is when smart money starts taking profits. Historically.",
-    "Peak euphoria. This is where 'just one more trade' turns into 'why didn't I sell.'",
+    msg("Everyone's a genius in a bull market. Don't let it go to your head."),
+    msg("Extreme greed. Historically, this is when smart money starts taking profits. Historically."),
+    msg("Peak euphoria. This is where 'just one more trade' turns into 'why didn't I sell.'"),
   ],
 };
 
@@ -59,27 +60,27 @@ const SENTIMENT_REACTIONS = {
 const RUG_PULL_REACTIONS = {
   // Immediate reaction when rug happens
   immediate: [
-    "Ouch. That one hurt.",
-    "And there it goes. Classic rug pull.",
-    "Rug pulled. The signs were probably there. They usually are.",
+    msg("Ouch. That one hurt."),
+    msg("And there it goes. Classic rug pull."),
+    msg("Rug pulled. The signs were probably there. They usually are."),
   ],
   // If player loses 20%+ treasury
   majorLoss: [
-    "That's gonna leave a mark. 20% gone just like that.",
-    "Major treasury hit. Time to reassess the risk profile.",
-    "Big rug. The metagame is to survive these. You're still here.",
+    msg("That's gonna leave a mark. 20% gone just like that."),
+    msg("Major treasury hit. Time to reassess the risk profile."),
+    msg("Big rug. The metagame is to survive these. You're still here."),
   ],
   // If multiple rugs in short time
   multipleRugs: [
-    "When it rains, it pours. Multiple rugs in quick succession.",
-    "Getting hit from all sides. The market doesn't care about your feelings.",
-    "Another one? The probability of multiple rugs... well, here we are.",
+    msg("When it rains, it pours. Multiple rugs in quick succession."),
+    msg("Getting hit from all sides. The market doesn't care about your feelings."),
+    msg("Another one? The probability of multiple rugs... well, here we are."),
   ],
   // First rug ever
   firstRug: [
-    "Welcome to crypto. This won't be the last time.",
-    "Your first rug pull. A rite of passage, really.",
-    "First rug. Everyone remembers their first. Anyway, rebuild.",
+    msg("Welcome to crypto. This won't be the last time."),
+    msg("Your first rug pull. A rite of passage, really."),
+    msg("First rug. Everyone remembers their first. Anyway, rebuild."),
   ],
 };
 
@@ -90,27 +91,27 @@ const RUG_PULL_REACTIONS = {
 const PATTERN_REACTIONS = {
   // 5+ degen buildings
   manyDegenBuildings: [
-    "Living dangerously, I see. 5+ high-risk buildings. Bold strategy.",
-    "That's a lot of degen plays. Your risk tolerance is impressive. Or concerning.",
-    "Heavy on the risk. The metagame rewards this sometimes. Sometimes.",
+    msg("Living dangerously, I see. 5+ high-risk buildings. Bold strategy."),
+    msg("That's a lot of degen plays. Your risk tolerance is impressive. Or concerning."),
+    msg("Heavy on the risk. The metagame rewards this sometimes. Sometimes."),
   ],
   // Only institution buildings
   onlyInstitution: [
-    "Playing it safe? Boring, but respectable. Slow and steady.",
-    "Conservative portfolio. Not exciting, but you'll probably survive.",
-    "Institution-heavy setup. Lower yield, lower rug chance. Tradeoffs.",
+    msg("Playing it safe? Boring, but respectable. Slow and steady."),
+    msg("Conservative portfolio. Not exciting, but you'll probably survive."),
+    msg("Institution-heavy setup. Lower yield, lower rug chance. Tradeoffs."),
   ],
   // Treasury drops below 20%
   lowTreasury: [
-    "Might want to slow down there, chief. Treasury looking thin.",
-    "Getting low on funds. The metagame is to not go bankrupt.",
-    "Treasury alert. Maybe pump the brakes on spending.",
+    msg("Might want to slow down there, chief. Treasury looking thin."),
+    msg("Getting low on funds. The metagame is to not go bankrupt."),
+    msg("Treasury alert. Maybe pump the brakes on spending."),
   ],
   // 10+ days without rug
   luckyStreak: [
-    "Luck can't last forever... 10 days without a rug is impressive though.",
-    "No rugs in 10 days. Either you're good at this or due for one.",
-    "Rug-free streak continues. Enjoy it. Statistically, it won't last.",
+    msg("Luck can't last forever... 10 days without a rug is impressive though."),
+    msg("No rugs in 10 days. Either you're good at this or due for one."),
+    msg("Rug-free streak continues. Enjoy it. Statistically, it won't last."),
   ],
 };
 
@@ -121,27 +122,27 @@ const PATTERN_REACTIONS = {
 const PROACTIVE_WARNINGS = {
   // Treasury below $10k
   lowTreasury: [
-    "Running low on funds. Maybe pump the brakes.",
-    "Treasury under $10k. Time to be more selective.",
-    "Low funds warning. The metagame is capital preservation now.",
+    msg("Running low on funds. Maybe pump the brakes."),
+    msg("Treasury under $10k. Time to be more selective."),
+    msg("Low funds warning. The metagame is capital preservation now."),
   ],
   // High risk portfolio
   highRisk: [
-    "Your risk exposure is giving me anxiety. A lot of degen plays.",
-    "Portfolio is heavily weighted toward risky buildings. Just saying.",
-    "High risk alert. One bad rug could set you back significantly.",
+    msg("Your risk exposure is giving me anxiety. A lot of degen plays."),
+    msg("Portfolio is heavily weighted toward risky buildings. Just saying."),
+    msg("High risk alert. One bad rug could set you back significantly."),
   ],
   // No income buildings
   noIncome: [
-    "You need some yield-generating buildings. Treasury's not gonna grow itself.",
-    "No income sources detected. DeFi buildings generate yields, just saying.",
-    "Building yield is zero. You might want to fix that.",
+    msg("You need some yield-generating buildings. Treasury's not gonna grow itself."),
+    msg("No income sources detected. DeFi buildings generate yields, just saying."),
+    msg("Building yield is zero. You might want to fix that."),
   ],
   // Happiness below 30%
   lowHappiness: [
-    "Your citizens are getting restless. Happiness at critical levels.",
-    "Low happiness alert. Unhappy citizens means problems down the road.",
-    "Citizens aren't vibing. Build some parks or something.",
+    msg("Your citizens are getting restless. Happiness at critical levels."),
+    msg("Low happiness alert. Unhappy citizens means problems down the road."),
+    msg("Citizens aren't vibing. Build some parks or something."),
   ],
 };
 
@@ -152,21 +153,21 @@ const PROACTIVE_WARNINGS = {
 const STREAK_COMMENTARY = {
   // 3+ successful days
   successStreak: [
-    "Nice streak going! Three days of gains.",
-    "Winning streak continues. The metagame is strong.",
-    "Three days in a row. Don't get cocky though.",
+    msg("Nice streak going! Three days of gains."),
+    msg("Winning streak continues. The metagame is strong."),
+    msg("Three days in a row. Don't get cocky though."),
   ],
   // 3+ rug pulls
   rugStreak: [
-    "Maybe diversify a bit? That's the third rug.",
-    "Triple rug. Time to reconsider the strategy.",
-    "Three rugs. The probability of this many... unlucky or poor choices?",
+    msg("Maybe diversify a bit? That's the third rug."),
+    msg("Triple rug. Time to reconsider the strategy."),
+    msg("Three rugs. The probability of this many... unlucky or poor choices?"),
   ],
   // First million
   firstMillion: [
-    "Welcome to the comma club. Treasury hit $1M.",
-    "First million! You're officially playing with whale money now.",
-    "Million dollar city. Not bad. Not bad at all.",
+    msg("Welcome to the comma club. Treasury hit $1M."),
+    msg("First million! You're officially playing with whale money now."),
+    msg("Million dollar city. Not bad. Not bad at all."),
   ],
 };
 
@@ -177,21 +178,21 @@ const STREAK_COMMENTARY = {
 const CLUSTER_REACTIONS = {
   // Good synergy detected
   goodSynergy: [
-    "Smart. Those DeFi buildings play nice together.",
-    "Good cluster. The synergy bonus is real there.",
-    "Nice grouping. Buildings that synergize earn more.",
+    msg("Smart. Those DeFi buildings play nice together."),
+    msg("Good cluster. The synergy bonus is real there."),
+    msg("Nice grouping. Buildings that synergize earn more."),
   ],
   // Bad placement detected
   badPlacement: [
-    "That stablecoin building won't synergize there. Just saying.",
-    "Suboptimal placement. The synergy system matters.",
-    "Lonely building. Might want to cluster similar types together.",
+    msg("That stablecoin building won't synergize there. Just saying."),
+    msg("Suboptimal placement. The synergy system matters."),
+    msg("Lonely building. Might want to cluster similar types together."),
   ],
   // Chain synergy detected
   chainSynergy: [
-    "Same chain buildings clustered. The chain synergy bonus is working.",
-    "Nice chain grouping. ETH buildings near ETH buildings makes sense.",
-    "Chain synergy activated. Smart play.",
+    msg("Same chain buildings clustered. The chain synergy bonus is working."),
+    msg("Nice chain grouping. ETH buildings near ETH buildings makes sense."),
+    msg("Chain synergy activated. Smart play."),
   ],
 };
 
@@ -203,37 +204,37 @@ const COBIE_TIPS: CobieMessage[] = [
   {
     id: 'welcome',
     type: 'tip',
-    message: "Welcome to the crypto city-building metagame. I'm Cobie. I'll be stumbling through this with you, same as I've been stumbling through crypto since 2012. Zone some land - residential, commercial, industrial. It's like portfolio allocation but with tiny buildings. Not financial advice, obviously.",
+    message: msg("Welcome to the crypto city-building metagame. I'm Cobie. I'll be stumbling through this with you, same as I've been stumbling through crypto since 2012. Zone some land - residential, commercial, industrial. It's like portfolio allocation but with tiny buildings. Not financial advice, obviously."),
     priority: 0,
   },
   {
     id: 'needs_utilities',
     type: 'tip',
-    message: "Your buildings need power, water, and roads to actually function. I know it's 2024 and we're all supposed to be running DAOs from our phones, but infrastructure still matters. Even in the metaverse.",
+    message: msg("Your buildings need power, water, and roads to actually function. I know it's 2024 and we're all supposed to be running DAOs from our phones, but infrastructure still matters. Even in the metaverse."),
     priority: 1,
   },
   {
     id: 'negative_demand',
     type: 'tip',
-    message: "Demand is negative. In crypto Twitter terms, this is 'accumulation.' In reality, your buildings are becoming abandoned. The metagame here is to balance your zones before it gets worse. Or don't. I'm not your financial advisor.",
+    message: msg("Demand is negative. In crypto Twitter terms, this is 'accumulation.' In reality, your buildings are becoming abandoned. The metagame here is to balance your zones before it gets worse. Or don't. I'm not your financial advisor."),
     priority: 2,
   },
   {
     id: 'needs_safety',
     type: 'tip',
-    message: "You need fire and police stations. Yes, I know - 'code is law' and 'trustless systems' - but your citizens still prefer not to be on fire. Call it a legacy requirement.",
+    message: msg("You need fire and police stations. Yes, I know - 'code is law' and 'trustless systems' - but your citizens still prefer not to be on fire. Call it a legacy requirement."),
     priority: 3,
   },
   {
     id: 'needs_parks',
     type: 'tip',
-    message: "Environment score is tanking. Build some parks. Touch grass, as they say. Your citizens are, statistically speaking, probably not going outside enough.",
+    message: msg("Environment score is tanking. Build some parks. Touch grass, as they say. Your citizens are, statistically speaking, probably not going outside enough."),
     priority: 4,
   },
   {
     id: 'needs_health_education',
     type: 'tip',
-    message: "Build hospitals and schools. Healthcare and education. The two things most crypto people forgot about while staring at charts. Your citizens need both, I promise.",
+    message: msg("Build hospitals and schools. Healthcare and education. The two things most crypto people forgot about while staring at charts. Your citizens need both, I promise."),
     priority: 5,
   },
 ];
@@ -245,107 +246,107 @@ const COBIE_TIPS: CobieMessage[] = [
 const BUILDING_REACTIONS: Record<string, string[]> = {
   // Legends - Failed projects
   'ftx_ruins': [
-    "The FTX Ruins. I streamed the collapse live, you know. Watched it all happen in real-time. Still processing that one, honestly.",
-    "FTX Ruins. Customer funds were safe, they said. Although it probably was Su's fault somehow. Or SBF. Definitely someone's fault.",
-    "Building a monument to the dangers of sleeping on beanbags at work. Bold choice.",
+    msg("The FTX Ruins. I streamed the collapse live, you know. Watched it all happen in real-time. Still processing that one, honestly."),
+    msg("FTX Ruins. Customer funds were safe, they said. Although it probably was Su's fault somehow. Or SBF. Definitely someone's fault."),
+    msg("Building a monument to the dangers of sleeping on beanbags at work. Bold choice."),
   ],
   'luna_crater': [
-    "Luna Crater. $40 billion evaporated in a week. The probability of that happening was supposed to be near zero. Turns out the model was wrong.",
-    "Ah, the algorithmic stablecoin memorial. 'It can't depeg,' they said with 95% confidence. The 5% hit different.",
-    "Luna Crater - a reminder that past performance doesn't guarantee future results, especially when the math is wrong.",
+    msg("Luna Crater. $40 billion evaporated in a week. The probability of that happening was supposed to be near zero. Turns out the model was wrong."),
+    msg("Ah, the algorithmic stablecoin memorial. 'It can't depeg,' they said with 95% confidence. The 5% hit different."),
+    msg("Luna Crater - a reminder that past performance doesn't guarantee future results, especially when the math is wrong."),
   ],
   'three_ac_yacht': [
-    "The 3AC Yacht. Beached. Like their creditors' hopes of getting their money back. Supercycle thesis didn't quite work out.",
-    "Su and Kyle's yacht. The metagame was strong until it wasn't.",
+    msg("The 3AC Yacht. Beached. Like their creditors' hopes of getting their money back. Supercycle thesis didn't quite work out."),
+    msg("Su and Kyle's yacht. The metagame was strong until it wasn't."),
   ],
   'celsius_freezer': [
-    "Celsius Freezer. The yields were unsustainable. Everyone kinda knew, but the music was playing so people kept dancing.",
-    "Where withdrawals went to die. Unbank yourself, they said. Get frozen, they didn't say.",
+    msg("Celsius Freezer. The yields were unsustainable. Everyone kinda knew, but the music was playing so people kept dancing."),
+    msg("Where withdrawals went to die. Unbank yourself, they said. Get frozen, they didn't say."),
   ],
   
   // Legends - Active figures
   'vitalik_tower': [
-    "Vitalik's Beacon. The man sold his dog coins for charity. That's the kind of move that makes you rethink your portfolio.",
-    "Building Ethereum's shrine. May your merge be smooth and your gas fees eventually reasonable.",
+    msg("Vitalik's Beacon. The man sold his dog coins for charity. That's the kind of move that makes you rethink your portfolio."),
+    msg("Building Ethereum's shrine. May your merge be smooth and your gas fees eventually reasonable."),
   ],
   'satoshi_monument': [
-    "Satoshi Monument. We still don't know who they are. Probably for the best. Mystery adds value in crypto.",
-    "A monument to the greatest disappearing act in financial history. Very bullish energy.",
+    msg("Satoshi Monument. We still don't know who they are. Probably for the best. Mystery adds value in crypto."),
+    msg("A monument to the greatest disappearing act in financial history. Very bullish energy."),
   ],
   'cz_safu_fund': [
-    "SAFU Vault. The funds are safe. Probably. Look, in this industry, 'probably safe' is actually pretty good odds.",
-    "CZ's SAFU Fund. Born from a typo, became a philosophy. Crypto in a nutshell, really.",
+    msg("SAFU Vault. The funds are safe. Probably. Look, in this industry, 'probably safe' is actually pretty good odds."),
+    msg("CZ's SAFU Fund. Born from a typo, became a philosophy. Crypto in a nutshell, really."),
   ],
   'pump_fun_factory': [
-    "Pump.fun Factory. The meta for memecoin creation. High volume, low survival rate. It's like a video game spawn point for shitcoins.",
-    "A factory that produces more tokens than meaningful innovations. But hey, the metagame is the metagame.",
+    msg("Pump.fun Factory. The meta for memecoin creation. High volume, low survival rate. It's like a video game spawn point for shitcoins."),
+    msg("A factory that produces more tokens than meaningful innovations. But hey, the metagame is the metagame."),
   ],
   'magic_carpet_emporium': [
-    "Magic Carpet Emporium. High yield, high probability of rug. You know the risks going in. At least it's honest about it.",
+    msg("Magic Carpet Emporium. High yield, high probability of rug. You know the risks going in. At least it's honest about it."),
   ],
   'alpha_bunker': [
-    "Wait, that's my bunker. I appreciate the tribute. Though I should mention - there's no actual alpha inside. Just vibes.",
-    "The Alpha Bunker. Finally, someone with taste. Subscribe to my Substack, I guess.",
-    "My bunker! The probability of finding alpha here is... well, it's non-zero. That's something.",
+    msg("Wait, that's my bunker. I appreciate the tribute. Though I should mention - there's no actual alpha inside. Just vibes."),
+    msg("The Alpha Bunker. Finally, someone with taste. Subscribe to my Substack, I guess."),
+    msg("My bunker! The probability of finding alpha here is... well, it's non-zero. That's something."),
   ],
 
   // DeFi
   'aave_lending_tower': [
-    "Aave Tower. Lending and borrowing at scale. The metagame for yield farming since 2020.",
-    "Building Aave. Solid choice. One of the few DeFi protocols that's survived multiple cycles.",
+    msg("Aave Tower. Lending and borrowing at scale. The metagame for yield farming since 2020."),
+    msg("Building Aave. Solid choice. One of the few DeFi protocols that's survived multiple cycles."),
   ],
   'uniswap_exchange': [
-    "Uniswap. The place where impermanent loss became a feature, not a bug. Allegedly.",
-    "Ah, Uniswap. Democratizing market making since... was it 2018? Time blurs together in crypto years.",
+    msg("Uniswap. The place where impermanent loss became a feature, not a bug. Allegedly."),
+    msg("Ah, Uniswap. Democratizing market making since... was it 2018? Time blurs together in crypto years."),
   ],
   'makerdao_vault': [
-    "MakerDAO. The OG of DeFi. Before yield farming was cool. Before it was even called DeFi, honestly.",
-    "Building the DAI vault. Decentralized stablecoins done right. Most of the time.",
+    msg("MakerDAO. The OG of DeFi. Before yield farming was cool. Before it was even called DeFi, honestly."),
+    msg("Building the DAI vault. Decentralized stablecoins done right. Most of the time."),
   ],
   'curve_finance_pool': [
-    "Curve. The stablecoin swap metagame. Low fees, high TVL. The boring play that actually works.",
+    msg("Curve. The stablecoin swap metagame. Low fees, high TVL. The boring play that actually works."),
   ],
   'lido_staking_hub': [
-    "Lido staking. Liquid staking changed the game. Now your ETH can earn while you... also earn. Compounding metagame.",
+    msg("Lido staking. Liquid staking changed the game. Now your ETH can earn while you... also earn. Compounding metagame."),
   ],
   'compound_bank': [
-    "Compound. The protocol that made lending boring in the best way. Boring is underrated in DeFi.",
+    msg("Compound. The protocol that made lending boring in the best way. Boring is underrated in DeFi."),
   ],
   
   // Exchanges
   'binance_tower': [
-    "Binance Tower. The volume leader. The controversies leader too, but volume is volume.",
-    "Building CZ's empire. The SAFU funds better actually be SAFU.",
+    msg("Binance Tower. The volume leader. The controversies leader too, but volume is volume."),
+    msg("Building CZ's empire. The SAFU funds better actually be SAFU."),
   ],
   'coinbase_hq': [
-    "Coinbase HQ. The regulated on-ramp. Normies' first stop. Nothing wrong with meeting people where they are.",
+    msg("Coinbase HQ. The regulated on-ramp. Normies' first stop. Nothing wrong with meeting people where they are."),
   ],
   'kraken_exchange': [
-    "Kraken. The exchange that somehow avoided most of the drama. That's a skill in this industry.",
+    msg("Kraken. The exchange that somehow avoided most of the drama. That's a skill in this industry."),
   ],
   
   // Chain
   'ethereum_beacon': [
-    "Ethereum Beacon. The merge happened. PoS is live. The ultrasound money thesis continues.",
-    "Building on Ethereum. The network effects are real. Even if the gas fees are also real.",
+    msg("Ethereum Beacon. The merge happened. PoS is live. The ultrasound money thesis continues."),
+    msg("Building on Ethereum. The network effects are real. Even if the gas fees are also real."),
   ],
   'solana_tower': [
-    "Solana Tower. Fast blocks, fast failures, fast recovery. The metagame for speed.",
+    msg("Solana Tower. Fast blocks, fast failures, fast recovery. The metagame for speed."),
   ],
   'bitcoin_vault': [
-    "Bitcoin Vault. Digital gold. The only crypto your normie friends might actually understand.",
+    msg("Bitcoin Vault. Digital gold. The only crypto your normie friends might actually understand."),
   ],
   'arbitrum_bridge': [
-    "Arbitrum. L2 scaling done right. The metagame evolved and rollups won. For now.",
+    msg("Arbitrum. L2 scaling done right. The metagame evolved and rollups won. For now."),
   ],
 
   // Meme
   'doge_monument': [
-    "Doge Monument. The OG memecoin. Elon tweets, Doge pumps. It's like a natural law at this point.",
-    "Much building. Very city. The fundamentals are vibes and that's honestly fine.",
+    msg("Doge Monument. The OG memecoin. Elon tweets, Doge pumps. It's like a natural law at this point."),
+    msg("Much building. Very city. The fundamentals are vibes and that's honestly fine."),
   ],
   'pepe_plaza': [
-    "Pepe Plaza. The memecoin metagame evolved and somehow frogs won. I don't make the rules.",
+    msg("Pepe Plaza. The memecoin metagame evolved and somehow frogs won. I don't make the rules."),
   ],
 };
 
@@ -355,40 +356,40 @@ const BUILDING_REACTIONS: Record<string, string[]> = {
 
 const MILESTONE_MESSAGES: Record<string, string[]> = {
   'population_100': [
-    "100 citizens. That's more active users than some Layer 2s, honestly.",
-    "You've got 100 people in your city. Statistically, at least a few of them will make it.",
+    msg("100 citizens. That's more active users than some Layer 2s, honestly."),
+    msg("You've got 100 people in your city. Statistically, at least a few of them will make it."),
   ],
   'population_1000': [
-    "1,000 population. You've achieved more organic growth than most token launches.",
-    "A thousand citizens. That's approximately the number of real users on most DeFi protocols. You're doing fine.",
+    msg("1,000 population. You've achieved more organic growth than most token launches."),
+    msg("A thousand citizens. That's approximately the number of real users on most DeFi protocols. You're doing fine."),
   ],
   'population_10000': [
-    "10,000 population. This is actually impressive. You've built something people want to be part of.",
+    msg("10,000 population. This is actually impressive. You've built something people want to be part of."),
   ],
   'treasury_100k': [
-    "100K in treasury. Small by crypto standards, but hey - most projects raise that much and deliver nothing. You've got a city.",
+    msg("100K in treasury. Small by crypto standards, but hey - most projects raise that much and deliver nothing. You've got a city."),
   ],
   'treasury_1m': [
-    "A million in the treasury. You're now in the range where VCs might pretend to care about your project. Congratulations, I guess.",
+    msg("A million in the treasury. You're now in the range where VCs might pretend to care about your project. Congratulations, I guess."),
   ],
   'first_rug': [
-    "Your first rug pull. Look, the probability was never zero. This is why we don't go all-in on high-yield buildings.",
-    "Building got rugged. It happens. The metagame is to survive enough of these to keep playing.",
-    "First rug. In hindsight, the signs were there. They always are. Anyway, rebuild.",
+    msg("Your first rug pull. Look, the probability was never zero. This is why we don't go all-in on high-yield buildings."),
+    msg("Building got rugged. It happens. The metagame is to survive enough of these to keep playing."),
+    msg("First rug. In hindsight, the signs were there. They always are. Anyway, rebuild."),
   ],
   'first_defi': [
-    "First DeFi building placed. Welcome to yield farming. The meta changes fast, try to keep up.",
+    msg("First DeFi building placed. Welcome to yield farming. The meta changes fast, try to keep up."),
   ],
   'first_exchange': [
-    "Built your first exchange. Centralized point of failure, but also where most of the volume happens. Tradeoffs everywhere.",
+    msg("Built your first exchange. Centralized point of failure, but also where most of the volume happens. Tradeoffs everywhere."),
   ],
   'bear_market': [
-    "Bear market. The metagame shifts to building and accumulating. Most people leave. The ones who stay tend to do well eventually.",
-    "Markets down. This is historically when the best projects are built. Less noise, more focus.",
+    msg("Bear market. The metagame shifts to building and accumulating. Most people leave. The ones who stay tend to do well eventually."),
+    msg("Markets down. This is historically when the best projects are built. Less noise, more focus."),
   ],
   'bull_market': [
-    "Bull market. Everyone's a genius now. Try not to let it go to your head. Also, consider taking some profits.",
-    "Number going up. Quick reminder: the best time to derisk is when things feel safest. Not financial advice.",
+    msg("Bull market. Everyone's a genius now. Try not to let it go to your head. Also, consider taking some profits."),
+    msg("Number going up. Quick reminder: the best time to derisk is when things feel safest. Not financial advice."),
   ],
 };
 
@@ -397,15 +398,15 @@ const MILESTONE_MESSAGES: Record<string, string[]> = {
 // =============================================================================
 
 const RANDOM_COMMENTARY: string[] = [
-  "The metagame right now is to build infrastructure while everyone else chases the next shiny thing.",
-  "Your city is doing fine. Better than most portfolios, probably.",
-  "I've been in crypto since 2012. Your city already has more utility than half my early investments.",
-  "Remember: this is a video game. The crypto part is just flavor. Have fun with it.",
-  "Stay the course. That's it. That's the alpha.",
-  "The best plays are usually the boring ones. Boring is underrated.",
-  "If you're not sure what to do, doing nothing is often correct.",
-  "I've made every mistake you can make in crypto. Somehow still here. That's the metagame.",
-  "This is a long game. Act accordingly.",
+  msg("The metagame right now is to build infrastructure while everyone else chases the next shiny thing."),
+  msg("Your city is doing fine. Better than most portfolios, probably."),
+  msg("I've been in crypto since 2012. Your city already has more utility than half my early investments."),
+  msg("Remember: this is a video game. The crypto part is just flavor. Have fun with it."),
+  msg("Stay the course. That's it. That's the alpha."),
+  msg("The best plays are usually the boring ones. Boring is underrated."),
+  msg("If you're not sure what to do, doing nothing is often correct."),
+  msg("I've made every mistake you can make in crypto. Somehow still here. That's the metagame."),
+  msg("This is a long game. Act accordingly."),
 ];
 
 // =============================================================================
@@ -810,23 +811,23 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
         // Handled by triggerRugPull
         return;
       case 'hack':
-        message = "Protocol hacked. The smart contract wasn't so smart after all.";
+        message = msg("Protocol hacked. The smart contract wasn't so smart after all.");
         break;
       case 'airdrop':
       case 'airdrop_season':
-        message = "Airdrop season! Free money falling from the sky. Enjoy it.";
+        message = msg("Airdrop season! Free money falling from the sky. Enjoy it.");
         break;
       case 'whale_entry':
-        message = "Whale spotted. Big money's moving in. Interesting.";
+        message = msg("Whale spotted. Big money's moving in. Interesting.");
         break;
       case 'liquidation_cascade':
-        message = "Liquidations cascading. Overleveraged positions getting rekt.";
+        message = msg("Liquidations cascading. Overleveraged positions getting rekt.");
         break;
       case 'ct_drama':
-        message = "CT is fighting again. Some things never change.";
+        message = msg("CT is fighting again. Some things never change.");
         break;
       case 'regulatory_fud':
-        message = "Regulatory FUD incoming. The government remembered crypto exists.";
+        message = msg("Regulatory FUD incoming. The government remembered crypto exists.");
         break;
     }
     

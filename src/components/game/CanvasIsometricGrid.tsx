@@ -83,6 +83,28 @@ import {
   generateTourWaypoints,
 } from '@/components/game/gridFinders';
 import { drawAirplanes as drawAirplanesUtil, drawHelicopters as drawHelicoptersUtil, drawSeaplanes as drawSeaplanesUtil } from '@/components/game/drawAircraft';
+// Canvas module utilities (Issue #66)
+import {
+  createRenderQueues,
+  clearRenderQueues,
+  insertionSortByDepth,
+  calculateMapBounds,
+  clampOffset as clampOffsetUtil,
+  calculateMapCorners,
+  createMapClipPath,
+  TILE_DIMENSIONS,
+  type RenderQueues,
+  type BuildingDrawItem,
+  type OverlayDrawItem,
+  type TileRenderMetadata,
+  PAN_DRAG_THRESHOLD,
+  getTouchDistance,
+  getTouchCenter,
+  clientToGrid,
+  isInGrid,
+  isTypingTarget,
+  type BackgroundGradientCache,
+} from '@/components/game/canvas';
 import { useVehicleSystems, VehicleSystemRefs, VehicleSystemState } from '@/components/game/vehicleSystems';
 import { useBuildingHelpers } from '@/components/game/buildingHelpers';
 import { useAircraftSystems, AircraftSystemRefs, AircraftSystemState } from '@/components/game/aircraftSystems';
@@ -325,7 +347,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   // Roads, bulldoze, and other tools support drag-to-place but don't show the grid
   const supportsDragPlace = selectedTool !== 'select';
 
-  const PAN_DRAG_THRESHOLD = 6;
+  // PAN_DRAG_THRESHOLD imported from canvas module
 
   // Market sentiment visual effects (Issue #46)
   // Get current market sentiment from crypto economy and calculate visual effects
@@ -3042,18 +3064,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   }, [zoom, offset, clampOffset]);
 
   // Touch handlers for mobile
-  const getTouchDistance = useCallback((touch1: React.Touch, touch2: React.Touch) => {
-    const dx = touch1.clientX - touch2.clientX;
-    const dy = touch1.clientY - touch2.clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  }, []);
-
-  const getTouchCenter = useCallback((touch1: React.Touch, touch2: React.Touch) => {
-    return {
-      x: (touch1.clientX + touch2.clientX) / 2,
-      y: (touch1.clientY + touch2.clientY) / 2,
-    };
-  }, []);
+  // getTouchDistance and getTouchCenter imported from canvas module
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 1) {

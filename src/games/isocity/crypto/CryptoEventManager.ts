@@ -12,6 +12,7 @@
  * Adapted for IsoCity's architecture.
  */
 
+import { msg } from 'gt-next';
 import { CryptoEventType, CryptoEvent, CryptoEventDefinition } from './types';
 import { CryptoEconomyManager } from './CryptoEconomyManager';
 import type { EventTrigger, TickerItem } from '../../../lib/crypto/types';
@@ -23,8 +24,8 @@ import type { EventTrigger, TickerItem } from '../../../lib/crypto/types';
 export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   bull_run: {
     type: 'bull_run',
-    name: 'Bull Run! 📈',
-    description: 'Markets are pumping! Sentiment surges as everyone FOMOs in.',
+    name: msg('Bull Run! 📈'),
+    description: msg('Markets are pumping! Sentiment surges as everyone FOMOs in.'),
     icon: '🐂',
     rarity: 0.05,
     duration: 30000, // 30 seconds
@@ -36,8 +37,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   bear_market: {
     type: 'bear_market',
-    name: 'Bear Market 📉',
-    description: 'Markets are crashing! Fear spreads as prices dump.',
+    name: msg('Bear Market 📉'),
+    description: msg('Markets are crashing! Fear spreads as prices dump.'),
     icon: '🐻',
     rarity: 0.05,
     duration: 30000,
@@ -49,8 +50,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   airdrop: {
     type: 'airdrop',
-    name: 'Airdrop Season! 🪂',
-    description: 'Free tokens rain from the sky! Treasury boosted.',
+    name: msg('Airdrop Season! 🪂'),
+    description: msg('Free tokens rain from the sky! Treasury boosted.'),
     icon: '🎁',
     rarity: 0.08,
     duration: 15000,
@@ -61,8 +62,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   rug_pull: {
     type: 'rug_pull',
-    name: 'Rug Pull! 🧹',
-    description: 'A project has rugged! Treasury and sentiment take a hit.',
+    name: msg('Rug Pull! 🧹'),
+    description: msg('A project has rugged! Treasury and sentiment take a hit.'),
     icon: '💀',
     rarity: 0.03,
     duration: 10000,
@@ -73,8 +74,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   hack: {
     type: 'hack',
-    name: 'Protocol Hacked! 🔓',
-    description: 'A major exploit hits the ecosystem. Funds are at risk.',
+    name: msg('Protocol Hacked! 🔓'),
+    description: msg('A major exploit hits the ecosystem. Funds are at risk.'),
     icon: '🏴‍☠️',
     rarity: 0.02,
     duration: 20000,
@@ -85,8 +86,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   protocol_upgrade: {
     type: 'protocol_upgrade',
-    name: 'Protocol Upgrade 🔧',
-    description: 'A major protocol upgrade improves efficiency!',
+    name: msg('Protocol Upgrade 🔧'),
+    description: msg('A major protocol upgrade improves efficiency!'),
     icon: '⚙️',
     rarity: 0.1,
     duration: 15000,
@@ -97,8 +98,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   whale_entry: {
     type: 'whale_entry',
-    name: 'Whale Alert! 🐋',
-    description: 'A whale has entered the city! Big deposits incoming.',
+    name: msg('Whale Alert! 🐋'),
+    description: msg('A whale has entered the city! Big deposits incoming.'),
     icon: '🐋',
     rarity: 0.07,
     duration: 10000,
@@ -109,8 +110,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   ct_drama: {
     type: 'ct_drama',
-    name: 'CT Drama 🍿',
-    description: 'Crypto Twitter is fighting again. Volatility spikes!',
+    name: msg('CT Drama 🍿'),
+    description: msg('Crypto Twitter is fighting again. Volatility spikes!'),
     icon: '🔥',
     rarity: 0.12,
     duration: 20000,
@@ -121,8 +122,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   liquidation_cascade: {
     type: 'liquidation_cascade',
-    name: 'Liquidation Cascade 💥',
-    description: 'Overleveraged positions are getting liquidated!',
+    name: msg('Liquidation Cascade 💥'),
+    description: msg('Overleveraged positions are getting liquidated!'),
     icon: '📉',
     rarity: 0.04,
     duration: 15000,
@@ -134,8 +135,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   merge: {
     type: 'merge',
-    name: 'The Merge! ⟠',
-    description: 'A major blockchain transition! Historic moment.',
+    name: msg('The Merge! ⟠'),
+    description: msg('A major blockchain transition! Historic moment.'),
     icon: '🔀',
     rarity: 0.01,
     duration: 45000,
@@ -146,8 +147,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   halving: {
     type: 'halving',
-    name: 'Halving Event ⚡',
-    description: 'Block rewards are cut in half! Bullish signal.',
+    name: msg('Halving Event ⚡'),
+    description: msg('Block rewards are cut in half! Bullish signal.'),
     icon: '✂️',
     rarity: 0.01,
     duration: 60000,
@@ -158,8 +159,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   airdrop_season: {
     type: 'airdrop_season',
-    name: 'Airdrop Season! 🌧️',
-    description: 'Multiple projects are distributing tokens!',
+    name: msg('Airdrop Season! 🌧️'),
+    description: msg('Multiple projects are distributing tokens!'),
     icon: '🎊',
     rarity: 0.03,
     duration: 45000,
@@ -170,8 +171,8 @@ export const CRYPTO_EVENTS: Record<CryptoEventType, CryptoEventDefinition> = {
   },
   regulatory_fud: {
     type: 'regulatory_fud',
-    name: 'Regulatory FUD 📜',
-    description: 'Government announces new crypto regulations.',
+    name: msg('Regulatory FUD 📜'),
+    description: msg('Government announces new crypto regulations.'),
     icon: '⚖️',
     rarity: 0.06,
     duration: 25000,
@@ -728,16 +729,16 @@ export class CryptoEventManager {
     
     // Fill with generic news if needed
     const genericNews = [
-      '📊 Market analysis: Crypto showing strength',
-      '💹 Trading volume up across major exchanges',
-      '🌐 New partnerships announced in DeFi space',
-      '🔐 Security improvements deployed by leading protocols',
-      '📱 Mobile wallet adoption continues to grow',
-      '🏛️ Institutional interest in crypto remains high',
-      '🎮 GameFi sector shows renewed activity',
-      '🎨 NFT market stabilizes with quality focus',
-      '🔗 Cross-chain bridges see increased usage',
-      '💎 Long-term holders remain confident',
+      msg('📊 Market analysis: Crypto showing strength'),
+      msg('💹 Trading volume up across major exchanges'),
+      msg('🌐 New partnerships announced in DeFi space'),
+      msg('🔐 Security improvements deployed by leading protocols'),
+      msg('📱 Mobile wallet adoption continues to grow'),
+      msg('🏛️ Institutional interest in crypto remains high'),
+      msg('🎮 GameFi sector shows renewed activity'),
+      msg('🎨 NFT market stabilizes with quality focus'),
+      msg('🔗 Cross-chain bridges see increased usage'),
+      msg('💎 Long-term holders remain confident'),
     ];
     
     while (headlines.length < count) {
