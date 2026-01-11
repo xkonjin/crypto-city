@@ -171,6 +171,11 @@ export interface PlacedCryptoBuilding {
   placedAt: number;
   // Accumulated yield since placement
   yieldAccumulated: number;
+  // === MONEY SINKS (Issue #54) ===
+  /** Current upgrade level (1-3) */
+  upgradeLevel?: 1 | 2 | 3;
+  /** Whether building is damaged (rug pulled) and needs repair */
+  isDamaged?: boolean;
 }
 
 // =============================================================================
@@ -185,6 +190,56 @@ export type MarketSentiment =
 // CRYPTO ECONOMY STATE
 // =============================================================================
 // State for the crypto economy simulation.
+
+// =============================================================================
+// MONEY SINK TYPES (Issue #54)
+// =============================================================================
+
+/** Building maintenance cost configuration */
+export interface BuildingMaintenance {
+  /** Per-building base cost per day */
+  baseCost: number;
+  /** Higher tiers cost more to maintain */
+  tierMultiplier: number;
+  /** Costs scale with city size (0.5% extra per 10 buildings) */
+  scalingFactor: number;
+}
+
+/** Service funding levels for crypto city services */
+export interface ServiceFunding {
+  /** Security service (0-100): affects rug protection */
+  security: number;
+  /** Marketing service (0-100): affects yield multiplier */
+  marketing: number;
+  /** Research service (0-100): affects event frequency and airdrop chance */
+  research: number;
+}
+
+/** Building upgrade level and effects */
+export interface BuildingUpgrade {
+  /** Current upgrade level (1, 2, or 3) */
+  level: 1 | 2 | 3;
+  /** Cost to upgrade (50%, 100%, 150% of base cost) */
+  cost: number;
+  /** Yield bonus from upgrade (+25%, +50%, +75%) */
+  yieldBonus: number;
+}
+
+/** Damaged building awaiting repair */
+export interface DamagedBuilding {
+  /** Building instance ID */
+  id: string;
+  /** Building definition ID */
+  buildingId: string;
+  /** Original building cost (repair = 25% of this) */
+  originalCost: number;
+  /** When the building was damaged */
+  damagedAt: number;
+  /** Grid position X */
+  gridX: number;
+  /** Grid position Y */
+  gridY: number;
+}
 
 export interface CryptoEconomyState {
   // Treasury balance (in tokens)
@@ -215,6 +270,15 @@ export interface CryptoEconomyState {
   lowHappinessCounter: number;
   // Whether player has ever had crypto buildings (for rugged out condition)
   hadCryptoBuildings: boolean;
+  // === MONEY SINKS (Issue #54) ===
+  /** Service funding levels (security, marketing, research) */
+  serviceFunding: ServiceFunding;
+  /** Daily maintenance cost total */
+  dailyMaintenanceCost: number;
+  /** Daily service funding cost total */
+  dailyServiceCost: number;
+  /** Buildings damaged by rug pulls awaiting repair */
+  damagedBuildings: DamagedBuilding[];
 }
 
 // =============================================================================

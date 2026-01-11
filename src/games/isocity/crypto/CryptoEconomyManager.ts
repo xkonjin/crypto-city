@@ -20,6 +20,8 @@ import {
   CryptoTier,
   CRYPTO_TIER_MULTIPLIERS,
   MarketSentiment,
+  ServiceFunding,
+  DamagedBuilding,
 } from './types';
 import { ALL_CRYPTO_BUILDINGS, getCryptoBuilding } from './buildings';
 import type { 
@@ -67,6 +69,61 @@ export const ECONOMY_CONFIG = {
   
   // Tick rate (ms)
   TICK_RATE: 5000,
+  
+  // === MONEY SINKS (Issue #54) ===
+  
+  // Maintenance costs
+  MAINTENANCE: {
+    /** Base cost per building per day (1-3% of average building cost ~$10k = $100-300) */
+    BASE_COST_PER_BUILDING: 150,
+    /** Tier multipliers for maintenance costs */
+    TIER_MULTIPLIERS: {
+      retail: 0.5,     // Lower maintenance for small buildings
+      degen: 1.0,      // Standard maintenance
+      whale: 1.5,      // Higher maintenance for premium buildings
+      institution: 2.0, // Highest maintenance for institutions
+    } as Record<CryptoTier, number>,
+    /** Extra cost per 10 buildings (0.5% scaling) */
+    SCALING_PER_10_BUILDINGS: 0.005,
+  },
+  
+  // Service funding
+  SERVICES: {
+    /** Base cost per service at 50% funding per day */
+    BASE_COST_AT_50_PERCENT: 50,
+    /** Maximum funding level */
+    MAX_FUNDING: 100,
+    /** Security: rug protection multiplier at 100% funding */
+    SECURITY_MAX_RUG_REDUCTION: 0.3, // 30% rug risk reduction at 100%
+    /** Marketing: yield multiplier at 100% funding */
+    MARKETING_MAX_YIELD_BONUS: 0.2, // 20% yield bonus at 100%
+    /** Research: airdrop chance multiplier at 100% funding */
+    RESEARCH_MAX_AIRDROP_BONUS: 0.5, // 50% more airdrops at 100%
+    /** Penalty for low funding (below 30%) */
+    LOW_FUNDING_THRESHOLD: 30,
+    LOW_FUNDING_PENALTY: 0.15, // 15% negative effect
+  },
+  
+  // Emergency repairs
+  REPAIRS: {
+    /** Repair cost as percentage of original building cost */
+    COST_PERCENTAGE: 0.25, // 25%
+  },
+  
+  // Building upgrades
+  UPGRADES: {
+    /** Cost multipliers for each level (% of base cost) */
+    LEVEL_COSTS: {
+      2: 0.5,  // 50% of base cost to upgrade to level 2
+      3: 1.0,  // 100% of base cost to upgrade to level 3
+    } as Record<2 | 3, number>,
+    /** Yield bonuses for each level */
+    LEVEL_YIELD_BONUS: {
+      1: 0,      // Base level, no bonus
+      2: 0.25,   // +25% yield at level 2
+      3: 0.50,   // +50% yield at level 3
+    } as Record<1 | 2 | 3, number>,
+  },
 } as const;
 
 // =============================================================================
@@ -93,6 +150,15 @@ export function createInitialEconomyState(): CryptoEconomyState {
     gameDays: 0,
     lowHappinessCounter: 0,
     hadCryptoBuildings: false,
+    // === MONEY SINKS (Issue #54) ===
+    serviceFunding: {
+      security: 50,   // Default 50% funding
+      marketing: 50,
+      research: 50,
+    },
+    dailyMaintenanceCost: 0,
+    dailyServiceCost: 0,
+    damagedBuildings: [],
   };
 }
 
@@ -468,11 +534,27 @@ export class CryptoEconomyManager {
         continue;
       }
       
+      // ==== MONEY SINKS (Issue #54) ====
+      // Skip yield calculation for damaged buildings (rug pull effect)
+      if (placed.isDamaged) {
+        // Damaged buildings produce 0 yield until repaired
+        const tvlMultiplier = CRYPTO_TIER_MULTIPLIERS[def.crypto.tier];
+        totalTVL += ECONOMY_CONFIG.TVL_PER_BUILDING_BASE * tvlMultiplier * 0.25; // Much reduced TVL
+        continue;
+      }
+      // ==== END MONEY SINKS ====
+      
       const effects = def.crypto.effects;
       const tierMultiplier = CRYPTO_TIER_MULTIPLIERS[def.crypto.tier];
       
       // Base yield from building
       let buildingYield = (effects.yieldRate || 0) * tierMultiplier;
+      
+      // ==== MONEY SINKS (Issue #54) ====
+      // Apply upgrade bonus to yield
+      const upgradeBonus = ECONOMY_CONFIG.UPGRADES.LEVEL_YIELD_BONUS[placed.upgradeLevel || 1];
+      buildingYield *= (1 + upgradeBonus);
+      // ==== END MONEY SINKS ====
       
       // Apply staking bonus if applicable
       if (effects.stakingBonus && effects.stakingBonus > 1) {
@@ -539,6 +621,18 @@ export class CryptoEconomyManager {
     adjustedYield *= (1 + institutionStabilityBonus);
     // ==== END INSTITUTION STABILITY BONUS ====
     
+    // ==== MONEY SINKS (Issue #54) ====
+    // Apply marketing service funding bonus to yields
+    const marketingBonus = this.getMarketingYieldBonus();
+    adjustedYield *= (1 + marketingBonus);
+    
+    // Calculate daily maintenance costs
+    const dailyMaintenanceCost = this.calculateMaintenanceCosts();
+    
+    // Calculate daily service funding costs
+    const dailyServiceCost = this.calculateServiceCosts();
+    // ==== END MONEY SINKS ====
+    
     // Update state
     this.state = {
       ...this.state,
@@ -546,6 +640,8 @@ export class CryptoEconomyManager {
       tvl: totalTVL,
       buildingCount,
       lastUpdate: Date.now(),
+      dailyMaintenanceCost,
+      dailyServiceCost,
     };
     
     this.notifyListeners();
@@ -667,13 +763,23 @@ export class CryptoEconomyManager {
     const ticksPerDay = (24 * 60 * 60 * 1000) / ECONOMY_CONFIG.TICK_RATE;
     const yieldThisTick = (this.state.dailyYield / ticksPerDay) * tickFraction * speedMultiplier;
     
+    // ==== MONEY SINKS (Issue #54) ====
+    // Calculate costs for this tick
+    const maintenanceCostThisTick = (this.state.dailyMaintenanceCost / ticksPerDay) * tickFraction * speedMultiplier;
+    const serviceCostThisTick = (this.state.dailyServiceCost / ticksPerDay) * tickFraction * speedMultiplier;
+    const totalCostsThisTick = maintenanceCostThisTick + serviceCostThisTick;
+    
+    // Net change: yield - costs
+    const netChangeThisTick = yieldThisTick - totalCostsThisTick;
+    // ==== END MONEY SINKS ====
+    
     // Track last tick yield for city tax calculation (Issue #44)
     this.lastTickYield = yieldThisTick;
     
     // Update treasury and accumulated yield
     this.state = {
       ...this.state,
-      treasury: this.state.treasury + yieldThisTick,
+      treasury: Math.max(0, this.state.treasury + netChangeThisTick),
       totalYield: this.state.totalYield + yieldThisTick,
       lastUpdate: now,
       tickCount: this.state.tickCount + 1,
@@ -876,10 +982,23 @@ export class CryptoEconomyManager {
         // Scale rug losses to 10% of treasury (minimum $5,000)
         // This makes late-game rug pulls actually meaningful
         // Apply prestige rug resistance to reduce losses (Issue #45)
-        const rugResistanceMultiplier = 1 - this.prestigeRugResistance;
+        // Apply security service rug reduction (Issue #54)
+        const securityReduction = this.getSecurityRugReduction();
+        const totalRugResistance = Math.max(0, this.prestigeRugResistance + securityReduction);
+        const rugResistanceMultiplier = 1 - totalRugResistance;
         const rugLoss = Math.max(5000, Math.floor(this.state.treasury * 0.10)) * magnitude * rugResistanceMultiplier;
         this.state.treasury = Math.max(0, this.state.treasury - rugLoss);
         this.state.marketSentiment = Math.max(0, this.state.marketSentiment - 15);
+        
+        // ==== MONEY SINKS (Issue #54) ====
+        // Damage a random building - it needs repair to produce yield again
+        const healthyBuildings = Array.from(this.placedBuildings.values())
+          .filter(b => !b.isDamaged);
+        if (healthyBuildings.length > 0) {
+          const randomIndex = Math.floor(Math.random() * healthyBuildings.length);
+          this.damageBuilding(healthyBuildings[randomIndex].id);
+        }
+        // ==== END MONEY SINKS ====
         
         // Issue #70: Cascading failure mechanic - adjacent degen buildings may also rug
         if (BALANCE_CONFIG.CONTAGION_ENABLED) {
@@ -1428,6 +1547,348 @@ export class CryptoEconomyManager {
       hadCryptoBuildings: false,
     };
     this.notifyListeners();
+  }
+  
+  // ---------------------------------------------------------------------------
+  // MONEY SINKS (Issue #54)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Calculate total daily maintenance costs for all buildings
+   * Maintenance = baseCost * tierMultiplier * (1 + scalingFactor * buildingCount / 10)
+   */
+  calculateMaintenanceCosts(): number {
+    let totalMaintenance = 0;
+    const { BASE_COST_PER_BUILDING, TIER_MULTIPLIERS, SCALING_PER_10_BUILDINGS } = ECONOMY_CONFIG.MAINTENANCE;
+    const buildingCount = this.placedBuildings.size;
+    const scalingMultiplier = 1 + (SCALING_PER_10_BUILDINGS * buildingCount / 10);
+    
+    for (const placed of this.placedBuildings.values()) {
+      // Skip damaged buildings - they don't cost maintenance but also don't produce
+      if (placed.isDamaged) continue;
+      
+      const def = getCryptoBuilding(placed.buildingId);
+      if (!def?.crypto?.tier) continue;
+      
+      const tierMultiplier = TIER_MULTIPLIERS[def.crypto.tier] || 1.0;
+      const buildingMaintenance = BASE_COST_PER_BUILDING * tierMultiplier * scalingMultiplier;
+      totalMaintenance += buildingMaintenance;
+    }
+    
+    return totalMaintenance;
+  }
+  
+  /**
+   * Calculate total daily service funding costs
+   * Each service costs (funding / 100) * BASE_COST_AT_50_PERCENT * 2 per day
+   * At 50% funding = BASE_COST_AT_50_PERCENT, at 100% = 2x that
+   */
+  calculateServiceCosts(): number {
+    const { BASE_COST_AT_50_PERCENT, MAX_FUNDING } = ECONOMY_CONFIG.SERVICES;
+    const { security, marketing, research } = this.state.serviceFunding;
+    
+    // Cost scales linearly: at 0% = $0, at 50% = $50, at 100% = $100
+    const securityCost = (security / MAX_FUNDING) * BASE_COST_AT_50_PERCENT * 2;
+    const marketingCost = (marketing / MAX_FUNDING) * BASE_COST_AT_50_PERCENT * 2;
+    const researchCost = (research / MAX_FUNDING) * BASE_COST_AT_50_PERCENT * 2;
+    
+    return securityCost + marketingCost + researchCost;
+  }
+  
+  /**
+   * Get marketing yield bonus based on funding level
+   * Returns bonus multiplier (0 to MAX_YIELD_BONUS)
+   */
+  getMarketingYieldBonus(): number {
+    const { MAX_FUNDING, MARKETING_MAX_YIELD_BONUS, LOW_FUNDING_THRESHOLD, LOW_FUNDING_PENALTY } = ECONOMY_CONFIG.SERVICES;
+    const marketing = this.state.serviceFunding.marketing;
+    
+    if (marketing < LOW_FUNDING_THRESHOLD) {
+      // Low funding = penalty (negative bonus)
+      return -LOW_FUNDING_PENALTY * (1 - marketing / LOW_FUNDING_THRESHOLD);
+    }
+    
+    // Linear bonus from 0 at 30% to max at 100%
+    const effectiveFunding = (marketing - LOW_FUNDING_THRESHOLD) / (MAX_FUNDING - LOW_FUNDING_THRESHOLD);
+    return MARKETING_MAX_YIELD_BONUS * effectiveFunding;
+  }
+  
+  /**
+   * Get security rug protection based on funding level
+   * Returns reduction multiplier (0 to MAX_RUG_REDUCTION)
+   */
+  getSecurityRugReduction(): number {
+    const { MAX_FUNDING, SECURITY_MAX_RUG_REDUCTION, LOW_FUNDING_THRESHOLD, LOW_FUNDING_PENALTY } = ECONOMY_CONFIG.SERVICES;
+    const security = this.state.serviceFunding.security;
+    
+    if (security < LOW_FUNDING_THRESHOLD) {
+      // Low funding = increased rug risk (return negative)
+      return -LOW_FUNDING_PENALTY * (1 - security / LOW_FUNDING_THRESHOLD);
+    }
+    
+    // Linear reduction from 0 at 30% to max at 100%
+    const effectiveFunding = (security - LOW_FUNDING_THRESHOLD) / (MAX_FUNDING - LOW_FUNDING_THRESHOLD);
+    return SECURITY_MAX_RUG_REDUCTION * effectiveFunding;
+  }
+  
+  /**
+   * Get research airdrop bonus based on funding level
+   * Returns bonus multiplier (0 to MAX_AIRDROP_BONUS)
+   */
+  getResearchAirdropBonus(): number {
+    const { MAX_FUNDING, RESEARCH_MAX_AIRDROP_BONUS, LOW_FUNDING_THRESHOLD, LOW_FUNDING_PENALTY } = ECONOMY_CONFIG.SERVICES;
+    const research = this.state.serviceFunding.research;
+    
+    if (research < LOW_FUNDING_THRESHOLD) {
+      // Low funding = reduced airdrops (negative bonus)
+      return -LOW_FUNDING_PENALTY * (1 - research / LOW_FUNDING_THRESHOLD);
+    }
+    
+    // Linear bonus from 0 at 30% to max at 100%
+    const effectiveFunding = (research - LOW_FUNDING_THRESHOLD) / (MAX_FUNDING - LOW_FUNDING_THRESHOLD);
+    return RESEARCH_MAX_AIRDROP_BONUS * effectiveFunding;
+  }
+  
+  /**
+   * Set service funding level
+   * @param service - Which service to adjust
+   * @param level - Funding level (0-100)
+   */
+  setServiceFunding(service: keyof ServiceFunding, level: number): void {
+    const clampedLevel = Math.max(0, Math.min(100, level));
+    this.state = {
+      ...this.state,
+      serviceFunding: {
+        ...this.state.serviceFunding,
+        [service]: clampedLevel,
+      },
+    };
+    this.recalculateEconomy();
+  }
+  
+  /**
+   * Get current service funding levels
+   */
+  getServiceFunding(): ServiceFunding {
+    return { ...this.state.serviceFunding };
+  }
+  
+  /**
+   * Get money sink stats for UI display
+   */
+  getMoneySinkStats(): {
+    dailyMaintenance: number;
+    dailyServiceCost: number;
+    totalDailyCosts: number;
+    netDailyYield: number;
+    serviceFunding: ServiceFunding;
+    marketingBonus: number;
+    securityBonus: number;
+    researchBonus: number;
+    damagedBuildingsCount: number;
+  } {
+    const dailyMaintenance = this.state.dailyMaintenanceCost;
+    const dailyServiceCost = this.state.dailyServiceCost;
+    const totalDailyCosts = dailyMaintenance + dailyServiceCost;
+    const netDailyYield = this.state.dailyYield - totalDailyCosts;
+    
+    return {
+      dailyMaintenance,
+      dailyServiceCost,
+      totalDailyCosts,
+      netDailyYield,
+      serviceFunding: this.getServiceFunding(),
+      marketingBonus: this.getMarketingYieldBonus(),
+      securityBonus: this.getSecurityRugReduction(),
+      researchBonus: this.getResearchAirdropBonus(),
+      damagedBuildingsCount: this.state.damagedBuildings.length,
+    };
+  }
+  
+  // ---------------------------------------------------------------------------
+  // EMERGENCY REPAIRS (Issue #54)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Damage a building after a rug pull
+   * Damaged buildings produce 0 yield until repaired
+   * @param buildingId - Instance ID of building to damage
+   */
+  damageBuilding(buildingId: string): void {
+    const building = this.placedBuildings.get(buildingId);
+    if (!building || building.isDamaged) return;
+    
+    const def = getCryptoBuilding(building.buildingId);
+    if (!def) return;
+    
+    // Mark building as damaged
+    building.isDamaged = true;
+    
+    // Add to damaged buildings list
+    const damagedEntry: DamagedBuilding = {
+      id: building.id,
+      buildingId: building.buildingId,
+      originalCost: def.cost,
+      damagedAt: Date.now(),
+      gridX: building.gridX,
+      gridY: building.gridY,
+    };
+    
+    this.state = {
+      ...this.state,
+      damagedBuildings: [...this.state.damagedBuildings, damagedEntry],
+    };
+    
+    this.recalculateEconomy();
+    logger.info(`[CryptoEconomy] Building ${buildingId} damaged and needs repair`);
+  }
+  
+  /**
+   * Get repair cost for a damaged building
+   * @param buildingId - Instance ID of damaged building
+   * @returns Repair cost or 0 if not damaged
+   */
+  getRepairCost(buildingId: string): number {
+    const damaged = this.state.damagedBuildings.find(d => d.id === buildingId);
+    if (!damaged) return 0;
+    
+    return Math.floor(damaged.originalCost * ECONOMY_CONFIG.REPAIRS.COST_PERCENTAGE);
+  }
+  
+  /**
+   * Repair a damaged building
+   * @param buildingId - Instance ID of building to repair
+   * @returns true if repair successful
+   */
+  repairDamagedBuilding(buildingId: string): boolean {
+    const building = this.placedBuildings.get(buildingId);
+    if (!building || !building.isDamaged) return false;
+    
+    const repairCost = this.getRepairCost(buildingId);
+    if (!this.canAfford(repairCost)) return false;
+    
+    // Deduct repair cost
+    this.state.treasury -= repairCost;
+    
+    // Remove from damaged list
+    this.state = {
+      ...this.state,
+      damagedBuildings: this.state.damagedBuildings.filter(d => d.id !== buildingId),
+    };
+    
+    // Mark building as repaired
+    building.isDamaged = false;
+    
+    this.recalculateEconomy();
+    logger.info(`[CryptoEconomy] Building ${buildingId} repaired for $${repairCost}`);
+    return true;
+  }
+  
+  /**
+   * Demolish a damaged building (free, removes building entirely)
+   * @param buildingId - Instance ID of building to demolish
+   * @returns true if demolition successful
+   */
+  demolishDamagedBuilding(buildingId: string): boolean {
+    const building = this.placedBuildings.get(buildingId);
+    if (!building || !building.isDamaged) return false;
+    
+    // Remove from damaged list
+    this.state = {
+      ...this.state,
+      damagedBuildings: this.state.damagedBuildings.filter(d => d.id !== buildingId),
+    };
+    
+    // Remove building
+    this.placedBuildings.delete(buildingId);
+    
+    this.recalculateEconomy();
+    logger.info(`[CryptoEconomy] Damaged building ${buildingId} demolished`);
+    return true;
+  }
+  
+  /**
+   * Get list of damaged buildings
+   */
+  getDamagedBuildings(): DamagedBuilding[] {
+    return [...this.state.damagedBuildings];
+  }
+  
+  /**
+   * Check if a building is damaged
+   */
+  isBuildingDamaged(buildingId: string): boolean {
+    const building = this.placedBuildings.get(buildingId);
+    return building?.isDamaged ?? false;
+  }
+  
+  // ---------------------------------------------------------------------------
+  // BUILDING UPGRADES (Issue #54)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Get upgrade cost for a building to the next level
+   * @param buildingId - Instance ID of building
+   * @returns Upgrade cost or 0 if cannot upgrade
+   */
+  getUpgradeCost(buildingId: string): number {
+    const building = this.placedBuildings.get(buildingId);
+    if (!building) return 0;
+    
+    const currentLevel = building.upgradeLevel || 1;
+    if (currentLevel >= 3) return 0; // Already max level
+    
+    const def = getCryptoBuilding(building.buildingId);
+    if (!def) return 0;
+    
+    const nextLevel = (currentLevel + 1) as 2 | 3;
+    const costMultiplier = ECONOMY_CONFIG.UPGRADES.LEVEL_COSTS[nextLevel];
+    return Math.floor(def.cost * costMultiplier);
+  }
+  
+  /**
+   * Upgrade a building to the next level
+   * @param buildingId - Instance ID of building to upgrade
+   * @returns true if upgrade successful
+   */
+  upgradeBuilding(buildingId: string): boolean {
+    const building = this.placedBuildings.get(buildingId);
+    if (!building) return false;
+    
+    // Cannot upgrade damaged buildings
+    if (building.isDamaged) return false;
+    
+    const currentLevel = building.upgradeLevel || 1;
+    if (currentLevel >= 3) return false; // Already max level
+    
+    const upgradeCost = this.getUpgradeCost(buildingId);
+    if (!this.canAfford(upgradeCost)) return false;
+    
+    // Deduct upgrade cost
+    this.state.treasury -= upgradeCost;
+    
+    // Upgrade building
+    building.upgradeLevel = (currentLevel + 1) as 1 | 2 | 3;
+    
+    this.recalculateEconomy();
+    logger.info(`[CryptoEconomy] Building ${buildingId} upgraded to level ${building.upgradeLevel}`);
+    return true;
+  }
+  
+  /**
+   * Get upgrade level of a building
+   */
+  getBuildingUpgradeLevel(buildingId: string): 1 | 2 | 3 {
+    const building = this.placedBuildings.get(buildingId);
+    return building?.upgradeLevel || 1;
+  }
+  
+  /**
+   * Get yield bonus for a building's upgrade level
+   */
+  getBuildingUpgradeBonus(buildingId: string): number {
+    const level = this.getBuildingUpgradeLevel(buildingId);
+    return ECONOMY_CONFIG.UPGRADES.LEVEL_YIELD_BONUS[level];
   }
   
   // ---------------------------------------------------------------------------

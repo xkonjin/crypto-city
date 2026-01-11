@@ -23,3 +23,9 @@ export { TopBar, StatsPanel, StatBadge, DemandIndicator, MiniStat, TimeOfDayIcon
 export { CanvasIsometricGrid } from './CanvasIsometricGrid';
 export type { CanvasIsometricGridProps } from './CanvasIsometricGrid';
 export { default as TimeLimitedBanner } from './TimeLimitedBanner';
+export { DaySummaryModal } from './DaySummaryModal';
+export type { DaySummaryModalProps } from './DaySummaryModal';
+export { StreakIndicator } from './StreakIndicator';
+export type { StreakIndicatorProps } from './StreakIndicator';
+export { DailyGoalsPanel } from './DailyGoalsPanel';
+export type { DailyGoalsPanelProps } from './DailyGoalsPanel';
