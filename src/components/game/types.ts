@@ -504,7 +504,12 @@ export type OverlayMode =
   | "pollution"
   | "crime"
   | "density"
-  | "synergy";
+  | "synergy"
+  // Crypto-specific overlays (Issue #58)
+  | "crypto_yield"
+  | "crypto_risk"
+  | "crypto_protection"
+  | "crypto_density";
 
 // ============================================================================
 // Train Types

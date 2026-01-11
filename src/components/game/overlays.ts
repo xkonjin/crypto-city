@@ -126,6 +126,31 @@ export const OVERLAY_CONFIG: Record<OverlayMode, OverlayConfig> = {
     activeColor: "bg-fuchsia-500",
     hoverColor: "hover:bg-fuchsia-600",
   },
+  // Crypto-specific overlays (Issue #58)
+  crypto_yield: {
+    label: "Yield",
+    title: "Crypto Building Yields",
+    activeColor: "bg-green-500",
+    hoverColor: "hover:bg-green-600",
+  },
+  crypto_risk: {
+    label: "Risk",
+    title: "Rug Pull Risk",
+    activeColor: "bg-red-500",
+    hoverColor: "hover:bg-red-600",
+  },
+  crypto_protection: {
+    label: "Protection",
+    title: "Auditor & Insurance Coverage",
+    activeColor: "bg-blue-500",
+    hoverColor: "hover:bg-blue-600",
+  },
+  crypto_density: {
+    label: "Density",
+    title: "Crypto Building Density",
+    activeColor: "bg-purple-500",
+    hoverColor: "hover:bg-purple-600",
+  },
 };
 
 /** Map of building tools to their corresponding overlay mode */
@@ -325,6 +350,15 @@ export function getOverlayFillStyle(
       // Return no fill - synergies are drawn as connection lines
       return NO_OVERLAY;
 
+    // Crypto-specific overlays (Issue #58)
+    // These are handled by CanvasIsometricGrid using calculateOverlay()
+    // Return no fill here - the canvas renders these directly
+    case "crypto_yield":
+    case "crypto_risk":
+    case "crypto_protection":
+    case "crypto_density":
+      return NO_OVERLAY;
+
     case "none":
     default:
       return NO_OVERLAY;
@@ -356,6 +390,11 @@ export const OVERLAY_MODES: OverlayMode[] = [
   "crime",
   "density",
   "synergy",
+  // Crypto-specific overlays (Issue #58)
+  "crypto_yield",
+  "crypto_risk",
+  "crypto_protection",
+  "crypto_density",
 ];
 
 // ============================================================================
@@ -379,6 +418,11 @@ export const OVERLAY_TO_BUILDING_TYPES: Record<OverlayMode, string[]> = {
   crime: [],
   density: [],
   synergy: [],
+  // Crypto-specific overlays (Issue #58)
+  crypto_yield: [],
+  crypto_risk: [],
+  crypto_protection: [],
+  crypto_density: [],
 };
 
 /** Overlay circle stroke colors (light/visible colors) */
@@ -398,6 +442,11 @@ export const OVERLAY_CIRCLE_COLORS: Record<OverlayMode, string> = {
   crime: "transparent",
   density: "transparent",
   synergy: "rgba(217, 70, 239, 0.8)", // Fuchsia for synergy
+  // Crypto-specific overlays (Issue #58)
+  crypto_yield: "rgba(34, 197, 94, 0.8)", // Green for yield
+  crypto_risk: "rgba(239, 68, 68, 0.8)", // Red for risk
+  crypto_protection: "rgba(59, 130, 246, 0.8)", // Blue for protection
+  crypto_density: "rgba(168, 85, 247, 0.8)", // Purple for density
 };
 
 /** Building highlight glow colors */
@@ -417,6 +466,11 @@ export const OVERLAY_HIGHLIGHT_COLORS: Record<OverlayMode, string> = {
   crime: "transparent",
   density: "transparent",
   synergy: "rgba(217, 70, 239, 1)", // Fuchsia for synergy
+  // Crypto-specific overlays (Issue #58)
+  crypto_yield: "rgba(34, 197, 94, 1)", // Green for yield
+  crypto_risk: "rgba(239, 68, 68, 1)", // Red for risk
+  crypto_protection: "rgba(59, 130, 246, 1)", // Blue for protection
+  crypto_density: "rgba(168, 85, 247, 1)", // Purple for density
 };
 
 /** Overlay circle fill colors (subtle, for area visibility) */
@@ -436,6 +490,11 @@ export const OVERLAY_CIRCLE_FILL_COLORS: Record<OverlayMode, string> = {
   crime: "transparent",
   density: "transparent",
   synergy: "rgba(217, 70, 239, 0.12)", // Fuchsia for synergy
+  // Crypto-specific overlays (Issue #58)
+  crypto_yield: "rgba(34, 197, 94, 0.12)", // Green for yield
+  crypto_risk: "rgba(239, 68, 68, 0.12)", // Red for risk
+  crypto_protection: "rgba(59, 130, 246, 0.12)", // Blue for protection
+  crypto_density: "rgba(168, 85, 247, 0.12)", // Purple for density
 };
 
 // ============================================================================

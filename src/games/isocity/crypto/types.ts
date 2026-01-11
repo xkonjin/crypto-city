@@ -250,6 +250,103 @@ export interface DamagedBuilding {
   gridY: number;
 }
 
+// =============================================================================
+// ACTIVE MANAGEMENT TYPES (Issue #55)
+// =============================================================================
+
+/** Harvest mode for collecting yields */
+export type HarvestMode = 'auto' | 'manual' | 'locked';
+
+/** Market timing state for yield management */
+export interface MarketTiming {
+  /** Yields waiting to be collected (in manual/locked mode) */
+  pendingYields: number;
+  /** Yields locked at a specific sentiment */
+  lockedYields: number;
+  /** Sentiment value when yields were locked (null if not locked) */
+  lockSentiment: number | null;
+  /** Current harvest mode */
+  harvestMode: HarvestMode;
+}
+
+/** Trade opportunity for risk/reward decisions */
+export interface TradeOpportunity {
+  /** Unique identifier */
+  id: string;
+  /** Display name */
+  name: string;
+  /** Description of the opportunity */
+  description: string;
+  /** Cost to invest */
+  cost: number;
+  /** Potential return multiplier */
+  potentialReturn: number;
+  /** Risk of loss (0-1, chance of failure) */
+  risk: number;
+  /** Duration in ticks until resolution */
+  duration: number;
+  /** Blockchain chain this opportunity is on */
+  chain: CryptoChain;
+  /** Tick when opportunity expires */
+  expiresAt: number;
+}
+
+/** Active trade that player has invested in */
+export interface ActiveTrade {
+  /** Trade opportunity this is based on */
+  opportunity: TradeOpportunity;
+  /** Amount invested */
+  investedAmount: number;
+  /** Tick when trade was started */
+  startedAt: number;
+  /** Tick when trade resolves */
+  resolvesAt: number;
+}
+
+/** Yield boost for leveraging buildings */
+export interface YieldBoost {
+  /** Unique identifier */
+  id: string;
+  /** Display name */
+  name: string;
+  /** Description */
+  description: string;
+  /** Yield multiplier (e.g., 1.5 for +50%) */
+  yieldMultiplier: number;
+  /** Additional rug risk (e.g., 0.5 for +50% rug chance) */
+  riskIncrease: number;
+  /** Duration in ticks */
+  duration: number;
+  /** Cost to activate */
+  cost: number;
+}
+
+/** Active yield boost on a building */
+export interface ActiveYieldBoost {
+  /** Building instance ID */
+  buildingId: string;
+  /** Boost configuration */
+  boost: YieldBoost;
+  /** Tick when boost was activated */
+  activatedAt: number;
+  /** Tick when boost expires */
+  expiresAt: number;
+}
+
+/** Repair mini-game state */
+export interface RepairMiniGame {
+  /** Building being repaired */
+  buildingId: string;
+  /** Progress (0-100) */
+  progress: number;
+  /** Time remaining in seconds */
+  timeRemaining: number;
+  /** Whether mini-game is active */
+  isActive: boolean;
+  /** Target progress to succeed (clicks fill progress) */
+  targetProgress: number;
+}
+
 export interface CryptoEconomyState {
   // Treasury balance (in tokens)
   treasury: number;
@@ -288,6 +385,17 @@ export interface CryptoEconomyState {
   dailyServiceCost: number;
   /** Buildings damaged by rug pulls awaiting repair */
   damagedBuildings: DamagedBuilding[];
+  // === ACTIVE MANAGEMENT (Issue #55) ===
+  /** Market timing state for yield management */
+  marketTiming: MarketTiming;
+  /** Available trade opportunities */
+  tradeOpportunities: TradeOpportunity[];
+  /** Active trades player has invested in */
+  activeTrades: ActiveTrade[];
+  /** Active yield boosts on buildings */
+  activeYieldBoosts: ActiveYieldBoost[];
+  /** Current repair mini-game state (null if not active) */
+  repairMiniGame: RepairMiniGame | null;
 }
 
 // =============================================================================

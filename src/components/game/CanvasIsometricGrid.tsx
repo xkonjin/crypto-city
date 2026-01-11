@@ -57,6 +57,13 @@ import {
   OVERLAY_CIRCLE_FILL_COLORS,
   OVERLAY_HIGHLIGHT_COLORS,
 } from '@/components/game/overlays';
+// Crypto overlay system (Issue #58)
+import {
+  calculateOverlay,
+  getCachedOverlay,
+  CryptoOverlayType,
+  TileOverlay,
+} from '@/lib/cryptoOverlays';
 import {
   calculateSynergyConnections,
   getBuildingsWithSynergyStatus,
@@ -2168,6 +2175,46 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
             const buildingsWithStatus = getBuildingsWithSynergyStatus(placedBuildings, synergyGridToScreen);
             // Only show indicators, not full overlay
             drawSynergyIndicators(buildingsCtx, buildingsWithStatus, { x: 0, y: 0 }, 1);
+          }
+        }
+        
+        // Draw crypto-specific overlays (Issue #58)
+        // These overlays show yield, risk, protection, and density for crypto buildings
+        const cryptoOverlayModes = ['crypto_yield', 'crypto_risk', 'crypto_protection', 'crypto_density'];
+        if (cryptoOverlayModes.includes(overlayMode)) {
+          const placedBuildings = cryptoEconomy.getPlacedBuildings();
+          if (placedBuildings.length > 0) {
+            // Map overlay mode to crypto overlay type
+            const cryptoOverlayMap: Record<string, CryptoOverlayType> = {
+              'crypto_yield': 'yield',
+              'crypto_risk': 'risk',
+              'crypto_protection': 'protection',
+              'crypto_density': 'crypto_density',
+            };
+            const cryptoOverlayType = cryptoOverlayMap[overlayMode] || 'none';
+            
+            // Calculate overlay tiles using cached calculation
+            const overlayTiles = getCachedOverlay(
+              cryptoOverlayType,
+              placedBuildings,
+              gridSize,
+              gridVersionRef.current
+            );
+            
+            // Render overlay tiles
+            for (const overlayTile of overlayTiles) {
+              const { screenX: osx, screenY: osy } = gridToScreen(overlayTile.x, overlayTile.y, 0, 0);
+              
+              // Draw colored isometric tile with the overlay color
+              buildingsCtx.fillStyle = overlayTile.color;
+              buildingsCtx.beginPath();
+              buildingsCtx.moveTo(osx + halfTileWidth, osy);
+              buildingsCtx.lineTo(osx + tileWidth, osy + halfTileHeight);
+              buildingsCtx.lineTo(osx + halfTileWidth, osy + tileHeight);
+              buildingsCtx.lineTo(osx, osy + halfTileHeight);
+              buildingsCtx.closePath();
+              buildingsCtx.fill();
+            }
           }
         }
         

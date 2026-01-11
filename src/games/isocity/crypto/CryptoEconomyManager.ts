@@ -22,6 +22,14 @@ import {
   MarketSentiment,
   ServiceFunding,
   DamagedBuilding,
+  // Active Management types (Issue #55)
+  HarvestMode,
+  MarketTiming,
+  TradeOpportunity,
+  ActiveTrade,
+  YieldBoost,
+  ActiveYieldBoost,
+  RepairMiniGame,
 } from './types';
 import { ALL_CRYPTO_BUILDINGS, getCryptoBuilding } from './buildings';
 import type { 
@@ -131,6 +139,49 @@ export const ECONOMY_CONFIG = {
       3: 0.50,   // +50% yield at level 3
     } as Record<1 | 2 | 3, number>,
   },
+  
+  // === ACTIVE MANAGEMENT (Issue #55) ===
+  
+  // Trade opportunities
+  TRADES: {
+    /** Maximum number of active trade opportunities */
+    MAX_OPPORTUNITIES: 3,
+    /** Ticks between generating new opportunities */
+    GENERATION_INTERVAL: 20, // ~1.5 minutes
+    /** How long opportunities last before expiring */
+    OPPORTUNITY_DURATION: 100, // ~8 minutes
+    /** Base trade examples */
+    TEMPLATES: [
+      { name: 'Early DEX listing', cost: 5000, potentialReturn: 3, risk: 0.4, duration: 30 },
+      { name: 'NFT flip opportunity', cost: 2000, potentialReturn: 5, risk: 0.6, duration: 20 },
+      { name: 'Staking pool entry', cost: 10000, potentialReturn: 1.5, risk: 0.1, duration: 50 },
+      { name: 'Arbitrage play', cost: 3000, potentialReturn: 2, risk: 0.3, duration: 15 },
+      { name: 'Presale allocation', cost: 8000, potentialReturn: 4, risk: 0.5, duration: 40 },
+      { name: 'Liquidity mining', cost: 6000, potentialReturn: 2.5, risk: 0.35, duration: 35 },
+    ],
+  },
+  
+  // Yield boosts
+  YIELD_BOOSTS: {
+    /** Available boost types */
+    TYPES: [
+      { id: 'leverage-2x', name: '2x Leverage', description: 'Double yields, double risk', yieldMultiplier: 2.0, riskIncrease: 1.0, duration: 50, cost: 2000 },
+      { id: 'leverage-3x', name: '3x Leverage', description: 'Triple yields, triple risk', yieldMultiplier: 3.0, riskIncrease: 2.0, duration: 30, cost: 5000 },
+      { id: 'degen-mode', name: 'Degen Mode', description: 'Max risk, max reward', yieldMultiplier: 5.0, riskIncrease: 4.0, duration: 20, cost: 10000 },
+    ] as YieldBoost[],
+  },
+  
+  // Repair mini-game
+  REPAIR_MINIGAME: {
+    /** Duration in seconds */
+    DURATION: 5,
+    /** Progress per click */
+    PROGRESS_PER_CLICK: 5,
+    /** Target progress to succeed */
+    TARGET_PROGRESS: 100,
+    /** Discount on repair cost if successful */
+    SUCCESS_DISCOUNT: 0.5, // 50% off
+  },
 } as const;
 
 // =============================================================================
@@ -166,6 +217,17 @@ export function createInitialEconomyState(): CryptoEconomyState {
     dailyMaintenanceCost: 0,
     dailyServiceCost: 0,
     damagedBuildings: [],
+    // === ACTIVE MANAGEMENT (Issue #55) ===
+    marketTiming: {
+      pendingYields: 0,
+      lockedYields: 0,
+      lockSentiment: null,
+      harvestMode: 'auto',
+    },
+    tradeOpportunities: [],
+    activeTrades: [],
+    activeYieldBoosts: [],
+    repairMiniGame: null,
   };
 }
 
@@ -806,13 +868,34 @@ export class CryptoEconomyManager {
     // Track last tick yield for city tax calculation (Issue #44)
     this.lastTickYield = yieldThisTick;
     
+    // ==== ACTIVE MANAGEMENT (Issue #55) ====
+    // Handle yield based on harvest mode
+    const harvestMode = this.state.marketTiming.harvestMode;
+    let treasuryChange = 0;
+    let pendingYieldsChange = 0;
+    
+    if (harvestMode === 'auto') {
+      // Auto mode: yields go directly to treasury (existing behavior)
+      treasuryChange = netChangeThisTick;
+    } else {
+      // Manual or locked mode: yields accumulate as pending, costs still apply
+      pendingYieldsChange = yieldThisTick;
+      treasuryChange = -totalCostsThisTick; // Still pay costs
+    }
+    // ==== END ACTIVE MANAGEMENT ====
+    
     // Update treasury and accumulated yield
     this.state = {
       ...this.state,
-      treasury: Math.max(0, this.state.treasury + netChangeThisTick),
+      treasury: Math.max(0, this.state.treasury + treasuryChange),
       totalYield: this.state.totalYield + yieldThisTick,
       lastUpdate: now,
       tickCount: this.state.tickCount + 1,
+      // Active management state update
+      marketTiming: {
+        ...this.state.marketTiming,
+        pendingYields: this.state.marketTiming.pendingYields + pendingYieldsChange,
+      },
     };
     
     // Accumulate yield per building (guard against division by zero)
@@ -835,6 +918,12 @@ export class CryptoEconomyManager {
     this.currentGameTick++;
     this.processDisasterTick();
     // ==== END DISASTER SYSTEM ====
+    
+    // ==== ACTIVE MANAGEMENT (Issue #55) ====
+    // Process trade opportunities and yield boosts
+    this.processTradeOpportunities();
+    this.processYieldBoosts();
+    // ==== END ACTIVE MANAGEMENT ====
     
     this.notifyListeners();
   }
@@ -2428,6 +2517,594 @@ export class CryptoEconomyManager {
       protectedBuildingsCount: protectedCount,
       insuredBuildingsCount: insuredCount,
       avgProtectionBonus: avgProtection,
+    };
+  }
+  
+  // ---------------------------------------------------------------------------
+  // CLEANUP
+  // ---------------------------------------------------------------------------
+  
+  // ---------------------------------------------------------------------------
+  // ACTIVE MANAGEMENT SYSTEM (Issue #55)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Set the harvest mode for yield collection
+   * @param mode - 'auto' (default), 'manual', or 'locked'
+   */
+  setHarvestMode(mode: HarvestMode): void {
+    this.state = {
+      ...this.state,
+      marketTiming: {
+        ...this.state.marketTiming,
+        harvestMode: mode,
+      },
+    };
+    
+    // If switching to auto, collect any pending yields
+    if (mode === 'auto') {
+      this.collectYields();
+    }
+    
+    this.notifyListeners();
+  }
+  
+  /**
+   * Get current harvest mode
+   */
+  getHarvestMode(): HarvestMode {
+    return this.state.marketTiming.harvestMode;
+  }
+  
+  /**
+   * Lock current yields at the current sentiment
+   * Player can release later to collect at the locked sentiment rate
+   */
+  lockYields(): void {
+    const { pendingYields, harvestMode } = this.state.marketTiming;
+    
+    // Can only lock in manual mode
+    if (harvestMode !== 'manual' && harvestMode !== 'locked') {
+      return;
+    }
+    
+    // Move pending yields to locked
+    this.state = {
+      ...this.state,
+      marketTiming: {
+        ...this.state.marketTiming,
+        lockedYields: this.state.marketTiming.lockedYields + pendingYields,
+        pendingYields: 0,
+        lockSentiment: this.state.marketSentiment,
+        harvestMode: 'locked',
+      },
+    };
+    
+    logger.info(`[CryptoEconomy] Locked ${pendingYields} yields at sentiment ${this.state.marketSentiment}`);
+    this.notifyListeners();
+  }
+  
+  /**
+   * Release locked yields (applies locked sentiment multiplier)
+   * @returns Amount released to treasury
+   */
+  releaseYields(): number {
+    const { lockedYields, lockSentiment } = this.state.marketTiming;
+    
+    if (lockedYields <= 0 || lockSentiment === null) {
+      return 0;
+    }
+    
+    // Calculate the multiplier that was locked
+    const lockedMultiplier = this.getSentimentMultiplierForValue(lockSentiment);
+    const releaseAmount = lockedYields * lockedMultiplier;
+    
+    // Add to treasury
+    this.state = {
+      ...this.state,
+      treasury: this.state.treasury + releaseAmount,
+      marketTiming: {
+        ...this.state.marketTiming,
+        lockedYields: 0,
+        lockSentiment: null,
+        harvestMode: 'manual',
+      },
+    };
+    
+    logger.info(`[CryptoEconomy] Released ${releaseAmount} yields from locked sentiment ${lockSentiment}`);
+    this.notifyListeners();
+    return releaseAmount;
+  }
+  
+  /**
+   * Collect all pending yields at current sentiment
+   * @returns Amount collected to treasury
+   */
+  collectYields(): number {
+    const { pendingYields } = this.state.marketTiming;
+    
+    if (pendingYields <= 0) {
+      return 0;
+    }
+    
+    // Apply current sentiment multiplier
+    const currentMultiplier = this.getSentimentMultiplier();
+    const collectAmount = pendingYields * currentMultiplier;
+    
+    // Add to treasury and clear pending
+    this.state = {
+      ...this.state,
+      treasury: this.state.treasury + collectAmount,
+      marketTiming: {
+        ...this.state.marketTiming,
+        pendingYields: 0,
+      },
+    };
+    
+    logger.info(`[CryptoEconomy] Collected ${collectAmount} yields at sentiment ${this.state.marketSentiment}`);
+    this.notifyListeners();
+    return collectAmount;
+  }
+  
+  /**
+   * Get sentiment multiplier for a specific sentiment value
+   */
+  private getSentimentMultiplierForValue(sentiment: number): number {
+    const thresholds = ECONOMY_CONFIG.SENTIMENT_THRESHOLDS;
+    const multipliers = ECONOMY_CONFIG.SENTIMENT_MULTIPLIERS;
+    
+    if (sentiment < thresholds.extremeFear) {
+      return multipliers.extremeFear;
+    } else if (sentiment < thresholds.fear) {
+      return multipliers.fear;
+    } else if (sentiment < thresholds.neutral) {
+      return multipliers.neutral;
+    } else if (sentiment < thresholds.greed) {
+      return multipliers.greed;
+    } else {
+      return multipliers.extremeGreed;
+    }
+  }
+  
+  /**
+   * Get market timing state for UI
+   */
+  getMarketTimingState(): MarketTiming {
+    return { ...this.state.marketTiming };
+  }
+  
+  // ---------------------------------------------------------------------------
+  // TRADE OPPORTUNITIES (Issue #55)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Generate a new trade opportunity
+   */
+  private generateTradeOpportunity(): TradeOpportunity {
+    const templates = ECONOMY_CONFIG.TRADES.TEMPLATES;
+    const template = templates[Math.floor(Math.random() * templates.length)];
+    const chains: CryptoChain[] = ['ethereum', 'solana', 'arbitrum', 'base', 'polygon'];
+    const chain = chains[Math.floor(Math.random() * chains.length)];
+    
+    // Add some variance to the template
+    const variance = 0.8 + Math.random() * 0.4; // 0.8x to 1.2x
+    
+    return {
+      id: `trade_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: template.name,
+      description: `${template.name} on ${chain.charAt(0).toUpperCase() + chain.slice(1)}`,
+      cost: Math.floor(template.cost * variance),
+      potentialReturn: template.potentialReturn,
+      risk: Math.min(0.9, Math.max(0.05, template.risk * variance)),
+      duration: template.duration,
+      chain,
+      expiresAt: this.state.tickCount + ECONOMY_CONFIG.TRADES.OPPORTUNITY_DURATION,
+    };
+  }
+  
+  /**
+   * Process trade opportunities each tick
+   * - Generate new opportunities if needed
+   * - Remove expired opportunities
+   * - Resolve completed trades
+   */
+  private processTradeOpportunities(): void {
+    const currentTick = this.state.tickCount;
+    
+    // Remove expired opportunities
+    const validOpportunities = this.state.tradeOpportunities.filter(
+      t => t.expiresAt > currentTick
+    );
+    
+    // Generate new opportunities if below max
+    const shouldGenerate = currentTick % ECONOMY_CONFIG.TRADES.GENERATION_INTERVAL === 0;
+    if (shouldGenerate && validOpportunities.length < ECONOMY_CONFIG.TRADES.MAX_OPPORTUNITIES) {
+      validOpportunities.push(this.generateTradeOpportunity());
+    }
+    
+    // Resolve completed trades
+    const pendingTrades: ActiveTrade[] = [];
+    for (const trade of this.state.activeTrades) {
+      if (trade.resolvesAt <= currentTick) {
+        // Trade resolves!
+        const success = Math.random() > trade.opportunity.risk;
+        if (success) {
+          const payout = trade.investedAmount * trade.opportunity.potentialReturn;
+          this.state.treasury += payout;
+          logger.info(`[CryptoEconomy] Trade SUCCESS: ${trade.opportunity.name} returned $${payout}`);
+        } else {
+          logger.info(`[CryptoEconomy] Trade FAILED: ${trade.opportunity.name} - lost $${trade.investedAmount}`);
+        }
+      } else {
+        pendingTrades.push(trade);
+      }
+    }
+    
+    this.state = {
+      ...this.state,
+      tradeOpportunities: validOpportunities,
+      activeTrades: pendingTrades,
+    };
+  }
+  
+  /**
+   * Get available trade opportunities
+   */
+  getTradeOpportunities(): TradeOpportunity[] {
+    return [...this.state.tradeOpportunities];
+  }
+  
+  /**
+   * Get active trades
+   */
+  getActiveTrades(): ActiveTrade[] {
+    return [...this.state.activeTrades];
+  }
+  
+  /**
+   * Invest in a trade opportunity
+   * @param opportunityId - ID of the opportunity to invest in
+   * @returns true if investment successful
+   */
+  investInTrade(opportunityId: string): boolean {
+    const opportunity = this.state.tradeOpportunities.find(t => t.id === opportunityId);
+    if (!opportunity) {
+      return false;
+    }
+    
+    if (!this.canAfford(opportunity.cost)) {
+      return false;
+    }
+    
+    // Deduct cost
+    this.state.treasury -= opportunity.cost;
+    
+    // Create active trade
+    const activeTrade: ActiveTrade = {
+      opportunity,
+      investedAmount: opportunity.cost,
+      startedAt: this.state.tickCount,
+      resolvesAt: this.state.tickCount + opportunity.duration,
+    };
+    
+    // Remove from opportunities, add to active trades
+    this.state = {
+      ...this.state,
+      tradeOpportunities: this.state.tradeOpportunities.filter(t => t.id !== opportunityId),
+      activeTrades: [...this.state.activeTrades, activeTrade],
+    };
+    
+    logger.info(`[CryptoEconomy] Invested $${opportunity.cost} in ${opportunity.name}`);
+    this.notifyListeners();
+    return true;
+  }
+  
+  // ---------------------------------------------------------------------------
+  // YIELD BOOST SYSTEM (Issue #55)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Get available yield boost types
+   */
+  getAvailableYieldBoosts(): YieldBoost[] {
+    return [...ECONOMY_CONFIG.YIELD_BOOSTS.TYPES];
+  }
+  
+  /**
+   * Activate a yield boost on a building
+   * @param buildingId - Instance ID of the building
+   * @param boostId - ID of the boost type to apply
+   * @returns true if boost activated successfully
+   */
+  activateYieldBoost(buildingId: string, boostId: string): boolean {
+    const building = this.placedBuildings.get(buildingId);
+    if (!building) {
+      return false;
+    }
+    
+    // Check if building already has an active boost
+    const existingBoost = this.state.activeYieldBoosts.find(b => b.buildingId === buildingId);
+    if (existingBoost) {
+      return false; // Already boosted
+    }
+    
+    // Find boost type
+    const boost = ECONOMY_CONFIG.YIELD_BOOSTS.TYPES.find(b => b.id === boostId);
+    if (!boost) {
+      return false;
+    }
+    
+    if (!this.canAfford(boost.cost)) {
+      return false;
+    }
+    
+    // Deduct cost
+    this.state.treasury -= boost.cost;
+    
+    // Add active boost
+    const activeBoost: ActiveYieldBoost = {
+      buildingId,
+      boost,
+      activatedAt: this.state.tickCount,
+      expiresAt: this.state.tickCount + boost.duration,
+    };
+    
+    this.state = {
+      ...this.state,
+      activeYieldBoosts: [...this.state.activeYieldBoosts, activeBoost],
+    };
+    
+    logger.info(`[CryptoEconomy] Activated ${boost.name} on building ${buildingId}`);
+    this.notifyListeners();
+    return true;
+  }
+  
+  /**
+   * Get yield boost multiplier for a building
+   * @param buildingId - Instance ID of the building
+   * @returns Yield multiplier from active boosts (1.0 if none)
+   */
+  getBuildingYieldBoostMultiplier(buildingId: string): number {
+    const activeBoost = this.state.activeYieldBoosts.find(
+      b => b.buildingId === buildingId && b.expiresAt > this.state.tickCount
+    );
+    return activeBoost ? activeBoost.boost.yieldMultiplier : 1.0;
+  }
+  
+  /**
+   * Get rug risk increase for a building from active boosts
+   * @param buildingId - Instance ID of the building
+   * @returns Risk increase from active boosts (0 if none)
+   */
+  getBuildingBoostRiskIncrease(buildingId: string): number {
+    const activeBoost = this.state.activeYieldBoosts.find(
+      b => b.buildingId === buildingId && b.expiresAt > this.state.tickCount
+    );
+    return activeBoost ? activeBoost.boost.riskIncrease : 0;
+  }
+  
+  /**
+   * Process yield boosts each tick - remove expired boosts
+   */
+  private processYieldBoosts(): void {
+    const currentTick = this.state.tickCount;
+    const activeBoosts = this.state.activeYieldBoosts.filter(
+      b => b.expiresAt > currentTick
+    );
+    
+    if (activeBoosts.length !== this.state.activeYieldBoosts.length) {
+      this.state = {
+        ...this.state,
+        activeYieldBoosts: activeBoosts,
+      };
+    }
+  }
+  
+  /**
+   * Get active yield boosts for UI display
+   */
+  getActiveYieldBoosts(): ActiveYieldBoost[] {
+    return this.state.activeYieldBoosts.filter(
+      b => b.expiresAt > this.state.tickCount
+    );
+  }
+  
+  // ---------------------------------------------------------------------------
+  // REPAIR MINI-GAME (Issue #55)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Start the repair mini-game for a damaged building
+   * @param buildingId - Instance ID of the building to repair
+   * @returns true if mini-game started successfully
+   */
+  startRepairMiniGame(buildingId: string): boolean {
+    const building = this.placedBuildings.get(buildingId);
+    if (!building || !building.isDamaged) {
+      return false;
+    }
+    
+    // Can't start if already in a mini-game
+    if (this.state.repairMiniGame?.isActive) {
+      return false;
+    }
+    
+    this.state = {
+      ...this.state,
+      repairMiniGame: {
+        buildingId,
+        progress: 0,
+        timeRemaining: ECONOMY_CONFIG.REPAIR_MINIGAME.DURATION,
+        isActive: true,
+        targetProgress: ECONOMY_CONFIG.REPAIR_MINIGAME.TARGET_PROGRESS,
+      },
+    };
+    
+    logger.info(`[CryptoEconomy] Started repair mini-game for building ${buildingId}`);
+    this.notifyListeners();
+    return true;
+  }
+  
+  /**
+   * Click in the repair mini-game to add progress
+   * @returns Updated progress value
+   */
+  clickRepairMiniGame(): number {
+    if (!this.state.repairMiniGame?.isActive) {
+      return 0;
+    }
+    
+    const newProgress = Math.min(
+      this.state.repairMiniGame.progress + ECONOMY_CONFIG.REPAIR_MINIGAME.PROGRESS_PER_CLICK,
+      100
+    );
+    
+    this.state = {
+      ...this.state,
+      repairMiniGame: {
+        ...this.state.repairMiniGame,
+        progress: newProgress,
+      },
+    };
+    
+    // Check if completed
+    const currentMiniGame = this.state.repairMiniGame;
+    if (currentMiniGame && newProgress >= currentMiniGame.targetProgress) {
+      this.completeRepairMiniGame(true);
+    }
+    
+    this.notifyListeners();
+    return newProgress;
+  }
+  
+  /**
+   * Update mini-game timer (called each second by UI)
+   * @returns Remaining time
+   */
+  updateRepairMiniGameTimer(): number {
+    if (!this.state.repairMiniGame?.isActive) {
+      return 0;
+    }
+    
+    const newTimeRemaining = this.state.repairMiniGame.timeRemaining - 1;
+    
+    if (newTimeRemaining <= 0) {
+      // Time's up - check if successful
+      const success = this.state.repairMiniGame.progress >= this.state.repairMiniGame.targetProgress;
+      this.completeRepairMiniGame(success);
+      return 0;
+    }
+    
+    this.state = {
+      ...this.state,
+      repairMiniGame: {
+        ...this.state.repairMiniGame,
+        timeRemaining: newTimeRemaining,
+      },
+    };
+    
+    return newTimeRemaining;
+  }
+  
+  /**
+   * Complete the repair mini-game
+   * @param success - Whether the player succeeded
+   */
+  private completeRepairMiniGame(success: boolean): void {
+    const miniGame = this.state.repairMiniGame;
+    if (!miniGame) {
+      return;
+    }
+    
+    const buildingId = miniGame.buildingId;
+    const repairCost = this.getRepairCost(buildingId);
+    const discount = success ? ECONOMY_CONFIG.REPAIR_MINIGAME.SUCCESS_DISCOUNT : 0;
+    const finalCost = Math.floor(repairCost * (1 - discount));
+    
+    // Clear mini-game state
+    this.state = {
+      ...this.state,
+      repairMiniGame: null,
+    };
+    
+    if (success) {
+      // Apply discounted repair if player can afford it
+      if (this.canAfford(finalCost)) {
+        this.state.treasury -= finalCost;
+        this.repairBuildingDirectly(buildingId);
+        logger.info(`[CryptoEconomy] Mini-game SUCCESS! Repaired for $${finalCost} (50% off)`);
+      } else {
+        logger.info(`[CryptoEconomy] Mini-game success but can't afford repair cost $${finalCost}`);
+      }
+    } else {
+      logger.info(`[CryptoEconomy] Mini-game FAILED - no discount applied`);
+    }
+    
+    this.notifyListeners();
+  }
+  
+  /**
+   * Directly repair a building (internal use, bypasses cost check)
+   */
+  private repairBuildingDirectly(buildingId: string): void {
+    const building = this.placedBuildings.get(buildingId);
+    if (!building) return;
+    
+    building.isDamaged = false;
+    this.state = {
+      ...this.state,
+      damagedBuildings: this.state.damagedBuildings.filter(d => d.id !== buildingId),
+    };
+    
+    this.recalculateEconomy();
+  }
+  
+  /**
+   * Cancel the repair mini-game
+   */
+  cancelRepairMiniGame(): void {
+    this.state = {
+      ...this.state,
+      repairMiniGame: null,
+    };
+    this.notifyListeners();
+  }
+  
+  /**
+   * Get current repair mini-game state
+   */
+  getRepairMiniGameState(): RepairMiniGame | null {
+    return this.state.repairMiniGame;
+  }
+  
+  // ---------------------------------------------------------------------------
+  // ACTIVE MANAGEMENT STATS (Issue #55)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Get comprehensive active management stats for UI display
+   */
+  getActiveManagementStats(): {
+    harvestMode: HarvestMode;
+    pendingYields: number;
+    lockedYields: number;
+    lockSentiment: number | null;
+    tradeOpportunityCount: number;
+    activeTradeCount: number;
+    activeBoostedBuildingCount: number;
+    isRepairMiniGameActive: boolean;
+  } {
+    return {
+      harvestMode: this.state.marketTiming.harvestMode,
+      pendingYields: this.state.marketTiming.pendingYields,
+      lockedYields: this.state.marketTiming.lockedYields,
+      lockSentiment: this.state.marketTiming.lockSentiment,
+      tradeOpportunityCount: this.state.tradeOpportunities.length,
+      activeTradeCount: this.state.activeTrades.length,
+      activeBoostedBuildingCount: this.state.activeYieldBoosts.filter(
+        b => b.expiresAt > this.state.tickCount
+      ).length,
+      isRepairMiniGameActive: this.state.repairMiniGame?.isActive ?? false,
     };
   }
   

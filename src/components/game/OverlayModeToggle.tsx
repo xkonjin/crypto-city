@@ -55,6 +55,11 @@ const OVERLAY_ICONS: Record<OverlayMode, React.ReactNode> = {
   crime: <AlertIcon size={14} />,
   density: <PopulationIcon size={14} />,
   synergy: <SynergyIcon size={14} />,
+  // Crypto-specific overlay icons (Issue #58) - using emoji for now
+  crypto_yield: <span className="text-[14px]">💰</span>,
+  crypto_risk: <span className="text-[14px]">⚠️</span>,
+  crypto_protection: <span className="text-[14px]">🛡️</span>,
+  crypto_density: <span className="text-[14px]">🏙️</span>,
 };
 
 // ============================================================================

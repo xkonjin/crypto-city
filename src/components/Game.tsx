@@ -63,12 +63,19 @@ import TreasuryPanel, { MiniTreasury } from "@/components/crypto/TreasuryPanel";
 import NewsTicker from "@/components/crypto/NewsTicker";
 import CryptoBuildingPanel from "@/components/crypto/CryptoBuildingPanel";
 import {
+  CryptoOverlaySelector,
+  CryptoOverlaySelectorCompact,
+  CryptoOverlayLegend,
+  CryptoOverlayLegendFloating,
+} from "@/components/crypto";
+import {
   cryptoEconomy,
   cryptoEvents as cryptoEventManager,
   CryptoEconomyState,
   CryptoEvent,
 } from "@/games/isocity/crypto";
 import { useRealCryptoData } from "@/hooks/useRealCryptoData";
+import { CryptoOverlayType } from "@/lib/cryptoOverlays";
 
 // Import game objectives system (Issues #29, #43)
 import { GameEndModal } from "@/components/game/GameEndModal";
@@ -141,6 +148,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     setCryptoTaxRevenue,
   } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>("none");
+  // Crypto overlay type - mapped to OverlayMode for canvas rendering (Issue #58)
+  const [cryptoOverlayType, setCryptoOverlayType] = useState<CryptoOverlayType>("none");
   const [selectedTile, setSelectedTile] = useState<{
     x: number;
     y: number;
@@ -896,6 +905,25 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     [addMoney, addNotification, gt, m],
   );
 
+  // ==== CRYPTO OVERLAY HANDLER (Issue #58) ====
+  // Handle crypto overlay selection - syncs with main overlay mode
+  const handleCryptoOverlaySelect = useCallback((type: CryptoOverlayType) => {
+    setCryptoOverlayType(type);
+    // Map crypto overlay type to main overlay mode
+    if (type === 'none') {
+      setOverlayMode('none');
+    } else if (type === 'yield') {
+      setOverlayMode('crypto_yield');
+    } else if (type === 'risk') {
+      setOverlayMode('crypto_risk');
+    } else if (type === 'protection') {
+      setOverlayMode('crypto_protection');
+    } else if (type === 'crypto_density') {
+      setOverlayMode('crypto_density');
+    }
+  }, []);
+  // ==== END CRYPTO OVERLAY HANDLER ====
+
   // ==== GAME END HANDLERS (Issues #29, #43) ====
   // Handle Play Again button - reset game
   const handlePlayAgain = useCallback(() => {
@@ -988,6 +1016,19 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               sentiment={economyState.marketSentiment}
             />
           </div>
+          {/* Crypto Overlay Controls - Mobile (Issue #58) */}
+          <div className="absolute top-16 right-2 z-30">
+            <CryptoOverlaySelectorCompact
+              currentOverlay={cryptoOverlayType}
+              onSelect={handleCryptoOverlaySelect}
+            />
+          </div>
+          {/* Crypto Overlay Legend - Mobile (Issue #58) */}
+          {cryptoOverlayType !== 'none' && (
+            <div className="absolute top-28 right-2 z-30">
+              <CryptoOverlayLegend type={cryptoOverlayType} compact />
+            </div>
+          )}
 
           {/* Share Modal for mobile co-op */}
           {multiplayer && (
@@ -1247,6 +1288,18 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               <OverlayModeToggle
                 overlayMode={overlayMode}
                 setOverlayMode={setOverlayMode}
+              />
+              {/* Crypto Overlay Controls (Issue #58) */}
+              <div className="fixed bottom-16 left-[240px] z-50">
+                <CryptoOverlaySelector
+                  currentOverlay={cryptoOverlayType}
+                  onSelect={handleCryptoOverlaySelect}
+                />
+              </div>
+              {/* Crypto Overlay Legend (Issue #58) */}
+              <CryptoOverlayLegendFloating
+                type={cryptoOverlayType}
+                position="bottom-right"
               />
               <MiniMap
                 onNavigate={(x, y) => setNavigationTarget({ x, y })}

@@ -26,3 +26,13 @@ export {
   default as RealDataSettings,
   useRealDataSettings,
 } from './RealDataSettings';
+
+// Crypto overlay controls (Issue #58)
+export { 
+  CryptoOverlaySelector, 
+  CryptoOverlaySelectorCompact,
+} from './CryptoOverlaySelector';
+export { 
+  CryptoOverlayLegend, 
+  CryptoOverlayLegendFloating,
+} from './CryptoOverlayLegend';

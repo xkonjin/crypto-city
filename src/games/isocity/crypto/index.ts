@@ -24,6 +24,14 @@ export type {
   RugWarning,
   BuildingRuins,
   AuditReport,
+  // Active Management types (Issue #55)
+  HarvestMode,
+  MarketTiming,
+  TradeOpportunity,
+  ActiveTrade,
+  YieldBoost,
+  ActiveYieldBoost,
+  RepairMiniGame,
 } from './types';
 
 export {
