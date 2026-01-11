@@ -4,7 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { getLocale } from "gt-next/server";
 import { GTProvider } from "gt-next";
-import { SoundProvider } from "@/context/SoundContext";
+import { Providers } from "./providers";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -97,9 +97,9 @@ export default async function RootLayout({
       </head>
       <body className="bg-background text-foreground antialiased font-sans overflow-hidden">
         <GTProvider>
-          <SoundProvider>
+          <Providers>
             {children}
-          </SoundProvider>
+          </Providers>
           <Analytics />
         </GTProvider>
       </body>

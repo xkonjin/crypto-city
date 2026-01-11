@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/Icons';
 import { copyShareUrl } from '@/lib/shareState';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
+import { ConnectWalletButton, StoreButton } from '@/components/wallet';
 
 // Translatable UI labels
 const UI_LABELS = {
@@ -270,6 +271,12 @@ export const TopBar = React.memo(function TopBar() {
         <Separator orientation="vertical" className="h-8" />
         
         <LanguageSelector iconOnly={false} variant="ghost" iconSize={14} />
+        
+        <Separator orientation="vertical" className="h-8" />
+        
+        <StoreButton />
+        
+        <ConnectWalletButton />
       </div>
     </div>
   );
