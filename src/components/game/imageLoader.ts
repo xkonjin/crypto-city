@@ -12,6 +12,9 @@ const COLOR_THRESHOLD = 155; // Adjust this value to be more/less aggressive
 // Image cache for building sprites
 const imageCache = new Map<string, HTMLImageElement>();
 
+// Track loading promises to prevent duplicate loads
+const loadingPromises = new Map<string, Promise<HTMLImageElement>>();
+
 // Track WebP support (detected once on first use)
 let webpSupported: boolean | null = null;
 
@@ -261,15 +264,30 @@ export function loadSpriteImage(src: string, applyFilter: boolean = true): Promi
     return Promise.resolve(imageCache.get(cacheKey)!);
   }
   
-  return loadImage(src).then((img) => {
+  // Return existing promise if already loading (prevent duplicate loads)
+  if (loadingPromises.has(cacheKey)) {
+    return loadingPromises.get(cacheKey)!;
+  }
+  
+  // Start load and cache the promise
+  const promise = loadImage(src).then((img) => {
     if (applyFilter) {
       return filterBackgroundColor(img).then((filteredImg: HTMLImageElement) => {
         imageCache.set(cacheKey, filteredImg);
+        loadingPromises.delete(cacheKey);
+        notifyImageLoaded();
         return filteredImg;
       });
     }
+    loadingPromises.delete(cacheKey);
     return img;
+  }).catch((error) => {
+    loadingPromises.delete(cacheKey);
+    throw error;
   });
+  
+  loadingPromises.set(cacheKey, promise);
+  return promise;
 }
 
 /**
