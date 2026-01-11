@@ -51,6 +51,7 @@ import {
   ChallengesPanel,
   PrestigePanel,
   MilestonePanel,
+  FinancialReportPanel,
 } from "@/components/game/panels";
 import { MiniMap } from "@/components/game/MiniMap";
 import { TopBar, StatsPanel } from "@/components/game/TopBar";
@@ -132,6 +133,8 @@ import {
   clearActiveMission,
   MILESTONES,
 } from "@/lib/milestones";
+// Import financial history system (Issue #68)
+import { getFinancialHistory } from "@/lib/financialHistory";
 import { UnlockNotification } from "@/components/game/UnlockNotification";
 import { StoryMissionModal } from "@/components/game/StoryMissionModal";
 
@@ -600,6 +603,47 @@ export default function Game({ onExit }: { onExit?: () => void }) {
       (window as unknown as { disasterManager: typeof disasterManager }).disasterManager = disasterManager;
     }
   }, []);
+  
+  // ==== FINANCIAL HISTORY (Issue #68) ====
+  // Expose financial history globally for testing and access
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const financialHistory = getFinancialHistory();
+      (window as unknown as { financialHistory: typeof financialHistory }).financialHistory = financialHistory;
+    }
+  }, []);
+  
+  // Record financial snapshot at the end of each game day
+  const previousDayForFinancialRef = useRef(state.day);
+  useEffect(() => {
+    if (state.day !== previousDayForFinancialRef.current) {
+      previousDayForFinancialRef.current = state.day;
+      
+      // Record the daily snapshot
+      const financialHistory = getFinancialHistory();
+      // Daily costs include service spending + maintenance (estimated from building count)
+      const estimatedDailyCosts = (economyState.serviceFunding?.security || 0) + 
+        (economyState.serviceFunding?.marketing || 0) + 
+        (economyState.serviceFunding?.research || 0) +
+        economyState.buildingCount * 5; // Rough maintenance estimate
+      
+      financialHistory.addSnapshot({
+        day: state.day,
+        treasury: economyState.treasury,
+        tvl: economyState.tvl,
+        dailyYield: economyState.dailyYield,
+        dailyCosts: estimatedDailyCosts,
+        netIncome: economyState.dailyYield - estimatedDailyCosts,
+        buildingCount: economyState.buildingCount,
+        population: state.stats.population,
+        sentiment: economyState.marketSentiment,
+        timestamp: Date.now(),
+      });
+      
+      // Persist to localStorage
+      financialHistory.persist();
+    }
+  }, [state.day, economyState, state.stats.population]);
 
   // Update notification manager with current game day
   useEffect(() => {
@@ -1407,6 +1451,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               onStartMission={handleStartMission}
             />
           )}
+          {state.activePanel === "reports" && (
+            <FinancialReportPanel
+              economyState={economyState}
+              buildings={cryptoEconomy.getPlacedBuildings()}
+            />
+          )}
 
           <VinnieDialog
             open={showVinnieDialog}
@@ -1675,6 +1725,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               }}
               onUpdateMilestoneState={setMilestoneState}
               onStartMission={handleStartMission}
+            />
+          )}
+          {state.activePanel === "reports" && (
+            <FinancialReportPanel
+              economyState={economyState}
+              buildings={cryptoEconomy.getPlacedBuildings()}
             />
           )}
 

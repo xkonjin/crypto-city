@@ -11,3 +11,4 @@ export { ReferralPanel } from "./ReferralPanel";
 export { ChallengesPanel } from "./ChallengesPanel";
 export { PrestigePanel } from "./PrestigePanel";
 export { MilestonePanel } from "./MilestonePanel";
+export { FinancialReportPanel } from "./FinancialReportPanel";
