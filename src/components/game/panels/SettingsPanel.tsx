@@ -15,8 +15,9 @@ import { SpriteTestPanel } from './SpriteTestPanel';
 import { SavedCityMeta } from '@/types/game';
 import { LocaleSelector } from 'gt-next';
 import { useSoundOptional } from '@/context/SoundContext';
-import { Volume2, VolumeX, Music, Zap } from 'lucide-react';
+import { Volume2, VolumeX, Music, Zap, BookOpen } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { useTerminology } from '@/hooks/useTerminology';
 
 // Translatable UI labels
 const UI_LABELS = {
@@ -24,6 +25,10 @@ const UI_LABELS = {
   gameSettings: msg('Game Settings'),
   disasters: msg('Disasters'),
   disastersDesc: msg('Enable random fires and disasters'),
+  terminologyMode: msg('Terminology Mode'),
+  terminologyModeDesc: msg('Choose between crypto jargon or classic terms'),
+  cryptoMode: msg('Crypto'),
+  classicMode: msg('Classic'),
   spritePack: msg('Sprite Pack'),
   spritePackDesc: msg('Choose building artwork style'),
   language: msg('Language'),
@@ -141,6 +146,44 @@ function formatMoney(money: number): string {
   return `$${money}`;
 }
 
+// Terminology Mode Toggle Component
+function TerminologyModeToggle() {
+  const { mode, setMode } = useTerminology();
+  const m = useMessages();
+  
+  return (
+    <div className="py-2">
+      <div className="flex items-center gap-2 mb-1">
+        <BookOpen className="w-4 h-4 text-muted-foreground" />
+        <Label>{m(UI_LABELS.terminologyMode)}</Label>
+      </div>
+      <p className="text-muted-foreground text-xs mb-2">{m(UI_LABELS.terminologyModeDesc)}</p>
+      <div className="flex rounded-md border border-border overflow-hidden">
+        <button
+          onClick={() => setMode('crypto')}
+          className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+            mode === 'crypto'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          🚀 {m(UI_LABELS.cryptoMode)}
+        </button>
+        <button
+          onClick={() => setMode('classic')}
+          className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+            mode === 'classic'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          🏠 {m(UI_LABELS.classicMode)}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function SettingsPanel() {
   const { state, setActivePanel, setDisastersEnabled, newGame, loadState, exportState, expandCity, shrinkCity, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
   const { disastersEnabled, cityName, gridSize, id: currentCityId } = state;
@@ -247,6 +290,8 @@ export function SettingsPanel() {
                 onCheckedChange={setDisastersEnabled}
               />
             </div>
+            
+            <TerminologyModeToggle />
             
             <div className="py-2">
               <Label>{m(UI_LABELS.spritePack)}</Label>

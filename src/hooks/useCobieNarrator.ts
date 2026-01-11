@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState } from '@/types/game';
 import { CryptoEvent, CryptoEconomyState, CryptoCategory } from '@/games/isocity/crypto/types';
+import { translateMessage as translateTerminology, getMode } from '@/lib/terminology';
 
 // Cobie message types
 export type CobieMessageType = 
@@ -648,6 +649,7 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
   }, [shownTips]);
 
   // Show a message (with rate limiting)
+  // In classic mode, messages are translated to remove crypto jargon
   const showMessage = useCallback((message: CobieMessage, force = false) => {
     if (!cobieEnabled) return;
     
@@ -663,7 +665,13 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
       return;
     }
     
-    setCurrentMessage(message);
+    // Translate message if in classic mode (Issue #64)
+    const translatedMessage: CobieMessage = {
+      ...message,
+      message: getMode() === 'classic' ? translateTerminology(message.message) : message.message,
+    };
+    
+    setCurrentMessage(translatedMessage);
     setIsVisible(true);
     lastMessageTimeRef.current = now;
     trackingRef.current.lastEventTime = now;

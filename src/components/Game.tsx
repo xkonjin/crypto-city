@@ -22,6 +22,7 @@ import { CommandMenu } from "@/components/ui/CommandMenu";
 import { CobieNarrator } from "@/components/game/CobieNarrator";
 import { useCobieNarrator } from "@/hooks/useCobieNarrator";
 import { Tutorial } from "@/components/game/Tutorial";
+import { TerminologyOnboarding } from "@/components/game/TerminologyOnboarding";
 import { DailyRewards } from "@/components/game/DailyRewards";
 import { useMultiplayerSync } from "@/hooks/useMultiplayerSync";
 import { useMultiplayerOptional } from "@/context/MultiplayerContext";
@@ -1412,6 +1413,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             onOpenChange={setShowVinnieDialog}
           />
 
+          {/* Terminology onboarding for first-time players (Issue #64) */}
+          <TerminologyOnboarding />
+
           {/* Tutorial system for new players */}
           <Tutorial state={state} />
 
@@ -1708,6 +1712,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             onOpenChange={setShowVinnieDialog}
           />
           <CommandMenu />
+
+          {/* Terminology onboarding for first-time players (Issue #64) */}
+          <TerminologyOnboarding />
 
           {/* Tutorial system for new players */}
           <Tutorial state={state} />
