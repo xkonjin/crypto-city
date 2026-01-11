@@ -3505,6 +3505,11 @@ export function getCryptoBuildingTypes(): string[] {
   return Object.keys(ALL_CRYPTO_BUILDINGS);
 }
 
+// Get all crypto buildings as an array
+export function getAllCryptoBuildings(): CryptoBuildingDefinition[] {
+  return Object.values(ALL_CRYPTO_BUILDINGS);
+}
+
 // Total count: 22 DeFi + 7 Exchange + 13 Chain + 10 CT + 14 Meme + 18 Plasma + 3 Stablecoin + 5 Infrastructure = 92 buildings
 export const CRYPTO_BUILDING_COUNT = Object.keys(ALL_CRYPTO_BUILDINGS).length;
 

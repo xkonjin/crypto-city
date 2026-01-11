@@ -174,6 +174,9 @@ import { SkipLinks } from "@/components/game/SkipLinks";
 import { ScreenReaderAnnouncer } from "@/components/game/ScreenReaderAnnouncer";
 import { useAccessibility } from "@/hooks/useAccessibility";
 
+// Import asset preloader (Issues #71, #74, #76, #79)
+import { LoadingScreen } from "@/components/game/LoadingScreen";
+
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg("containers"), msg("bulk materials"), msg("oil")];
 
@@ -252,6 +255,10 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const [notificationToast, setNotificationToast] = useState<Notification | null>(null);
   const [showNotificationToast, setShowNotificationToast] = useState(false);
   // ==== END NOTIFICATION CENTER STATE ====
+
+  // ==== ASSET LOADING STATE (Issues #71, #74, #76, #79) ====
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+  // ==== END ASSET LOADING STATE ====
 
   // ==== WEEKLY CHALLENGES STATE (Issue #40) ====
   const [challengeState, setChallengeState] = useState<ChallengeState>(() => 
@@ -1282,6 +1289,13 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     );
   }, [prestigeState, addNotification]);
   // ==== END PRESTIGE HANDLERS ====
+
+  // ==== ASSET LOADING SCREEN (Issues #71, #74, #76, #79) ====
+  // Show loading screen until critical assets are ready
+  if (!assetsLoaded) {
+    return <LoadingScreen onComplete={() => setAssetsLoaded(true)} />;
+  }
+  // ==== END ASSET LOADING SCREEN ====
 
   // Mobile layout
   if (isMobile) {
