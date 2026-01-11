@@ -146,6 +146,21 @@ import {
 } from "@/lib/rugPullEffect";
 import { useSound } from "@/hooks/useSound";
 
+// Import notification system (Issue #65)
+import { NotificationBadge } from "./game/NotificationBadge";
+import { NotificationCenter } from "./game/NotificationCenter";
+import { NotificationToast } from "./game/NotificationToast";
+import {
+  notificationManager,
+  Notification,
+  createRugPullNotification,
+  createDisasterNotification,
+  createMilestoneNotification,
+  createTradeNotification,
+  createWarningNotification,
+} from "@/lib/notifications";
+import { disasterManager, type ActiveDisaster } from "@/lib/disasters";
+
 // Import crypto building animations (Issue #27)
 import { CryptoParticleSystem } from "@/components/game/CryptoParticleSystem";
 
@@ -221,6 +236,12 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const { playSfx } = useSound();
   // ==== END RUG PULL ANIMATION STATE ====
+
+  // ==== NOTIFICATION CENTER STATE (Issue #65) ====
+  const [showNotificationCenter, setShowNotificationCenter] = useState(false);
+  const [notificationToast, setNotificationToast] = useState<Notification | null>(null);
+  const [showNotificationToast, setShowNotificationToast] = useState(false);
+  // ==== END NOTIFICATION CENTER STATE ====
 
   // ==== WEEKLY CHALLENGES STATE (Issue #40) ====
   const [challengeState, setChallengeState] = useState<ChallengeState>(() => 
@@ -569,6 +590,109 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     );
   }, [milestoneState, addNotification]);
   // ==== END MILESTONES TRACKING ====
+
+  // ==== NOTIFICATION CENTER INTEGRATION (Issue #65) ====
+  // Expose notification manager and disaster manager globally for testing
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as unknown as { notificationManager: typeof notificationManager }).notificationManager = notificationManager;
+      (window as unknown as { disasterManager: typeof disasterManager }).disasterManager = disasterManager;
+    }
+  }, []);
+
+  // Update notification manager with current game day
+  useEffect(() => {
+    notificationManager.setGameDay(state.day);
+  }, [state.day]);
+
+  // Subscribe to new notifications for toast display
+  useEffect(() => {
+    const unsubscribe = notificationManager.subscribe((notification: Notification) => {
+      // Show toast for appropriate notifications
+      if (notificationManager.shouldShowToast(notification)) {
+        setNotificationToast(notification);
+        setShowNotificationToast(true);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Subscribe to disaster events and create notifications
+  useEffect(() => {
+    const unsubscribe = disasterManager.subscribe((disaster: ActiveDisaster, isStarting: boolean) => {
+      if (isStarting) {
+        const notif = createDisasterNotification(
+          disaster.disaster.name,
+          disaster.disaster.description,
+          state.day,
+          disaster.disaster.isPositive || false
+        );
+        notificationManager.add(notif);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [state.day]);
+
+  // Create notifications for milestone completions
+  useEffect(() => {
+    // Check for newly completed milestones
+    for (const mp of milestoneState.milestones) {
+      const wasCompleted = previousMilestoneProgressRef.current.get(mp.milestoneId);
+      if (mp.completed && !wasCompleted && !mp.claimed) {
+        const milestone = MILESTONES.find(m => m.id === mp.milestoneId);
+        if (milestone) {
+          let rewardText = '';
+          if (milestone.reward.treasury) {
+            rewardText += `$${milestone.reward.treasury.toLocaleString()}`;
+          }
+          if (milestone.reward.yieldBonus) {
+            rewardText += `${rewardText ? ', ' : ''}+${(milestone.reward.yieldBonus * 100).toFixed(0)}% yield`;
+          }
+          if (milestone.reward.prestigePoints) {
+            rewardText += `${rewardText ? ', ' : ''}+${milestone.reward.prestigePoints} prestige`;
+          }
+          
+          const notif = createMilestoneNotification(
+            milestone.name,
+            rewardText || 'Reward available!',
+            state.day
+          );
+          notificationManager.add(notif);
+        }
+      }
+    }
+  }, [milestoneState.milestones, state.day]);
+
+  // Create notifications for rug pull events
+  useEffect(() => {
+    const handleRugPullNotification = () => {
+      const notif = createRugPullNotification(
+        activeRugPull?.buildingName || 'Unknown Building',
+        activeRugPull?.treasuryLoss || 0,
+        state.day
+      );
+      notificationManager.add(notif);
+    };
+
+    if (activeRugPull) {
+      handleRugPullNotification();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only trigger when activeRugPull changes
+  }, [activeRugPull?.buildingName, activeRugPull?.treasuryLoss]);
+
+  // Notification toast handlers
+  const handleNotificationToastDismiss = useCallback(() => {
+    setShowNotificationToast(false);
+    setTimeout(() => setNotificationToast(null), 300);
+  }, []);
+
+  const handleOpenNotificationCenter = useCallback(() => {
+    setShowNotificationCenter(true);
+    handleNotificationToastDismiss();
+  }, [handleNotificationToastDismiss]);
+  // ==== END NOTIFICATION CENTER INTEGRATION ====
 
   // ==== ACHIEVEMENT UNLOCK TRACKING (Issue #39) ====
   // Track when new achievements are unlocked and show toast
@@ -1134,6 +1258,10 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               sentiment={economyState.marketSentiment}
             />
           </div>
+          {/* Notification Badge - Mobile (Issue #65) */}
+          <div className="absolute top-16 left-28 z-30">
+            <NotificationBadge onClick={() => setShowNotificationCenter(true)} />
+          </div>
           {/* Crypto Overlay Controls - Mobile (Issue #58) */}
           <div className="absolute top-16 right-2 z-30">
             <CryptoOverlaySelectorCompact
@@ -1238,7 +1366,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
 
           {state.activePanel === "budget" && <BudgetPanel />}
           {state.activePanel === "statistics" && <StatisticsPanel />}
-          {state.activePanel === "advisors" && <AdvisorsPanel />}
+          {state.activePanel === "advisors" && <AdvisorsPanel economyState={economyState} />}
           {state.activePanel === "settings" && <SettingsPanel />}
           {state.activePanel === "petitions" && <PetitionsPanel />}
           {state.activePanel === "events" && <EventsPanel />}
@@ -1348,6 +1476,18 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             isVisible={showRugPullToast}
             onDismiss={handleRugPullToastDismiss}
           />
+
+          {/* Notification Center and Toast - Mobile (Issue #65) */}
+          <NotificationCenter
+            isOpen={showNotificationCenter}
+            onClose={() => setShowNotificationCenter(false)}
+          />
+          <NotificationToast
+            notification={notificationToast}
+            isVisible={showNotificationToast}
+            onDismiss={handleNotificationToastDismiss}
+            onOpenCenter={handleOpenNotificationCenter}
+          />
         </div>
       </TooltipProvider>
     );
@@ -1360,6 +1500,10 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         {/* Crypto Treasury Panel - Top */}
         <div className="relative z-50">
           <TreasuryPanel economyState={economyState} />
+          {/* Notification Badge (Issue #65) */}
+          <div className="absolute right-64 top-1/2 -translate-y-1/2">
+            <NotificationBadge onClick={() => setShowNotificationCenter(true)} />
+          </div>
           {/* Screenshot Share Button */}
           <div className="absolute right-48 top-1/2 -translate-y-1/2">
             <ScreenshotShare
@@ -1488,7 +1632,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
 
           {state.activePanel === "budget" && <BudgetPanel />}
           {state.activePanel === "statistics" && <StatisticsPanel />}
-          {state.activePanel === "advisors" && <AdvisorsPanel />}
+          {state.activePanel === "advisors" && <AdvisorsPanel economyState={economyState} />}
           {state.activePanel === "settings" && <SettingsPanel />}
           {state.activePanel === "petitions" && <PetitionsPanel />}
           {state.activePanel === "events" && <EventsPanel />}
@@ -1628,6 +1772,18 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             event={activeRugPull}
             isVisible={showRugPullToast}
             onDismiss={handleRugPullToastDismiss}
+          />
+
+          {/* Notification Center and Toast (Issue #65) */}
+          <NotificationCenter
+            isOpen={showNotificationCenter}
+            onClose={() => setShowNotificationCenter(false)}
+          />
+          <NotificationToast
+            notification={notificationToast}
+            isVisible={showNotificationToast}
+            onDismiss={handleNotificationToastDismiss}
+            onOpenCenter={handleOpenNotificationCenter}
           />
         </div>
 
