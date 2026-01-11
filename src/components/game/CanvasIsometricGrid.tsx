@@ -3093,7 +3093,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   }, [offset, zoom, getTouchDistance, getTouchCenter]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
+    // Note: preventDefault is called via native event listener to avoid passive listener warning
 
     if (e.touches.length === 1 && isPanning && !initialPinchDistanceRef.current) {
       // Single touch pan
@@ -3193,6 +3193,25 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       lastTouchCenterRef.current = null;
     }
   }, [zoom, offset, gridSize, selectedTool, placeAtTile, setSelectedTile, findBuildingOrigin]);
+
+  // Attach native touchmove listener with passive: false to allow preventDefault
+  // This prevents page scrolling during canvas pan/zoom (Issue #75)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    
+    const handleNativeTouchMove = (e: TouchEvent) => {
+      // Prevent default scrolling behavior during canvas interaction
+      if (isPanning || isPinchZoomingRef.current) {
+        e.preventDefault();
+      }
+    };
+    
+    container.addEventListener('touchmove', handleNativeTouchMove, { passive: false });
+    return () => {
+      container.removeEventListener('touchmove', handleNativeTouchMove);
+    };
+  }, [isPanning]);
   
   return (
     <div
