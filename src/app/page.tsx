@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { GameProvider } from "@/context/GameContext";
 import { MultiplayerContextProvider } from "@/context/MultiplayerContext";
 import Game from "@/components/Game";
+import { GameErrorBoundary } from "@/components/ErrorBoundary";
 import { CoopModal } from "@/components/multiplayer/CoopModal";
 import { useMobile } from "@/hooks/useMobile";
 import {
@@ -516,7 +517,9 @@ export default function HomePage() {
   if (showGame) {
     const gameContent = (
       <main className="h-screen w-screen overflow-hidden">
-        <Game onExit={handleExitGame} />
+        <GameErrorBoundary onExit={handleExitGame}>
+          <Game onExit={handleExitGame} />
+        </GameErrorBoundary>
       </main>
     );
 

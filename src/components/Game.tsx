@@ -55,6 +55,9 @@ import { TopBar, StatsPanel } from "@/components/game/TopBar";
 import { CanvasIsometricGrid } from "@/components/game/CanvasIsometricGrid";
 import { ScreenshotShare } from "@/components/game/ScreenshotShare";
 
+// Import error boundary (Issue #51)
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+
 // Import crypto components
 import TreasuryPanel, { MiniTreasury } from "@/components/crypto/TreasuryPanel";
 import NewsTicker from "@/components/crypto/NewsTicker";
@@ -561,7 +564,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     rugPullQueueRef.current.setProcessor(processRugPullEvent);
   }, [processRugPullEvent]);
 
-  // Listen for rug pull events from CryptoEventManager
+  // Listen for rug pull events from CryptoEventManager (Issue #47)
+  // Note: Cobie rug pull reactions are handled separately after the hook is declared
   useEffect(() => {
     const handleRugPull = (buildingId: string, buildingName: string) => {
       // Create rug pull event with default treasury loss from the event definition
@@ -570,6 +574,11 @@ export default function Game({ onExit }: { onExit?: () => void }) {
       
       // Queue the rug pull animation
       rugPullQueueRef.current.enqueue(event);
+      
+      // Dispatch custom event for Cobie narrator to listen to (Issue #53)
+      window.dispatchEvent(new CustomEvent('cobie-rug-pull', { 
+        detail: { buildingName, treasuryLossPercent: 0.10 }
+      }));
     };
     
     // Register the callback with the event manager
@@ -609,7 +618,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     clearTriggeredCheat,
   } = useCheatCodes();
 
-  // Cobie narrator system - sardonic tips and commentary
+  // Cobie narrator system - sardonic tips and commentary (Issue #53: Enhanced)
   const {
     currentMessage: cobieMessage,
     isVisible: isCobieVisible,
@@ -617,7 +626,49 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     onDisableCobie,
     triggerReaction: triggerCobieReaction,
     triggerMilestone: triggerCobieMilestone,
+    // New event-driven triggers (Issue #53)
+    triggerRugPull: triggerCobieRugPull,
+    triggerEventReaction: triggerCobieEventReaction,
+    onEconomyUpdate: onCobieEconomyUpdate,
+    onBuildingPlaced: onCobieBuildingPlaced,
   } = useCobieNarrator(state);
+
+  // ==== COBIE NARRATOR EVENT INTEGRATION (Issue #53) ====
+  // Subscribe Cobie narrator to economy updates for reactive commentary
+  useEffect(() => {
+    const unsubscribeEconomy = cryptoEconomy.subscribe((newState) => {
+      onCobieEconomyUpdate(newState);
+    });
+    return () => unsubscribeEconomy();
+  }, [onCobieEconomyUpdate]);
+
+  // Subscribe Cobie narrator to crypto events for event reactions
+  useEffect(() => {
+    const unsubscribeEvents = cryptoEventManager.subscribe((events) => {
+      // React to the most recent new event
+      const latestEvent = events[0];
+      if (latestEvent && latestEvent.active) {
+        triggerCobieEventReaction(latestEvent);
+      }
+    });
+    return () => unsubscribeEvents();
+  }, [triggerCobieEventReaction]);
+
+  // Listen for rug pull events to trigger Cobie reactions
+  useEffect(() => {
+    const handleCobieRugPull = (e: CustomEvent) => {
+      const { buildingName, treasuryLossPercent } = e.detail || {};
+      if (buildingName) {
+        triggerCobieRugPull(buildingName, treasuryLossPercent || 0.10);
+      }
+    };
+    
+    window.addEventListener('cobie-rug-pull', handleCobieRugPull as EventListener);
+    return () => {
+      window.removeEventListener('cobie-rug-pull', handleCobieRugPull as EventListener);
+    };
+  }, [triggerCobieRugPull]);
+  // ==== END COBIE NARRATOR EVENT INTEGRATION ====
 
   // Multiplayer sync
   const {
@@ -951,15 +1002,17 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             className="flex-1 relative overflow-hidden"
             style={{ paddingTop: "72px", paddingBottom: "76px" }}
           >
-            <CanvasIsometricGrid
-              overlayMode={overlayMode}
-              selectedTile={selectedTile}
-              setSelectedTile={setSelectedTile}
-              isMobile={true}
-              onViewportChange={setViewport}
-              onBargeDelivery={handleBargeDelivery}
-              selectedCryptoBuilding={selectedCryptoBuilding}
-            />
+            <ErrorBoundary>
+              <CanvasIsometricGrid
+                overlayMode={overlayMode}
+                selectedTile={selectedTile}
+                setSelectedTile={setSelectedTile}
+                isMobile={true}
+                onViewportChange={setViewport}
+                onBargeDelivery={handleBargeDelivery}
+                selectedCryptoBuilding={selectedCryptoBuilding}
+              />
+            </ErrorBoundary>
             {/* Crypto Building Particle System - Mobile (Issue #27) */}
             {viewport && (
               <CryptoParticleSystem
@@ -1170,16 +1223,18 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             <TopBar />
             <StatsPanel />
             <div className="flex-1 relative overflow-visible">
-              <CanvasIsometricGrid
-                overlayMode={overlayMode}
-                selectedTile={selectedTile}
-                setSelectedTile={setSelectedTile}
-                navigationTarget={navigationTarget}
-                onNavigationComplete={() => setNavigationTarget(null)}
-                onViewportChange={setViewport}
-                onBargeDelivery={handleBargeDelivery}
-                selectedCryptoBuilding={selectedCryptoBuilding}
-              />
+              <ErrorBoundary>
+                <CanvasIsometricGrid
+                  overlayMode={overlayMode}
+                  selectedTile={selectedTile}
+                  setSelectedTile={setSelectedTile}
+                  navigationTarget={navigationTarget}
+                  onNavigationComplete={() => setNavigationTarget(null)}
+                  onViewportChange={setViewport}
+                  onBargeDelivery={handleBargeDelivery}
+                  selectedCryptoBuilding={selectedCryptoBuilding}
+                />
+              </ErrorBoundary>
               {/* Crypto Building Particle System (Issue #27) */}
               {viewport && (
                 <CryptoParticleSystem
@@ -1288,14 +1343,16 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                 >
                   ✕
                 </button>
-                <CryptoBuildingPanel
-                  selectedBuilding={selectedCryptoBuilding}
-                  onSelectBuilding={(buildingId) => {
-                    setSelectedCryptoBuilding(buildingId);
-                    setTool("select");
-                  }}
-                  treasury={economyState.treasury}
-                />
+                <ErrorBoundary>
+                  <CryptoBuildingPanel
+                    selectedBuilding={selectedCryptoBuilding}
+                    onSelectBuilding={(buildingId) => {
+                      setSelectedCryptoBuilding(buildingId);
+                      setTool("select");
+                    }}
+                    treasury={economyState.treasury}
+                  />
+                </ErrorBoundary>
               </div>
             </div>
           )}

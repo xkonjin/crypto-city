@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState } from '@/types/game';
+import { CryptoEvent, CryptoEconomyState, CryptoCategory } from '@/games/isocity/crypto/types';
 
 // Cobie message types
 export type CobieMessageType = 
@@ -9,7 +10,8 @@ export type CobieMessageType =
   | 'reaction'      // Reaction to player actions
   | 'commentary'    // Periodic sardonic observations
   | 'milestone'     // Celebrating/mocking achievements
-  | 'event';        // Reacting to crypto events
+  | 'event'         // Reacting to crypto events
+  | 'warning';      // Proactive warnings
 
 export interface CobieMessage {
   id: string;
@@ -18,8 +20,184 @@ export interface CobieMessage {
   priority: number; // Lower = higher priority
 }
 
-// Cobie's sardonic tips (replacing generic tips)
-// Voice: Self-deprecating, gaming metaphors, probabilistic thinking, self-aware absurdity
+// =============================================================================
+// MARKET SENTIMENT REACTIONS (Issue #53)
+// =============================================================================
+
+const SENTIMENT_REACTIONS = {
+  // Sentiment drops 10+ points
+  sentimentDrop: [
+    "Market's getting shaky. The probability of a smooth ride just went down.",
+    "Sentiment tanking. This is where diamond hands get tested.",
+    "Fear creeping in. Historically, this is when opportunities appear. Historically.",
+  ],
+  // Sentiment rises 10+ points
+  sentimentRise: [
+    "Bulls are back, baby! Or at least, they think they are.",
+    "Sentiment pumping. Enjoy it while it lasts.",
+    "Green candles everywhere. Everyone's a genius again.",
+  ],
+  // Extreme fear (0-20)
+  extremeFear: [
+    "Now THIS is a buying opportunity... if you have the stomach.",
+    "Maximum fear. The metagame says this is when you're supposed to be greedy. Do with that what you will.",
+    "Extreme fear zone. Either the bottom is in or we're going lower. Helpful, I know.",
+  ],
+  // Extreme greed (80-100)
+  extremeGreed: [
+    "Everyone's a genius in a bull market. Don't let it go to your head.",
+    "Extreme greed. Historically, this is when smart money starts taking profits. Historically.",
+    "Peak euphoria. This is where 'just one more trade' turns into 'why didn't I sell.'",
+  ],
+};
+
+// =============================================================================
+// RUG PULL REACTIONS (Issue #53)
+// =============================================================================
+
+const RUG_PULL_REACTIONS = {
+  // Immediate reaction when rug happens
+  immediate: [
+    "Ouch. That one hurt.",
+    "And there it goes. Classic rug pull.",
+    "Rug pulled. The signs were probably there. They usually are.",
+  ],
+  // If player loses 20%+ treasury
+  majorLoss: [
+    "That's gonna leave a mark. 20% gone just like that.",
+    "Major treasury hit. Time to reassess the risk profile.",
+    "Big rug. The metagame is to survive these. You're still here.",
+  ],
+  // If multiple rugs in short time
+  multipleRugs: [
+    "When it rains, it pours. Multiple rugs in quick succession.",
+    "Getting hit from all sides. The market doesn't care about your feelings.",
+    "Another one? The probability of multiple rugs... well, here we are.",
+  ],
+  // First rug ever
+  firstRug: [
+    "Welcome to crypto. This won't be the last time.",
+    "Your first rug pull. A rite of passage, really.",
+    "First rug. Everyone remembers their first. Anyway, rebuild.",
+  ],
+};
+
+// =============================================================================
+// PLAYER PATTERN REACTIONS (Issue #53)
+// =============================================================================
+
+const PATTERN_REACTIONS = {
+  // 5+ degen buildings
+  manyDegenBuildings: [
+    "Living dangerously, I see. 5+ high-risk buildings. Bold strategy.",
+    "That's a lot of degen plays. Your risk tolerance is impressive. Or concerning.",
+    "Heavy on the risk. The metagame rewards this sometimes. Sometimes.",
+  ],
+  // Only institution buildings
+  onlyInstitution: [
+    "Playing it safe? Boring, but respectable. Slow and steady.",
+    "Conservative portfolio. Not exciting, but you'll probably survive.",
+    "Institution-heavy setup. Lower yield, lower rug chance. Tradeoffs.",
+  ],
+  // Treasury drops below 20%
+  lowTreasury: [
+    "Might want to slow down there, chief. Treasury looking thin.",
+    "Getting low on funds. The metagame is to not go bankrupt.",
+    "Treasury alert. Maybe pump the brakes on spending.",
+  ],
+  // 10+ days without rug
+  luckyStreak: [
+    "Luck can't last forever... 10 days without a rug is impressive though.",
+    "No rugs in 10 days. Either you're good at this or due for one.",
+    "Rug-free streak continues. Enjoy it. Statistically, it won't last.",
+  ],
+};
+
+// =============================================================================
+// PROACTIVE WARNINGS (Issue #53)
+// =============================================================================
+
+const PROACTIVE_WARNINGS = {
+  // Treasury below $10k
+  lowTreasury: [
+    "Running low on funds. Maybe pump the brakes.",
+    "Treasury under $10k. Time to be more selective.",
+    "Low funds warning. The metagame is capital preservation now.",
+  ],
+  // High risk portfolio
+  highRisk: [
+    "Your risk exposure is giving me anxiety. A lot of degen plays.",
+    "Portfolio is heavily weighted toward risky buildings. Just saying.",
+    "High risk alert. One bad rug could set you back significantly.",
+  ],
+  // No income buildings
+  noIncome: [
+    "You need some yield-generating buildings. Treasury's not gonna grow itself.",
+    "No income sources detected. DeFi buildings generate yields, just saying.",
+    "Building yield is zero. You might want to fix that.",
+  ],
+  // Happiness below 30%
+  lowHappiness: [
+    "Your citizens are getting restless. Happiness at critical levels.",
+    "Low happiness alert. Unhappy citizens means problems down the road.",
+    "Citizens aren't vibing. Build some parks or something.",
+  ],
+};
+
+// =============================================================================
+// STREAK COMMENTARY (Issue #53)
+// =============================================================================
+
+const STREAK_COMMENTARY = {
+  // 3+ successful days
+  successStreak: [
+    "Nice streak going! Three days of gains.",
+    "Winning streak continues. The metagame is strong.",
+    "Three days in a row. Don't get cocky though.",
+  ],
+  // 3+ rug pulls
+  rugStreak: [
+    "Maybe diversify a bit? That's the third rug.",
+    "Triple rug. Time to reconsider the strategy.",
+    "Three rugs. The probability of this many... unlucky or poor choices?",
+  ],
+  // First million
+  firstMillion: [
+    "Welcome to the comma club. Treasury hit $1M.",
+    "First million! You're officially playing with whale money now.",
+    "Million dollar city. Not bad. Not bad at all.",
+  ],
+};
+
+// =============================================================================
+// BUILDING CLUSTER REACTIONS (Issue #53)
+// =============================================================================
+
+const CLUSTER_REACTIONS = {
+  // Good synergy detected
+  goodSynergy: [
+    "Smart. Those DeFi buildings play nice together.",
+    "Good cluster. The synergy bonus is real there.",
+    "Nice grouping. Buildings that synergize earn more.",
+  ],
+  // Bad placement detected
+  badPlacement: [
+    "That stablecoin building won't synergize there. Just saying.",
+    "Suboptimal placement. The synergy system matters.",
+    "Lonely building. Might want to cluster similar types together.",
+  ],
+  // Chain synergy detected
+  chainSynergy: [
+    "Same chain buildings clustered. The chain synergy bonus is working.",
+    "Nice chain grouping. ETH buildings near ETH buildings makes sense.",
+    "Chain synergy activated. Smart play.",
+  ],
+};
+
+// =============================================================================
+// ORIGINAL COBIE TIPS
+// =============================================================================
+
 const COBIE_TIPS: CobieMessage[] = [
   {
     id: 'welcome',
@@ -59,8 +237,10 @@ const COBIE_TIPS: CobieMessage[] = [
   },
 ];
 
-// Cobie's reactions to specific building placements
-// Voice: References real events, probabilistic framing, self-aware humor
+// =============================================================================
+// BUILDING REACTIONS
+// =============================================================================
+
 const BUILDING_REACTIONS: Record<string, string[]> = {
   // Legends - Failed projects
   'ftx_ruins': [
@@ -168,8 +348,10 @@ const BUILDING_REACTIONS: Record<string, string[]> = {
   ],
 };
 
-// Cobie's milestone commentary
-// Voice: Probabilistic framing, self-deprecating, references to real crypto metrics
+// =============================================================================
+// MILESTONE MESSAGES
+// =============================================================================
+
 const MILESTONE_MESSAGES: Record<string, string[]> = {
   'population_100': [
     "100 citizens. That's more active users than some Layer 2s, honestly.",
@@ -209,52 +391,26 @@ const MILESTONE_MESSAGES: Record<string, string[]> = {
   ],
 };
 
-// Random periodic commentary
-// Voice: Gaming metaphors, market observations, self-aware crypto humor, Cobie's famous sayings
+// =============================================================================
+// RANDOM COMMENTARY (Reduced, Event-Driven)
+// =============================================================================
+
 const RANDOM_COMMENTARY: string[] = [
-  // Core Cobie-isms
   "The metagame right now is to build infrastructure while everyone else chases the next shiny thing.",
   "Your city is doing fine. Better than most portfolios, probably.",
   "I've been in crypto since 2012. Your city already has more utility than half my early investments.",
   "Remember: this is a video game. The crypto part is just flavor. Have fun with it.",
-  "Your citizens seem content. They're probably not on Twitter. Smart.",
-  "Building during uncertain times is historically the right call. Historically.",
-  "Every cycle, I tell people to take some risk off. Every cycle, they don't listen. Your call.",
-  "This city has good bones. Which is more than I can say for most token projects.",
-  "You're actually building something. That already puts you ahead of 95% of crypto.",
-  "The probability of everything going right is low. The probability of learning something is high. Keep building.",
-  "Nice city. The metagame is always changing but good fundamentals tend to survive.",
-  "At least you're not panic selling during a dip. That's more discipline than most people have.",
-  
-  // Famous Cobie phrases
   "Stay the course. That's it. That's the alpha.",
   "The best plays are usually the boring ones. Boring is underrated.",
-  "Everyone has a plan until they see their portfolio down 60%.",
   "If you're not sure what to do, doing nothing is often correct.",
-  "The market is a machine for transferring money from the impatient to the patient.",
-  
-  // UpOnly podcast references
-  "This reminds me of something we discussed on UpOnly. Can't remember what. The podcasts all blur together after a while.",
-  "Ledger said something relevant on the show once. I think. Content creation is weird.",
-  
-  // Self-deprecating humor
   "I've made every mistake you can make in crypto. Somehow still here. That's the metagame.",
-  "Don't ask me for financial advice. I once held through a 99% drawdown. By accident.",
-  "My track record is public. Draw your own conclusions.",
-  
-  // Market observations
-  "Retail is quiet. That's historically when you want to be building.",
-  "CT is bullish. Historically, that's when you want to start thinking about exits. Historically.",
-  "Everyone's calling for the cycle top. So we probably have more room to run. Or not. I don't know.",
-  "The narrative changed again. Try to keep up. Or don't. The fundamentals rarely do.",
-  
-  // Gaming metaphors
-  "You're playing the right game. Most people don't even know what game they're in.",
-  "The current meta rewards builders. That usually changes, but enjoy it while it lasts.",
   "This is a long game. Act accordingly.",
 ];
 
-// Check functions for tips
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
 function checkNeedsUtilities(state: GameState): boolean {
   let hasZonedTiles = false;
   let hasPower = false;
@@ -332,14 +488,61 @@ function checkIsNewCity(state: GameState): boolean {
   return !hasAnyZone && !hasAnyBuilding;
 }
 
+function getRandomMessage(messages: string[]): string {
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+
+// =============================================================================
+// CONFIGURATION
+// =============================================================================
+
 const STORAGE_KEY = 'cryptocity-cobie-disabled';
 const SHOWN_TIPS_KEY = 'cryptocity-cobie-shown';
-const MIN_MESSAGE_INTERVAL_MS = 20000; // 20 seconds between messages
+const COBIE_TRACKING_KEY = 'cryptocity-cobie-tracking';
+const MIN_MESSAGE_INTERVAL_MS = 15000; // 15 seconds between messages (reduced from 20)
 const TIP_CHECK_INTERVAL_MS = 5000;
 const INITIAL_DELAY_MS = 2000;
-const COMMENTARY_INTERVAL_MS = 120000; // Random commentary every 2 minutes
+const EVENT_DRIVEN_COMMENTARY_INTERVAL_MS = 180000; // Only show random commentary every 3 min when nothing happens
 
-interface UseCobieNarratorReturn {
+// =============================================================================
+// TRACKING STATE (for patterns and streaks)
+// =============================================================================
+
+interface CobieTrackingState {
+  lastSentiment: number;
+  rugCount: number;
+  lastRugTime: number;
+  firstRug: boolean;
+  daysWithoutRug: number;
+  successfulDays: number;
+  lastTreasury: number;
+  lastDailyYield: number;
+  buildingCounts: Record<string, number>;
+  hasReachedMillion: boolean;
+  lastEventTime: number;
+}
+
+function createInitialTrackingState(): CobieTrackingState {
+  return {
+    lastSentiment: 50,
+    rugCount: 0,
+    lastRugTime: 0,
+    firstRug: true,
+    daysWithoutRug: 0,
+    successfulDays: 0,
+    lastTreasury: 50000,
+    lastDailyYield: 0,
+    buildingCounts: {},
+    hasReachedMillion: false,
+    lastEventTime: 0,
+  };
+}
+
+// =============================================================================
+// MAIN HOOK
+// =============================================================================
+
+export interface UseCobieNarratorReturn {
   currentMessage: CobieMessage | null;
   isVisible: boolean;
   onDismiss: () => void;
@@ -349,6 +552,11 @@ interface UseCobieNarratorReturn {
   // For triggering reactions from outside
   triggerReaction: (buildingId: string) => void;
   triggerMilestone: (milestoneId: string) => void;
+  // New: Event-driven triggers
+  triggerRugPull: (buildingName: string, treasuryLoss: number) => void;
+  triggerEventReaction: (event: CryptoEvent) => void;
+  onEconomyUpdate: (economyState: CryptoEconomyState) => void;
+  onBuildingPlaced: (buildingId: string, category: CryptoCategory, tier: string) => void;
 }
 
 export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
@@ -362,12 +570,14 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
   const hasLoadedRef = useRef(false);
   const stateRef = useRef(state);
   const messageQueueRef = useRef<CobieMessage[]>([]);
+  const trackingRef = useRef<CobieTrackingState>(createInitialTrackingState());
+  const shownWarningsRef = useRef<Set<string>>(new Set());
   
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
 
-  // Load preferences
+  // Load preferences and tracking state
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
@@ -383,6 +593,11 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
         if (Array.isArray(parsed)) {
           setShownTips(new Set(parsed));
         }
+      }
+      
+      const tracking = localStorage.getItem(COBIE_TRACKING_KEY);
+      if (tracking) {
+        trackingRef.current = { ...createInitialTrackingState(), ...JSON.parse(tracking) };
       }
     } catch (e) {
       console.error('Failed to load Cobie preferences:', e);
@@ -401,6 +616,16 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
       console.error('Failed to save Cobie state:', e);
     }
   }, [shownTips]);
+
+  // Save tracking state periodically
+  const saveTrackingState = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(COBIE_TRACKING_KEY, JSON.stringify(trackingRef.current));
+    } catch (e) {
+      console.error('Failed to save Cobie tracking:', e);
+    }
+  }, []);
 
   const setCobieEnabled = useCallback((enabled: boolean) => {
     setCobieEnabledState(enabled);
@@ -428,14 +653,20 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
     
     const now = Date.now();
     if (!force && now - lastMessageTimeRef.current < MIN_MESSAGE_INTERVAL_MS) {
-      // Queue the message
-      messageQueueRef.current.push(message);
+      // Queue the message (prioritize higher priority)
+      const insertIndex = messageQueueRef.current.findIndex(m => m.priority > message.priority);
+      if (insertIndex === -1) {
+        messageQueueRef.current.push(message);
+      } else {
+        messageQueueRef.current.splice(insertIndex, 0, message);
+      }
       return;
     }
     
     setCurrentMessage(message);
     setIsVisible(true);
     lastMessageTimeRef.current = now;
+    trackingRef.current.lastEventTime = now;
     
     if (message.type === 'tip') {
       setShownTips(prev => new Set([...prev, message.id]));
@@ -478,17 +709,20 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
     }
   }, [cobieEnabled, isVisible, showMessage]);
 
+  // =========================================================================
+  // TRIGGER FUNCTIONS (Issue #53 - Event-driven reactions)
+  // =========================================================================
+
   // Trigger reaction to building placement
   const triggerReaction = useCallback((buildingId: string) => {
     if (!cobieEnabled) return;
     
     const reactions = BUILDING_REACTIONS[buildingId];
     if (reactions && reactions.length > 0) {
-      const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
       showMessage({
         id: `reaction_${buildingId}_${Date.now()}`,
         type: 'reaction',
-        message: randomReaction,
+        message: getRandomMessage(reactions),
         priority: 1,
       });
     }
@@ -500,15 +734,266 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
     
     const messages = MILESTONE_MESSAGES[milestoneId];
     if (messages && messages.length > 0) {
-      const randomMessage = messages[Math.floor(Math.random() * messages.length)];
       showMessage({
         id: `milestone_${milestoneId}_${Date.now()}`,
         type: 'milestone',
-        message: randomMessage,
+        message: getRandomMessage(messages),
         priority: 0, // High priority for milestones
       }, true); // Force show milestones
     }
   }, [cobieEnabled, showMessage]);
+
+  // NEW: Trigger rug pull reaction
+  const triggerRugPull = useCallback((buildingName: string, treasuryLoss: number) => {
+    if (!cobieEnabled) return;
+    
+    const tracking = trackingRef.current;
+    const now = Date.now();
+    const timeSinceLastRug = now - tracking.lastRugTime;
+    const isMultipleRugs = timeSinceLastRug < 60000 && tracking.rugCount > 0; // Multiple rugs within 1 min
+    const isFirstRug = tracking.firstRug;
+    const isMajorLoss = treasuryLoss >= 0.2; // 20%+ loss
+    
+    // Update tracking
+    tracking.rugCount++;
+    tracking.lastRugTime = now;
+    tracking.firstRug = false;
+    tracking.daysWithoutRug = 0;
+    saveTrackingState();
+    
+    // Choose appropriate reaction
+    let messages: string[];
+    let messageType = 'event' as CobieMessageType;
+    
+    if (isFirstRug) {
+      messages = RUG_PULL_REACTIONS.firstRug;
+    } else if (isMultipleRugs) {
+      messages = RUG_PULL_REACTIONS.multipleRugs;
+    } else if (isMajorLoss) {
+      messages = RUG_PULL_REACTIONS.majorLoss;
+    } else {
+      messages = RUG_PULL_REACTIONS.immediate;
+    }
+    
+    showMessage({
+      id: `rug_${buildingName}_${now}`,
+      type: messageType,
+      message: getRandomMessage(messages),
+      priority: 0, // High priority for rugs
+    }, true);
+  }, [cobieEnabled, showMessage, saveTrackingState]);
+
+  // NEW: Trigger event reaction (for CryptoEventManager events)
+  const triggerEventReaction = useCallback((event: CryptoEvent) => {
+    if (!cobieEnabled) return;
+    
+    // React based on event type
+    const eventType = event.type;
+    let message: string | null = null;
+    
+    switch (eventType) {
+      case 'bull_run':
+        triggerMilestone('bull_market');
+        return;
+      case 'bear_market':
+        triggerMilestone('bear_market');
+        return;
+      case 'rug_pull':
+        // Handled by triggerRugPull
+        return;
+      case 'hack':
+        message = "Protocol hacked. The smart contract wasn't so smart after all.";
+        break;
+      case 'airdrop':
+      case 'airdrop_season':
+        message = "Airdrop season! Free money falling from the sky. Enjoy it.";
+        break;
+      case 'whale_entry':
+        message = "Whale spotted. Big money's moving in. Interesting.";
+        break;
+      case 'liquidation_cascade':
+        message = "Liquidations cascading. Overleveraged positions getting rekt.";
+        break;
+      case 'ct_drama':
+        message = "CT is fighting again. Some things never change.";
+        break;
+      case 'regulatory_fud':
+        message = "Regulatory FUD incoming. The government remembered crypto exists.";
+        break;
+    }
+    
+    if (message) {
+      showMessage({
+        id: `event_${eventType}_${Date.now()}`,
+        type: 'event',
+        message,
+        priority: 2,
+      });
+    }
+  }, [cobieEnabled, showMessage, triggerMilestone]);
+
+  // NEW: React to economy state updates
+  const onEconomyUpdate = useCallback((economyState: CryptoEconomyState) => {
+    if (!cobieEnabled) return;
+    
+    const tracking = trackingRef.current;
+    const sentiment = economyState.marketSentiment;
+    const treasury = economyState.treasury;
+    const dailyYield = economyState.dailyYield;
+    
+    // Check sentiment changes
+    const sentimentChange = sentiment - tracking.lastSentiment;
+    if (Math.abs(sentimentChange) >= 10) {
+      const warningKey = `sentiment_${sentimentChange > 0 ? 'rise' : 'drop'}_${Math.floor(Date.now() / 60000)}`;
+      if (!shownWarningsRef.current.has(warningKey)) {
+        shownWarningsRef.current.add(warningKey);
+        
+        if (sentimentChange >= 10) {
+          showMessage({
+            id: `sentiment_rise_${Date.now()}`,
+            type: 'event',
+            message: getRandomMessage(SENTIMENT_REACTIONS.sentimentRise),
+            priority: 3,
+          });
+        } else if (sentimentChange <= -10) {
+          showMessage({
+            id: `sentiment_drop_${Date.now()}`,
+            type: 'event',
+            message: getRandomMessage(SENTIMENT_REACTIONS.sentimentDrop),
+            priority: 3,
+          });
+        }
+      }
+    }
+    
+    // Check extreme sentiment
+    if (sentiment <= 20) {
+      const warningKey = 'extreme_fear_' + Math.floor(Date.now() / 300000); // Every 5 min max
+      if (!shownWarningsRef.current.has(warningKey)) {
+        shownWarningsRef.current.add(warningKey);
+        showMessage({
+          id: `extreme_fear_${Date.now()}`,
+          type: 'event',
+          message: getRandomMessage(SENTIMENT_REACTIONS.extremeFear),
+          priority: 2,
+        });
+      }
+    } else if (sentiment >= 80) {
+      const warningKey = 'extreme_greed_' + Math.floor(Date.now() / 300000);
+      if (!shownWarningsRef.current.has(warningKey)) {
+        shownWarningsRef.current.add(warningKey);
+        showMessage({
+          id: `extreme_greed_${Date.now()}`,
+          type: 'event',
+          message: getRandomMessage(SENTIMENT_REACTIONS.extremeGreed),
+          priority: 2,
+        });
+      }
+    }
+    
+    // Check proactive warnings
+    // Treasury below $10k
+    if (treasury < 10000 && tracking.lastTreasury >= 10000) {
+      showMessage({
+        id: `low_treasury_${Date.now()}`,
+        type: 'warning',
+        message: getRandomMessage(PROACTIVE_WARNINGS.lowTreasury),
+        priority: 1,
+      });
+    }
+    
+    // First million milestone
+    if (treasury >= 1000000 && !tracking.hasReachedMillion) {
+      tracking.hasReachedMillion = true;
+      showMessage({
+        id: `first_million_${Date.now()}`,
+        type: 'milestone',
+        message: getRandomMessage(STREAK_COMMENTARY.firstMillion),
+        priority: 0,
+      }, true);
+    }
+    
+    // No income warning
+    if (dailyYield <= 0 && tracking.lastDailyYield > 0) {
+      showMessage({
+        id: `no_income_${Date.now()}`,
+        type: 'warning',
+        message: getRandomMessage(PROACTIVE_WARNINGS.noIncome),
+        priority: 2,
+      });
+    }
+    
+    // Update tracking
+    tracking.lastSentiment = sentiment;
+    tracking.lastTreasury = treasury;
+    tracking.lastDailyYield = dailyYield;
+    saveTrackingState();
+  }, [cobieEnabled, showMessage, saveTrackingState]);
+
+  // NEW: React to building placement for pattern detection
+  const onBuildingPlaced = useCallback((buildingId: string, category: CryptoCategory, tier: string) => {
+    if (!cobieEnabled) return;
+    
+    const tracking = trackingRef.current;
+    
+    // Track building counts by category
+    tracking.buildingCounts[category] = (tracking.buildingCounts[category] || 0) + 1;
+    
+    // Check for degen pattern (5+ degen/meme buildings)
+    const degenCount = (tracking.buildingCounts['meme'] || 0) + 
+                       (tier === 'degen' ? tracking.buildingCounts[category] || 0 : 0);
+    if (degenCount >= 5) {
+      const warningKey = `degen_pattern_${Math.floor(degenCount / 5)}`;
+      if (!shownWarningsRef.current.has(warningKey)) {
+        shownWarningsRef.current.add(warningKey);
+        showMessage({
+          id: `degen_pattern_${Date.now()}`,
+          type: 'reaction',
+          message: getRandomMessage(PATTERN_REACTIONS.manyDegenBuildings),
+          priority: 3,
+        });
+      }
+    }
+    
+    // Check for institution-only pattern
+    const totalBuildings = Object.values(tracking.buildingCounts).reduce((a, b) => a + b, 0);
+    const institutionCount = tracking.buildingCounts['exchange'] || 0;
+    if (totalBuildings >= 5 && institutionCount === totalBuildings) {
+      const warningKey = 'institution_only';
+      if (!shownWarningsRef.current.has(warningKey)) {
+        shownWarningsRef.current.add(warningKey);
+        showMessage({
+          id: `institution_pattern_${Date.now()}`,
+          type: 'reaction',
+          message: getRandomMessage(PATTERN_REACTIONS.onlyInstitution),
+          priority: 4,
+        });
+      }
+    }
+    
+    // Trigger building-specific reaction
+    triggerReaction(buildingId);
+    saveTrackingState();
+  }, [cobieEnabled, showMessage, triggerReaction, saveTrackingState]);
+
+  // Check happiness warning
+  useEffect(() => {
+    if (!cobieEnabled || !hasLoadedRef.current) return;
+    
+    const happiness = state.stats.happiness;
+    if (happiness < 30) {
+      const warningKey = 'low_happiness_' + Math.floor(Date.now() / 300000);
+      if (!shownWarningsRef.current.has(warningKey)) {
+        shownWarningsRef.current.add(warningKey);
+        showMessage({
+          id: `low_happiness_${Date.now()}`,
+          type: 'warning',
+          message: getRandomMessage(PROACTIVE_WARNINGS.lowHappiness),
+          priority: 2,
+        });
+      }
+    }
+  }, [cobieEnabled, state.stats.happiness, showMessage]);
 
   // Set up periodic checks
   useEffect(() => {
@@ -529,7 +1014,7 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
     };
   }, [cobieEnabled, checkAndShowTip]);
 
-  // Set up random commentary
+  // Set up random commentary (REDUCED - only when nothing interesting is happening)
   useEffect(() => {
     if (commentaryIntervalRef.current) {
       clearInterval(commentaryIntervalRef.current);
@@ -540,6 +1025,10 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
     commentaryIntervalRef.current = setInterval(() => {
       if (isVisible) return; // Don't interrupt existing messages
       
+      // Only show random commentary if no events recently (3 min)
+      const timeSinceLastEvent = Date.now() - trackingRef.current.lastEventTime;
+      if (timeSinceLastEvent < EVENT_DRIVEN_COMMENTARY_INTERVAL_MS) return;
+      
       const randomComment = RANDOM_COMMENTARY[Math.floor(Math.random() * RANDOM_COMMENTARY.length)];
       showMessage({
         id: `commentary_${Date.now()}`,
@@ -547,7 +1036,7 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
         message: randomComment,
         priority: 10, // Low priority
       });
-    }, COMMENTARY_INTERVAL_MS);
+    }, EVENT_DRIVEN_COMMENTARY_INTERVAL_MS);
     
     return () => {
       if (commentaryIntervalRef.current) {
@@ -576,5 +1065,10 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
     setCobieEnabled,
     triggerReaction,
     triggerMilestone,
+    // New event-driven triggers
+    triggerRugPull,
+    triggerEventReaction,
+    onEconomyUpdate,
+    onBuildingPlaced,
   };
 }
