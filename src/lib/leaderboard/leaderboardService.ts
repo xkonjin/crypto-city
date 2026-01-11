@@ -22,6 +22,7 @@ import {
   LEADERBOARD_CACHE_KEY,
   LEADERBOARD_QUEUE_KEY,
 } from './types';
+import { logger } from '../logger';
 
 const STORAGE_KEY = 'cryptocity-leaderboard';
 const SETTINGS_KEY = 'cryptocity-leaderboard-settings';
@@ -145,7 +146,7 @@ function getCachedLeaderboard(category: LeaderboardCategory): CachedLeaderboard 
       }
     }
   } catch (e) {
-    console.error('[Leaderboard] Failed to read cache:', e);
+    logger.error('[Leaderboard] Failed to read cache:', e);
   }
   return null;
 }
@@ -159,7 +160,7 @@ function setCachedLeaderboard(category: LeaderboardCategory, data: LeaderboardDa
     parsed[category] = { data, timestamp: Date.now() };
     localStorage.setItem(LEADERBOARD_CACHE_KEY, JSON.stringify(parsed));
   } catch (e) {
-    console.error('[Leaderboard] Failed to write cache:', e);
+    logger.error('[Leaderboard] Failed to write cache:', e);
   }
 }
 
@@ -179,7 +180,7 @@ function getSubmissionQueue(): QueuedSubmission[] {
     const queue = localStorage.getItem(LEADERBOARD_QUEUE_KEY);
     return queue ? JSON.parse(queue) : [];
   } catch (e) {
-    console.error('[Leaderboard] Failed to read queue:', e);
+    logger.error('[Leaderboard] Failed to read queue:', e);
     return [];
   }
 }
@@ -192,7 +193,7 @@ function addToSubmissionQueue(submission: LeaderboardSubmission): void {
     queue.push({ submission, timestamp: Date.now() });
     localStorage.setItem(LEADERBOARD_QUEUE_KEY, JSON.stringify(queue));
   } catch (e) {
-    console.error('[Leaderboard] Failed to add to queue:', e);
+    logger.error('[Leaderboard] Failed to add to queue:', e);
   }
 }
 
@@ -209,13 +210,13 @@ async function processSubmissionQueue(): Promise<void> {
   const queue = getSubmissionQueue();
   if (queue.length === 0) return;
   
-  console.log('[Leaderboard] Processing queued submissions:', queue.length);
+  logger.debug('[Leaderboard] Processing queued submissions:', queue.length);
   
   for (const item of queue) {
     try {
       await submitToSupabase(item.submission);
     } catch (e) {
-      console.error('[Leaderboard] Failed to process queued submission:', e);
+      logger.error('[Leaderboard] Failed to process queued submission:', e);
     }
   }
   
@@ -257,7 +258,7 @@ async function submitToSupabase(submission: LeaderboardSubmission): Promise<{ su
     .single();
   
   if (error) {
-    console.error('[Leaderboard] Supabase submit error:', error);
+    logger.error('[Leaderboard] Supabase submit error:', error);
     return { success: false };
   }
   
@@ -287,7 +288,7 @@ async function fetchFromSupabase(
     .limit(limit);
   
   if (error) {
-    console.error('[Leaderboard] Supabase fetch error:', error);
+    logger.error('[Leaderboard] Supabase fetch error:', error);
     return null;
   }
   
@@ -340,7 +341,7 @@ export function getLeaderboardSettings(): LeaderboardSettings {
       return JSON.parse(stored);
     }
   } catch (e) {
-    console.error('[Leaderboard] Failed to load settings:', e);
+    logger.error('[Leaderboard] Failed to load settings:', e);
   }
   
   return { optedIn: false, playerName: 'Anonymous', lastSubmission: null };
@@ -352,7 +353,7 @@ export function saveLeaderboardSettings(settings: LeaderboardSettings): void {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   } catch (e) {
-    console.error('[Leaderboard] Failed to save settings:', e);
+    logger.error('[Leaderboard] Failed to save settings:', e);
   }
 }
 
@@ -517,7 +518,7 @@ function getUserEntry(): LeaderboardEntry | null {
       return JSON.parse(stored);
     }
   } catch (e) {
-    console.error('[Leaderboard] Failed to load user entry:', e);
+    logger.error('[Leaderboard] Failed to load user entry:', e);
   }
   
   return null;
@@ -584,7 +585,7 @@ export async function submitToLeaderboard(
       lastSubmission: Date.now(),
     });
   } catch (e) {
-    console.error('[Leaderboard] Failed to save locally:', e);
+    logger.error('[Leaderboard] Failed to save locally:', e);
     return { success: false, rank: null, error: 'Failed to save entry' };
   }
   

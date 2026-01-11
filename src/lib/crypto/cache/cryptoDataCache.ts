@@ -39,6 +39,7 @@ import {
   CACHE_DB_NAME,
   CACHE_STORES,
 } from './types';
+import { logger } from '../../logger';
 
 // =============================================================================
 // DATABASE SCHEMA
@@ -127,11 +128,11 @@ export class CryptoDataCache {
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
         this.isOnline = true;
-        console.log('[CryptoCache] Online');
+        logger.debug('[CryptoCache] Online');
       });
       window.addEventListener('offline', () => {
         this.isOnline = false;
-        console.log('[CryptoCache] Offline');
+        logger.debug('[CryptoCache] Offline');
       });
     }
   }
@@ -197,14 +198,14 @@ export class CryptoDataCache {
           if (!db.objectStoreNames.contains(CACHE_STORES.META)) {
             db.createObjectStore(CACHE_STORES.META);
           }
-          console.log('[CryptoCache] Database upgraded to version', CACHE_DB_VERSION);
+          logger.debug('[CryptoCache] Database upgraded to version', CACHE_DB_VERSION);
         },
       });
       
       this.initialized = true;
-      console.log('[CryptoCache] Initialized');
+      logger.debug('[CryptoCache] Initialized');
     } catch (error) {
-      console.error('[CryptoCache] Initialization failed:', error);
+      logger.error('[CryptoCache] Initialization failed:', error);
       // Continue without cache in case of failure (degraded mode)
       this.initialized = true;
     }
@@ -238,7 +239,7 @@ export class CryptoDataCache {
     };
 
     await this.db.put(CACHE_STORES.PRICES, entry, this.CACHE_KEY);
-    console.log('[CryptoCache] Prices cached');
+    logger.debug('[CryptoCache] Prices cached');
   }
 
   /**
@@ -279,7 +280,7 @@ export class CryptoDataCache {
     };
 
     await this.db.put(CACHE_STORES.DEFI, entry, this.CACHE_KEY);
-    console.log('[CryptoCache] DeFi data cached');
+    logger.debug('[CryptoCache] DeFi data cached');
   }
 
   /**
@@ -319,7 +320,7 @@ export class CryptoDataCache {
     };
 
     await this.db.put(CACHE_STORES.FEAR_GREED, entry, this.CACHE_KEY);
-    console.log('[CryptoCache] Fear & Greed cached');
+    logger.debug('[CryptoCache] Fear & Greed cached');
   }
 
   /**
@@ -359,7 +360,7 @@ export class CryptoDataCache {
     };
 
     await this.db.put(CACHE_STORES.NEWS, entry, this.CACHE_KEY);
-    console.log('[CryptoCache] News cached');
+    logger.debug('[CryptoCache] News cached');
   }
 
   /**
@@ -399,7 +400,7 @@ export class CryptoDataCache {
     };
 
     await this.db.put(CACHE_STORES.TWITTER, entry, this.CACHE_KEY);
-    console.log('[CryptoCache] Twitter data cached');
+    logger.debug('[CryptoCache] Twitter data cached');
   }
 
   /**
@@ -530,7 +531,7 @@ export class CryptoDataCache {
       this.db.clear(CACHE_STORES.META),
     ]);
 
-    console.log('[CryptoCache] All data cleared');
+    logger.debug('[CryptoCache] All data cleared');
   }
 
   /**

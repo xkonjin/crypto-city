@@ -27,6 +27,13 @@ import type {
   BlendedGameData,
   YieldAdjustment,
 } from '../../../lib/crypto/types';
+import { logger } from '../../../lib/logger';
+import { 
+  BALANCE_CONFIG, 
+  isContagionImmune, 
+  getComparativeRisk,
+  formatComparativeRisk 
+} from './balanceConfig';
 
 // =============================================================================
 // CONFIGURATION CONSTANTS
@@ -381,7 +388,7 @@ export class CryptoEconomyManager {
   ): PlacedCryptoBuilding | null {
     const definition = getCryptoBuilding(buildingId);
     if (!definition) {
-      console.warn(`[CryptoEconomyManager] Unknown building: ${buildingId}`);
+      logger.warn(`[CryptoEconomyManager] Unknown building: ${buildingId}`);
       return null;
     }
     
@@ -525,6 +532,12 @@ export class CryptoEconomyManager {
     // Apply prestige yield multiplier from purchased bonuses
     adjustedYield *= this.prestigeYieldMultiplier;
     // ==== END PRESTIGE SYSTEM ====
+    
+    // ==== INSTITUTION STABILITY BONUS (Issue #70) ====
+    // Apply diversity bonus when player has 5+ institution buildings
+    const institutionStabilityBonus = this.getInstitutionStabilityBonus();
+    adjustedYield *= (1 + institutionStabilityBonus);
+    // ==== END INSTITUTION STABILITY BONUS ====
     
     // Update state
     this.state = {
@@ -700,7 +713,7 @@ export class CryptoEconomyManager {
       // Check if we've crossed into bankruptcy
       if (this.state.bankruptcyCounter >= BANKRUPTCY_THRESHOLD_TICKS && !this.state.isBankrupt) {
         this.state.isBankrupt = true;
-        console.log('[CryptoEconomy] Bankruptcy triggered! Buildings will start decaying.');
+        logger.info('[CryptoEconomy] Bankruptcy triggered! Buildings will start decaying.');
       }
       
       // If bankrupt, randomly decay buildings (they produce 0 yield)
@@ -713,7 +726,7 @@ export class CryptoEconomyManager {
           const randomIndex = Math.floor(Math.random() * nonDecayingBuildings.length);
           const buildingToDecay = nonDecayingBuildings[randomIndex];
           this.state.decayingBuildings.push(buildingToDecay);
-          console.log(`[CryptoEconomy] Building ${buildingToDecay} is now decaying due to bankruptcy`);
+          logger.info(`[CryptoEconomy] Building ${buildingToDecay} is now decaying due to bankruptcy`);
         }
       }
     } else {
@@ -726,7 +739,7 @@ export class CryptoEconomyManager {
       if (this.state.isBankrupt && this.state.treasury > 10000) {
         this.state.isBankrupt = false;
         // Decaying buildings stay decayed until repaired
-        console.log('[CryptoEconomy] Bankruptcy ended. Repair buildings to restore yields.');
+        logger.info('[CryptoEconomy] Bankruptcy ended. Repair buildings to restore yields.');
       }
     }
   }
@@ -867,6 +880,11 @@ export class CryptoEconomyManager {
         const rugLoss = Math.max(5000, Math.floor(this.state.treasury * 0.10)) * magnitude * rugResistanceMultiplier;
         this.state.treasury = Math.max(0, this.state.treasury - rugLoss);
         this.state.marketSentiment = Math.max(0, this.state.marketSentiment - 15);
+        
+        // Issue #70: Cascading failure mechanic - adjacent degen buildings may also rug
+        if (BALANCE_CONFIG.CONTAGION_ENABLED) {
+          this.applyContagion();
+        }
         break;
       case 'hack':
         // Percentage-based treasury loss, big sentiment hit
@@ -905,7 +923,7 @@ export class CryptoEconomyManager {
         break;
       default:
         // Unknown event type - log warning but don't crash
-        console.warn(`[CryptoEconomyManager] Unknown event type: ${eventType}`);
+        logger.warn(`[CryptoEconomyManager] Unknown event type: ${eventType}`);
     }
     
     this.recalculateEconomy();
@@ -1179,6 +1197,147 @@ export class CryptoEconomyManager {
    */
   getPrestigeRugResistance(): number {
     return this.prestigeRugResistance;
+  }
+  
+  // ---------------------------------------------------------------------------
+  // DEGEN BALANCE (Issue #70)
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Apply cascading failure (contagion) to adjacent degen buildings
+   * When a degen building rugs, there's a chance adjacent degen buildings also rug
+   * Institution buildings are immune to contagion
+   */
+  private applyContagion(): void {
+    if (!BALANCE_CONFIG.CONTAGION_ENABLED) return;
+    
+    const contagionTargets: PlacedCryptoBuilding[] = [];
+    
+    // Find all degen buildings that could be affected
+    for (const building of this.placedBuildings.values()) {
+      const def = getCryptoBuilding(building.buildingId);
+      if (!def?.crypto?.tier) continue;
+      
+      // Skip buildings immune to contagion
+      if (isContagionImmune(def.crypto.tier)) continue;
+      
+      // Only degen tier buildings can be affected by contagion
+      if (def.crypto.tier !== 'degen') continue;
+      
+      // Check if this building is adjacent to another degen building
+      // (within CONTAGION_RADIUS tiles)
+      const hasDegenNeighbor = this.hasAdjacentDegenBuilding(building, BALANCE_CONFIG.CONTAGION_RADIUS);
+      
+      if (hasDegenNeighbor) {
+        contagionTargets.push(building);
+      }
+    }
+    
+    // Roll for contagion on each target
+    for (const target of contagionTargets) {
+      if (Math.random() < BALANCE_CONFIG.CONTAGION_CHANCE) {
+        // This building is affected by contagion!
+        // Apply additional treasury loss scaled by the building's rug risk
+        const def = getCryptoBuilding(target.buildingId);
+        const rugRisk = def?.crypto?.effects?.rugRisk || 0.05;
+        const contagionLoss = Math.floor(this.state.treasury * rugRisk * 0.5);
+        
+        this.state.treasury = Math.max(0, this.state.treasury - contagionLoss);
+        this.state.marketSentiment = Math.max(0, this.state.marketSentiment - 5);
+        
+        logger.info(`[CryptoEconomy] Contagion hit ${target.buildingId}! Lost $${contagionLoss}`);
+      }
+    }
+  }
+  
+  /**
+   * Check if a building has an adjacent degen building within radius
+   */
+  private hasAdjacentDegenBuilding(building: PlacedCryptoBuilding, radius: number): boolean {
+    for (const other of this.placedBuildings.values()) {
+      if (other.id === building.id) continue;
+      
+      const otherDef = getCryptoBuilding(other.buildingId);
+      if (!otherDef?.crypto?.tier || otherDef.crypto.tier !== 'degen') continue;
+      
+      // Calculate Chebyshev distance (diagonal = 1)
+      const dx = Math.abs(other.gridX - building.gridX);
+      const dy = Math.abs(other.gridY - building.gridY);
+      const distance = Math.max(dx, dy);
+      
+      if (distance <= radius) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  /**
+   * Get the institution stability bonus (0 to DIVERSITY_BONUS)
+   * Returns DIVERSITY_BONUS if player has >= INSTITUTION_STABILITY_THRESHOLD institution buildings
+   * Otherwise returns 0
+   */
+  getInstitutionStabilityBonus(): number {
+    let institutionCount = 0;
+    
+    for (const building of this.placedBuildings.values()) {
+      const def = getCryptoBuilding(building.buildingId);
+      if (def?.crypto?.tier === 'institution') {
+        institutionCount++;
+      }
+    }
+    
+    if (institutionCount >= BALANCE_CONFIG.INSTITUTION_STABILITY_THRESHOLD) {
+      return BALANCE_CONFIG.DIVERSITY_BONUS;
+    }
+    
+    return 0;
+  }
+  
+  /**
+   * Get count of institution buildings
+   */
+  getInstitutionCount(): number {
+    let count = 0;
+    for (const building of this.placedBuildings.values()) {
+      const def = getCryptoBuilding(building.buildingId);
+      if (def?.crypto?.tier === 'institution') {
+        count++;
+      }
+    }
+    return count;
+  }
+  
+  /**
+   * Check if player has the institution stability bonus active
+   */
+  hasStabilityBonus(): boolean {
+    return this.getInstitutionCount() >= BALANCE_CONFIG.INSTITUTION_STABILITY_THRESHOLD;
+  }
+  
+  /**
+   * Get comparative risk info for a building (for tooltip display)
+   */
+  getBuildingRiskInfo(buildingId: string): {
+    rugRisk: number;
+    comparativeRisk: number;
+    riskLabel: string;
+    hasContagionRisk: boolean;
+  } | null {
+    const def = getCryptoBuilding(buildingId);
+    if (!def?.crypto?.effects) return null;
+    
+    const rugRisk = def.crypto.effects.rugRisk;
+    const comparativeRisk = getComparativeRisk(rugRisk);
+    const riskLabel = formatComparativeRisk(rugRisk);
+    const hasContagionRisk = def.crypto.tier === 'degen' && BALANCE_CONFIG.CONTAGION_ENABLED;
+    
+    return {
+      rugRisk,
+      comparativeRisk,
+      riskLabel,
+      hasContagionRisk,
+    };
   }
   
   // ---------------------------------------------------------------------------

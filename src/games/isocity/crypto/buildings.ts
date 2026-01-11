@@ -1350,15 +1350,15 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     sprites: {
       south: '/Building/crypto/ct/2x2ct_studio_south.png',
     },
-    cost: 6000,
+    cost: 12000, // Issue #70: Doubled from $6k
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The CT Studio broadcasts alpha to thousands of followers.',
+      description: 'The CT Studio broadcasts alpha to thousands of followers. ⚠️ High contagion risk!',
       effects: {
-        yieldRate: 8,
+        yieldRate: 6, // Issue #70: Reduced from 8 (25% reduction)
         volatility: 0.3,
-        rugRisk: 0.02,
+        rugRisk: 0.05, // Issue #70: Increased from 0.02 (150% increase)
         populationBoost: 30,
         happinessEffect: 5,
         zoneRadius: 4,
@@ -1402,15 +1402,15 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     footprint: { width: 1, height: 2 },
     icon: '📞',
     isProcedural: true,
-    cost: 5000,
+    cost: 10000, // Issue #70: Doubled from $5k
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The Alpha Call Center shares insider tips 24/7.',
+      description: 'The Alpha Call Center shares insider tips 24/7. ⚠️ High contagion risk!',
       effects: {
-        yieldRate: 12,
+        yieldRate: 10, // Issue #70: Reduced from 12 (17% reduction)
         volatility: 0.4,
-        rugRisk: 0.05,
+        rugRisk: 0.075, // Issue #70: Increased from 0.05 (50% increase)
         populationBoost: 20,
         happinessEffect: 3,
         zoneRadius: 3,
@@ -1426,15 +1426,15 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     footprint: { width: 2, height: 2 },
     icon: '🎧',
     isProcedural: true,
-    cost: 7000,
+    cost: 14000, // Issue #70: Doubled from $7k
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The Podcast Tower hosts crypto thought leaders.',
+      description: 'The Podcast Tower hosts crypto thought leaders. ⚠️ High contagion risk!',
       effects: {
-        yieldRate: 6,
+        yieldRate: 5, // Issue #70: Reduced from 6 (17% reduction)
         volatility: 0.15,
-        rugRisk: 0.01,
+        rugRisk: 0.05, // Issue #70: Increased from 0.01 to base degen level
         populationBoost: 25,
         happinessEffect: 8,
         zoneRadius: 4,
@@ -1505,15 +1505,15 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     footprint: { width: 1, height: 1 },
     icon: '🕵️',
     isProcedural: true,
-    cost: 4000,
+    cost: 8000, // Issue #70: Doubled from $4k
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The Anon Bunker protects pseudonymous identities.',
+      description: 'The Anon Bunker protects pseudonymous identities. ⚠️ High contagion risk!',
       effects: {
-        yieldRate: 10,
+        yieldRate: 8, // Issue #70: Reduced from 10 (20% reduction)
         volatility: 0.35,
-        rugRisk: 0.04,
+        rugRisk: 0.06, // Issue #70: Increased from 0.04 (50% increase)
         populationBoost: 15,
         happinessEffect: 2,
         zoneRadius: 2,
@@ -1532,15 +1532,15 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     sprites: {
       south: '/Building/crypto/ct/2x2degen_lounge_south.png',
     },
-    cost: 12000, // Increased from 5500 - was too cheap for 20 yield
+    cost: 25000, // Issue #70: Doubled from $12k to $25k for balance
     crypto: {
       tier: 'degen',
       chain: 'solana',
-      description: 'The Degen Lounge is where apes gather to trade.',
+      description: 'The Degen Lounge is where apes gather to trade. ⚠️ High contagion risk!',
       effects: {
-        yieldRate: 15, // Reduced from 20 - more balanced for cost
+        yieldRate: 12, // Issue #70: Reduced from 15 (20% reduction)
         volatility: 0.6,
-        rugRisk: 0.1, // Increased from 0.08 - degen tier should be risky
+        rugRisk: 0.15, // Issue #70: Increased from 0.1 to 0.15 (50% increase)
         populationBoost: 25,
         happinessEffect: 10,
         zoneRadius: 4,
@@ -1615,15 +1615,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     sprites: {
       south: '/Building/crypto/meme/1x1pepe_statue_south.png',
     },
-    cost: 2000,
+    cost: 4000, // Issue #70: Doubled from $2k
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The iconic Pepe Statue brings good luck to degens.',
+      description: 'The iconic Pepe Statue brings good luck to degens. ⚠️ High contagion risk!',
       effects: {
-        yieldRate: 5,
+        yieldRate: 4, // Issue #70: Reduced from 5 (20% reduction)
         volatility: 0.5,
-        rugRisk: 0.05,
+        rugRisk: 0.075, // Issue #70: Increased from 0.05 (50% increase)
         populationBoost: 15,
         happinessEffect: 20,
         zoneRadius: 3,
@@ -1642,15 +1642,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     sprites: {
       south: '/Building/crypto/meme/2x2doge_fountain_south.png',
     },
-    cost: 3500,
+    cost: 7000, // Issue #70: Doubled from $3.5k
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The Doge Fountain celebrates the OG meme coin.',
+      description: 'The Doge Fountain celebrates the OG meme coin. ⚠️ High contagion risk!',
       effects: {
-        yieldRate: 8,
+        yieldRate: 6, // Issue #70: Reduced from 8 (25% reduction)
         volatility: 0.45,
-        rugRisk: 0.03,
+        rugRisk: 0.06, // Issue #70: Increased from 0.03 (100% increase)
         populationBoost: 25,
         happinessEffect: 25,
         zoneRadius: 4,
@@ -1847,15 +1847,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     footprint: { width: 1, height: 2 },
     icon: '🏃',
     isProcedural: true,
-    cost: 3500,
+    cost: 7000, // Issue #70: Doubled from $3.5k
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'FOMO Tower broadcasts urgency signals 24/7.',
+      description: 'FOMO Tower broadcasts urgency signals 24/7. ⚠️ High contagion risk!',
       effects: {
-        yieldRate: 15,
+        yieldRate: 12, // Issue #70: Reduced from 15 (20% reduction)
         volatility: 0.6,
-        rugRisk: 0.06,
+        rugRisk: 0.09, // Issue #70: Increased from 0.06 (50% increase)
         populationBoost: 20,
         happinessEffect: 5,
         zoneRadius: 4,

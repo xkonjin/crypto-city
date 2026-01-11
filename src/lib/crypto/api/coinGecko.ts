@@ -27,6 +27,7 @@ import {
   FEATURES,
 } from '../config';
 import { PriceData, TokenPrice } from '../cache/types';
+import { logger } from '../../logger';
 
 // =============================================================================
 // TYPES
@@ -140,7 +141,7 @@ async function fetchCoinMarkets(): Promise<RawCoinMarket[]> {
     if (!response.ok) {
       // Handle rate limiting
       if (response.status === 429) {
-        console.warn('[CoinGecko] Rate limited, waiting...');
+        logger.warn('[CoinGecko] Rate limited, waiting...');
         await delay(60000); // Wait 1 minute
         throw new Error('Rate limited');
       }
@@ -149,7 +150,7 @@ async function fetchCoinMarkets(): Promise<RawCoinMarket[]> {
 
     return await response.json();
   } catch (error) {
-    console.error('[CoinGecko] Failed to fetch markets:', error);
+    logger.error('[CoinGecko] Failed to fetch markets:', error);
     throw error;
   }
 }
@@ -168,7 +169,7 @@ async function fetchGlobalData(): Promise<RawGlobalData> {
 
     if (!response.ok) {
       if (response.status === 429) {
-        console.warn('[CoinGecko] Rate limited on global data');
+        logger.warn('[CoinGecko] Rate limited on global data');
         throw new Error('Rate limited');
       }
       throw new Error(`CoinGecko global API error: ${response.status}`);
@@ -176,7 +177,7 @@ async function fetchGlobalData(): Promise<RawGlobalData> {
 
     return await response.json();
   } catch (error) {
-    console.error('[CoinGecko] Failed to fetch global data:', error);
+    logger.error('[CoinGecko] Failed to fetch global data:', error);
     throw error;
   }
 }
@@ -211,7 +212,7 @@ export async function fetchCoinGeckoData(): Promise<PriceData> {
     throw new Error('Price fetching is disabled');
   }
 
-  console.log('[CoinGecko] Fetching data...');
+  logger.debug('[CoinGecko] Fetching data...');
   const startTime = Date.now();
 
   // Fetch market data and global data in parallel
@@ -233,7 +234,7 @@ export async function fetchCoinGeckoData(): Promise<PriceData> {
   const totalMarketCap = globalData.data.total_market_cap['usd'] || 0;
 
   const elapsed = Date.now() - startTime;
-  console.log(`[CoinGecko] Fetched in ${elapsed}ms: ${Object.keys(tokens).length} tokens`);
+  logger.debug(`[CoinGecko] Fetched in ${elapsed}ms: ${Object.keys(tokens).length} tokens`);
 
   return {
     tokens,
