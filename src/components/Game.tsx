@@ -21,6 +21,7 @@ import { VinnieDialog } from "@/components/VinnieDialog";
 import { CommandMenu } from "@/components/ui/CommandMenu";
 import { CobieNarrator } from "@/components/game/CobieNarrator";
 import { useCobieNarrator } from "@/hooks/useCobieNarrator";
+import { CobieScreen } from "@/components/game/CobieScreen";
 import { Tutorial } from "@/components/game/Tutorial";
 import { TerminologyOnboarding } from "@/components/game/TerminologyOnboarding";
 import { DailyRewards } from "@/components/game/DailyRewards";
@@ -96,6 +97,9 @@ import {
 
 // Import referral system (Issue #38)
 import { applyPendingReferral, REFERRED_BONUS } from "@/lib/referral";
+
+// Import God Hand cursor system (Hero Pet System)
+import { GodHandCursor } from "@/components/titan/GodHandCursor";
 
 // Import weekly challenges system (Issue #40)
 import {
@@ -196,6 +200,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     selectedCryptoBuilding,
     setSelectedCryptoBuilding,
     setCryptoTaxRevenue,
+    showCobieScreen,
   } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>("none");
   // Crypto overlay type - mapped to OverlayMode for canvas rendering (Issue #58)
@@ -787,6 +792,28 @@ export default function Game({ onExit }: { onExit?: () => void }) {
 
   // Listen for custom achievement-unlocked events (for testing)
   useEffect(() => {
+    const isE2E =
+      typeof window !== "undefined" &&
+      (navigator.webdriver || process.env.NEXT_PUBLIC_E2E === "1");
+
+    const flushQueuedAchievements = () => {
+      if (!isE2E) return;
+      const windowWithQueue = window as Window & {
+        __e2eAchievementQueue?: Achievement[];
+      };
+      const queue = windowWithQueue.__e2eAchievementQueue;
+      if (!queue?.length) return;
+
+      for (const achievement of queue) {
+        if (!shownAchievementsRef.current.has(achievement.id)) {
+          setPendingAchievement(achievement);
+          setShowAchievementToast(true);
+          shownAchievementsRef.current.add(achievement.id);
+        }
+      }
+      windowWithQueue.__e2eAchievementQueue = [];
+    };
+
     const handleAchievementUnlocked = (event: CustomEvent<Achievement>) => {
       const achievement = event.detail;
       if (!shownAchievementsRef.current.has(achievement.id)) {
@@ -797,6 +824,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     };
 
     window.addEventListener('achievement-unlocked', handleAchievementUnlocked as EventListener);
+    flushQueuedAchievements();
     return () => {
       window.removeEventListener('achievement-unlocked', handleAchievementUnlocked as EventListener);
     };
@@ -1586,6 +1614,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             onDismiss={handleNotificationToastDismiss}
             onOpenCenter={handleOpenNotificationCenter}
           />
+          
+          {/* God Hand Cursor - Mobile (Hero Pet System) */}
+          <GodHandCursor />
         </div>
       </TooltipProvider>
     );
@@ -1680,6 +1711,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                 overlayMode={overlayMode}
                 setOverlayMode={setOverlayMode}
               />
+              {showCobieScreen && (
+                <CobieScreen className="absolute right-6 bottom-28 z-40" size={88} />
+              )}
               {/* Crypto Overlay Controls (Issue #58) */}
               <div className="fixed bottom-16 left-[240px] z-50">
                 <CryptoOverlaySelector
@@ -1913,6 +1947,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           isOpen={showCodex}
           onClose={() => setShowCodex(false)}
         />
+
+        {/* God Hand Cursor - Desktop (Hero Pet System) */}
+        <GodHandCursor />
 
         {/* Crypto News Ticker - Bottom */}
         <NewsTicker events={cryptoEvents} className="z-50" />

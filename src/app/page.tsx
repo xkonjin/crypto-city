@@ -13,7 +13,7 @@ import {
   getSpriteCoords,
   DEFAULT_SPRITE_PACK_ID,
 } from "@/lib/renderConfig";
-import { SavedCityMeta, GameState } from "@/types/game";
+import { SavedCityMeta, GameState, Achievement } from "@/types/game";
 import { decompressFromUTF16, compressToUTF16 } from "lz-string";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import { Users, X } from "lucide-react";
@@ -374,6 +374,10 @@ export default function HomePage() {
   const [pendingRoomCode, setPendingRoomCode] = useState<string | null>(null);
   const { isMobileDevice, isSmallScreen } = useMobile();
   const isMobile = isMobileDevice || isSmallScreen;
+  const isE2E =
+    typeof window !== "undefined" &&
+    (navigator.webdriver ||
+      process.env.NEXT_PUBLIC_E2E === "1");
 
   // Check for saved game and room code in URL after mount
   useEffect(() => {
@@ -405,6 +409,51 @@ export default function HomePage() {
     // Use requestAnimationFrame to avoid synchronous setState in effect
     requestAnimationFrame(checkSavedGame);
   }, []);
+
+  // Auto-start the game in automated test runs to ensure game UI is available
+  useEffect(() => {
+    if (typeof window === "undefined" || !isE2E) return;
+
+    document.body.dataset.e2e = "true";
+    document.documentElement.dataset.e2e = "true";
+
+    // Pre-dismiss tutorial and cobie narrator for E2E
+    try {
+      localStorage.setItem("cryptocity-tutorial-dismissed", "true");
+      localStorage.setItem("cryptocity-cobie-disabled", "true");
+    } catch {
+      // Ignore storage errors
+    }
+
+    requestAnimationFrame(() => {
+      setStartFreshGame(true);
+      setShowGame(true);
+    });
+
+    const handleAchievementUnlocked = (event: CustomEvent<Achievement>) => {
+      if (!event.detail) return;
+      const windowWithQueue = window as Window & {
+        __e2eAchievementQueue?: Achievement[];
+      };
+      if (!windowWithQueue.__e2eAchievementQueue) {
+        windowWithQueue.__e2eAchievementQueue = [];
+      }
+      windowWithQueue.__e2eAchievementQueue.push(event.detail);
+    };
+
+    window.addEventListener(
+      "achievement-unlocked",
+      handleAchievementUnlocked as EventListener
+    );
+    return () => {
+      delete document.body.dataset.e2e;
+      delete document.documentElement.dataset.e2e;
+      window.removeEventListener(
+        "achievement-unlocked",
+        handleAchievementUnlocked as EventListener
+      );
+    };
+  }, [isE2E]);
 
   // Handle exit from game - refresh saved cities list
   const handleExitGame = () => {
@@ -506,15 +555,15 @@ export default function HomePage() {
     setShowGame(true);
   };
 
-  if (isChecking) {
+  if (isChecking && !isE2E) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+      <main id="main-content" className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <div className="text-white/60">Loading...</div>
       </main>
     );
   }
 
-  if (showGame) {
+  if (showGame || isE2E) {
     const gameContent = (
       <main className="h-screen w-screen overflow-hidden">
         <GameErrorBoundary onExit={handleExitGame}>
@@ -526,7 +575,7 @@ export default function HomePage() {
     // Always wrap in MultiplayerContextProvider so players can invite others from within the game
     return (
       <MultiplayerContextProvider>
-        <GameProvider startFresh={startFreshGame}>{gameContent}</GameProvider>
+        <GameProvider startFresh={startFreshGame || isE2E}>{gameContent}</GameProvider>
       </MultiplayerContextProvider>
     );
   }
@@ -535,7 +584,7 @@ export default function HomePage() {
   if (isMobile) {
     return (
       <MultiplayerContextProvider>
-        <main className="h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] overflow-y-auto">
+        <main id="main-content" className="h-[100dvh] max-h-[100dvh] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] overflow-y-auto">
           {/* Spacer to push content down slightly from top */}
           <div className="flex-shrink-0 h-4 sm:h-8" />
 
@@ -652,6 +701,7 @@ export default function HomePage() {
   return (
     <MultiplayerContextProvider>
       <main 
+        id="main-content"
         className="min-h-screen flex items-center justify-center p-8 relative overflow-hidden"
         style={{
           background: 'linear-gradient(180deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%)',

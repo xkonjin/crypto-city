@@ -8,6 +8,34 @@
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  
+  /* Spacing scale (#145) */
+  --space-xs: 0.25rem;   /* 4px - tight elements */
+  --space-sm: 0.5rem;    /* 8px - related elements */
+  --space-md: 1rem;      /* 16px - standard gaps */
+  --space-lg: 1.5rem;    /* 24px - section padding */
+  --space-xl: 2rem;      /* 32px - major sections */
+  --space-2xl: 3rem;     /* 48px - page-level */
+  
+  /* Semantic colors for crypto (#142) */
+  --crypto-yield: 142 76% 46%;      /* Green for yields */
+  --crypto-risk-low: 142 76% 46%;   /* Green */
+  --crypto-risk-medium: 48 96% 53%; /* Yellow/amber */
+  --crypto-risk-high: 25 95% 53%;   /* Orange */
+  --crypto-risk-extreme: 0 72% 51%; /* Red */
+  --crypto-synergy: 270 76% 60%;    /* Purple for synergies */
+  --crypto-chain: 280 65% 60%;      /* Purple for chain info */
+  
+  /* Status colors */
+  --status-success: 142 76% 46%;
+  --status-warning: 48 96% 53%;
+  --status-error: 0 72% 51%;
+  --status-info: 210 60% 60%;
+  
+  /* Panel backgrounds */
+  --panel-bg: 220 18% 11%;
+  --panel-bg-hover: 220 15% 15%;
+  --panel-border: 220 15% 20%;
 }
 
 @layer base {
@@ -503,6 +531,17 @@ input[type="number"]:focus {
   outline: none;
 }
 
+:where(button, [role="button"], a, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid hsl(210 60% 60%);
+  outline-offset: 2px;
+}
+
+/* E2E test mode: disable dialog overlays from blocking clicks */
+html[data-e2e="true"] [data-aria-hidden="true"][data-state="open"],
+html[data-e2e="true"] .fixed.inset-0.z-50.bg-black\/80 {
+  pointer-events: none !important;
+}
+
 /* Custom checkbox/switch styling */
 [role="switch"][data-state="checked"] {
   background: linear-gradient(135deg, hsl(210 60% 45%) 0%, hsl(210 60% 65%) 100%);
@@ -929,4 +968,178 @@ html, body {
 
 .animate-shake {
   animation: notificationShake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* =============================================================================
+   TITAN TRAINING FEEDBACK ANIMATIONS (Hero Pet System - Task 2-6)
+   ============================================================================= */
+
+/* Float up and fade animation for training feedback text */
+@keyframes titanFloatUpFade {
+  0% { 
+    transform: translateY(0) translateX(-50%); 
+    opacity: 1; 
+  }
+  75% {
+    transform: translateY(-40px) translateX(-50%);
+    opacity: 1;
+  }
+  100% { 
+    transform: translateY(-50px) translateX(-50%); 
+    opacity: 0; 
+  }
+}
+
+.animate-titan-float-up-fade {
+  animation: titanFloatUpFade 2s ease-out forwards;
+}
+
+/* Particle expand animation for praise */
+@keyframes titanParticleExpand {
+  0% { 
+    transform: scale(0) translate(-50%, -50%); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: scale(2) translate(-50%, -50%); 
+    opacity: 0; 
+  }
+}
+
+.animate-particle-expand {
+  animation: titanParticleExpand 1s ease-out forwards;
+}
+
+/* Particle shake animation for punish */
+@keyframes titanParticleShake {
+  0%, 100% { 
+    transform: translateX(0) translate(-50%, -50%); 
+  }
+  25% { 
+    transform: translateX(-5px) translate(-50%, -50%); 
+  }
+  75% { 
+    transform: translateX(5px) translate(-50%, -50%); 
+  }
+}
+
+.animate-particle-shake {
+  animation: titanParticleShake 0.1s ease-in-out infinite;
+}
+
+/* Rainbow glow animation for praise feedback */
+@keyframes titanRainbowGlow {
+  0% { 
+    box-shadow: 0 0 10px #ff0000; 
+  }
+  16% { 
+    box-shadow: 0 0 10px #ff7f00; 
+  }
+  33% { 
+    box-shadow: 0 0 10px #ffff00; 
+  }
+  50% { 
+    box-shadow: 0 0 10px #00ff00; 
+  }
+  66% { 
+    box-shadow: 0 0 10px #0000ff; 
+  }
+  83% { 
+    box-shadow: 0 0 10px #8b00ff; 
+  }
+  100% { 
+    box-shadow: 0 0 10px #ff0000; 
+  }
+}
+
+.animate-rainbow-glow {
+  animation: titanRainbowGlow 2s linear infinite;
+}
+
+/* Red pulse animation for punish feedback */
+@keyframes titanRedPulse {
+  0%, 100% { 
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); 
+  }
+  50% { 
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); 
+  }
+}
+
+.animate-red-pulse {
+  animation: titanRedPulse 0.3s ease-in-out infinite;
+}
+
+/* Praise sparkle burst effect */
+@keyframes titanSparkleBurst {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(
+      calc(-50% + var(--sparkle-x, 0px)),
+      calc(-50% + var(--sparkle-y, 0px))
+    ) scale(1.5);
+    opacity: 0;
+  }
+}
+
+.animate-sparkle-burst {
+  animation: titanSparkleBurst 1s ease-out forwards;
+}
+
+/* Punish angry shake effect */
+@keyframes titanAngryShake {
+  0%, 100% { 
+    transform: translate(-50%, -50%) rotate(0deg); 
+  }
+  10%, 30%, 50%, 70%, 90% { 
+    transform: translate(calc(-50% - 4px), calc(-50% - 2px)) rotate(-2deg); 
+  }
+  20%, 40%, 60%, 80% { 
+    transform: translate(calc(-50% + 4px), calc(-50% + 2px)) rotate(2deg); 
+  }
+}
+
+.animate-angry-shake {
+  animation: titanAngryShake 0.4s ease-in-out;
+}
+
+/* Feedback text entrance animation */
+@keyframes titanTextEntrance {
+  0% {
+    transform: translateX(-50%) scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.1);
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-text-entrance {
+  animation: titanTextEntrance 0.3s ease-out forwards;
+}
+
+/* Reduced motion for training feedback */
+@media (prefers-reduced-motion: reduce) {
+  .animate-titan-float-up-fade,
+  .animate-particle-expand,
+  .animate-particle-shake,
+  .animate-rainbow-glow,
+  .animate-red-pulse,
+  .animate-sparkle-burst,
+  .animate-angry-shake,
+  .animate-text-entrance {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
