@@ -1,0 +1,33 @@
+{
+  "title": "AI System Bug Fixes",
+  "description": "Fix bugs identified in AI/NPC/Titan system testing",
+  "status": "completed",
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Fix TitanManager.clearStorage localStorage check",
+      "description": "Add typeof localStorage check before accessing it to prevent ReferenceError in Node.js test context",
+      "status": "completed",
+      "file": "src/lib/titan/TitanManager.ts",
+      "issue": "#170",
+      "acceptance": [
+        "clearStorage() method checks typeof localStorage before accessing",
+        "No more ReferenceError in test console output",
+        "All existing tests still pass"
+      ]
+    },
+    {
+      "id": "2", 
+      "title": "Fix startGame helper for E2E auto-start mode",
+      "description": "Update startGame helper to detect when game is already running in E2E mode and skip button clicking",
+      "status": "completed",
+      "file": "tests/helpers/titanTestHelpers.ts",
+      "issue": "#171",
+      "acceptance": [
+        "startGame() checks if canvas is already visible before looking for buttons",
+        "God Hand Integration tests pass without timeout",
+        "28/29 integration tests pass (1 skipped intentionally)"
+      ]
+    }
+  ]
+}
