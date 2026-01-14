@@ -17,3 +17,4 @@ export { NPCInspectorPanel } from "./NPCInspectorPanel";
 export { DisasterPanel } from "./DisasterPanel";
 export { CityAIPanel } from "./CityAIPanel";
 export { EconomyStatsPanel } from "./EconomyStatsPanel";
+export { FindMyCharacterPanel } from "./FindMyCharacterPanel";

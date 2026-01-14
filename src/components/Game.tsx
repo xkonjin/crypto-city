@@ -57,6 +57,7 @@ import {
   NPCInspectorPanel,
   DisasterPanel,
   CityAIPanel,
+  FindMyCharacterPanel,
 } from "@/components/game/panels";
 import { MiniMap } from "@/components/game/MiniMap";
 import { TopBar, StatsPanel } from "@/components/game/TopBar";
@@ -304,6 +305,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
 
   // ==== INGESTION MODAL STATE ====
   const [showIngestionModal, setShowIngestionModal] = useState(false);
+  const [showFindMyCharacter, setShowFindMyCharacter] = useState(false);
   // ==== END INGESTION MODAL STATE ====
 
   // ==== WEEKLY CHALLENGES STATE (Issue #40) ====
@@ -1799,6 +1801,24 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           >
             𝕏
           </button>
+          {/* Find My Character Button */}
+          <button
+            onClick={() => setShowFindMyCharacter(!showFindMyCharacter)}
+            className={`
+              absolute right-[220px] top-1/2 -translate-y-1/2
+              px-2 py-1.5 rounded text-sm font-medium
+              transition-all duration-200
+              ${
+                showFindMyCharacter
+                  ? "bg-cyan-500 text-black"
+                  : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border"
+              }
+            `}
+            title="Find My Character"
+            aria-label="Find ingested characters in city"
+          >
+            🔍
+          </button>
           {/* Screenshot Share Button */}
           <div className="absolute right-48 top-1/2 -translate-y-1/2">
             <ScreenshotShare
@@ -2170,6 +2190,19 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           isOpen={showIngestionModal}
           onClose={() => setShowIngestionModal(false)}
         />
+
+        {/* Find My Character Panel */}
+        {showFindMyCharacter && (
+          <FindMyCharacterPanel
+            onClose={() => setShowFindMyCharacter(false)}
+            onFindCharacter={(x, y, username) => {
+              // Navigate the camera to the character's position
+              setNavigationTarget({ x, y });
+              // Also close the panel and show a toast
+              console.log(`[Game] Navigating to @${username} at (${x}, ${y})`);
+            }}
+          />
+        )}
 
         {/* Crypto News Ticker - Bottom */}
         <NewsTicker events={cryptoEvents} className="z-50" />

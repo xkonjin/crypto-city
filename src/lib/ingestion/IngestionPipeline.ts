@@ -32,6 +32,7 @@ import { MockXProfileAdapter, getDefaultXProfileAdapter } from './XProfileAdapte
 import { extractPersonalityFromProfile } from './PersonalityExtractor';
 import { spawnIngestedNPC, type IngestedProfile } from './spawnIngestedNPC';
 import { AvatarQueue } from './avatarQueue';
+import IngestedNPCStore, { type PersistedIngestedNPC } from './IngestedNPCStore';
 
 // =============================================================================
 // TYPES
@@ -437,6 +438,34 @@ export async function ingestXProfile(
         stage: 'spawning',
         duration: Date.now() - startTime,
       };
+    }
+
+    // ==========
+    // STAGE 7: PERSIST TO INDEXEDDB
+    // ==========
+    updateProgress('completed', 95, 'Saving to database...', onProgress);
+
+    try {
+      const persistedNPC: PersistedIngestedNPC = {
+        profileId: profile.id,
+        username: profile.username.toLowerCase(),
+        displayName: profile.displayName,
+        profileImageUrl: profile.profileImageUrl,
+        avatarSpritesheetBase64: avatarSpritesheet 
+          ? IngestedNPCStore.dataUrlToBase64(avatarSpritesheet)
+          : undefined,
+        archetype: traits.archetype,
+        occupation: traits.occupation,
+        dialogueSeeds: traits.dialogueSeeds,
+        lastPosition: { x: npc.gridX, y: npc.gridY },
+        createdAt: Date.now(),
+        lastActiveAt: Date.now(),
+        x402WalletAddress,
+      };
+      await IngestedNPCStore.save(persistedNPC);
+    } catch (persistError) {
+      console.warn('[Ingestion] Failed to persist NPC:', persistError);
+      // Don't fail the whole ingestion if persistence fails
     }
 
     updateProgress('completed', 100, `@${cleanUsername} is now a citizen!`, onProgress);
