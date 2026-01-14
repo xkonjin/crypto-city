@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { X, ExternalLink, RefreshCw, Clock, CheckCircle, XCircle, Loader2, History } from 'lucide-react';
 import { usePlasmaWallet } from '@/hooks/usePlasmaWallet';
 import {
@@ -53,23 +53,8 @@ function StatusBadge({ status }: { status: TransactionRecord['status'] }) {
 
 export function TransactionHistory({ isOpen, onClose }: TransactionHistoryProps) {
   const { isConnected } = usePlasmaWallet();
-  const [transactions, setTransactions] = useState<TransactionRecord[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const loadTransactions = useCallback(() => {
-    setLoading(true);
-    // Small delay to show loading state
-    setTimeout(() => {
-      setTransactions(getRecentTransactions(20));
-      setLoading(false);
-    }, 300);
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      loadTransactions();
-    }
-  }, [isOpen, loadTransactions]);
+  const [, forceRefresh] = useState(0);
+  const transactions = !isOpen || !isConnected ? [] : getRecentTransactions(20);
 
   if (!isOpen) return null;
 
@@ -91,12 +76,11 @@ export function TransactionHistory({ isOpen, onClose }: TransactionHistoryProps)
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={loadTransactions}
-              disabled={loading}
+              onClick={() => forceRefresh(key => key + 1)}
               className="p-2 rounded-lg hover:bg-white/10 transition-colors"
               title="Refresh"
             >
-              <RefreshCw className={`w-5 h-5 text-white/60 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className="w-5 h-5 text-white/60" />
             </button>
             <button
               onClick={onClose}
@@ -113,10 +97,6 @@ export function TransactionHistory({ isOpen, onClose }: TransactionHistoryProps)
             <div className="flex flex-col items-center justify-center h-full text-white/40 p-8">
               <History className="w-16 h-16 mb-4 opacity-50" />
               <p className="text-center">Connect your wallet to view transaction history</p>
-            </div>
-          ) : loading ? (
-            <div className="flex items-center justify-center h-full">
-              <Loader2 className="w-8 h-8 text-[#00D4FF] animate-spin" />
             </div>
           ) : transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-white/40 p-8">

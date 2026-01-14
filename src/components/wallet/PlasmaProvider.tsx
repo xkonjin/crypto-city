@@ -7,7 +7,7 @@
 
 'use client';
 
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode } from 'react';
 import { PrivyProvider } from '@privy-io/react-auth';
 import { PLASMA_CHAIN_ID, PLASMA_RPC_URL } from '@/lib/plasma/constants';
 
@@ -31,15 +31,9 @@ function LoadingSpinner() {
 
 export function PlasmaProvider({ children }: PlasmaProviderProps) {
   const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   // During SSR or before hydration, render children without Privy
   // This prevents hydration mismatches
-  if (!isMounted) {
+  if (typeof window === 'undefined') {
     return <>{children}</>;
   }
 

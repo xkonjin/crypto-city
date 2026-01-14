@@ -363,6 +363,7 @@ export class CryptoEconomyManager {
       stablecoin: 0,
       infrastructure: 0,
       legends: 0,
+      titan: 0,
     };
     
     for (const building of this.placedBuildings.values()) {

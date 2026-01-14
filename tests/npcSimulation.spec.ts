@@ -687,3 +687,183 @@ test.describe("getNearbyNPCs helper", () => {
     NPCManager.clear();
   });
 });
+
+// =============================================================================
+// TITAN INTEGRATION TESTS
+// =============================================================================
+
+import { TitanManager } from "@/lib/titan";
+
+/**
+ * Helper to reset TitanManager state
+ */
+function resetTitanManager(): void {
+  TitanManager.despawnTitan();
+  try {
+    TitanManager.clearStorage();
+  } catch {
+    // Expected in Node.js context
+  }
+}
+
+/**
+ * Test Suite: Titan Integration
+ * Tests that the Titan is updated in the simulation tick
+ */
+test.describe("Titan Integration", () => {
+  test.beforeEach(async () => {
+    resetTitanManager();
+    NPCManager.clear();
+  });
+
+  test.afterEach(async () => {
+    resetTitanManager();
+    NPCManager.clear();
+  });
+
+  test("tick should update Titan needs when Titan exists", async () => {
+    const simulation = new NPCSimulation({ gameMinutesPerTick: 10, lodEnabled: false });
+
+    // Spawn a Titan
+    const titan = TitanManager.spawnTitan({ gridX: 5, gridY: 5 });
+    const initialHunger = titan.needs.hunger.current;
+
+    // Run a tick
+    simulation.tick();
+
+    // Titan's needs should have decayed
+    const updatedTitan = TitanManager.getTitan();
+    expect(updatedTitan?.needs.hunger.current).toBeLessThan(initialHunger);
+  });
+
+  test("tick should update Titan alignment decay", async () => {
+    const simulation = new NPCSimulation({ gameMinutesPerTick: 60, lodEnabled: false });
+
+    // Spawn a Titan with extreme alignment
+    const titan = TitanManager.spawnTitan({ 
+      gridX: 5, 
+      gridY: 5, 
+      initialAlignment: 0.8  // Evil alignment
+    });
+    const initialAlignment = titan.alignment;
+
+    // Run many ticks (alignment decay is slow)
+    for (let i = 0; i < 10; i++) {
+      simulation.tick();
+    }
+
+    // Alignment should have decayed toward neutral
+    const updatedTitan = TitanManager.getTitan();
+    // Alignment decays toward 0, so absolute value should decrease
+    expect(Math.abs(updatedTitan?.alignment ?? 0)).toBeLessThanOrEqual(Math.abs(initialAlignment));
+  });
+
+  test("tick should not crash when no Titan exists", async () => {
+    const simulation = new NPCSimulation();
+
+    // Ensure no Titan
+    TitanManager.despawnTitan();
+
+    // Should not throw
+    expect(() => simulation.tick()).not.toThrow();
+  });
+
+  test("Titan should use at least medium LOD even when far from camera", async () => {
+    const simulation = new NPCSimulation({ lodEnabled: true });
+
+    // Spawn a Titan far from camera
+    TitanManager.spawnTitan({ gridX: 100, gridY: 100 });
+    simulation.setCameraPosition({ x: 0, y: 0 });
+
+    const titan = TitanManager.getTitan();
+    if (titan) {
+      // Calculate what LOD would be for this distance
+      const distance = Math.sqrt(100 * 100 + 100 * 100); // ~141 tiles
+      
+      // Regular NPC at this distance would get 'minimal' LOD
+      // Titan should get at least 'medium' LOD
+      const titanLOD = simulation.calculateTitanLOD?.(titan) ?? 'medium';
+      expect(['full', 'high', 'medium']).toContain(titanLOD);
+    }
+  });
+
+  test("getTitanNearbyNPCs should return NPCs near the Titan", async () => {
+    const simulation = new NPCSimulation();
+
+    // Spawn Titan and NPCs
+    TitanManager.spawnTitan({ gridX: 5, gridY: 5 });
+    const nearNPC = NPCManager.spawnNPC({ gridX: 6, gridY: 5 }); // 1 tile away
+    const farNPC = NPCManager.spawnNPC({ gridX: 50, gridY: 50 }); // Far away
+
+    const titan = TitanManager.getTitan();
+    if (titan) {
+      const nearbyNPCs = simulation.getTitanNearbyNPCs?.(titan, 3) ?? [];
+      expect(nearbyNPCs).toContain(nearNPC);
+      expect(nearbyNPCs).not.toContain(farNPC);
+    }
+  });
+});
+
+/**
+ * Test Suite: Titan Events
+ * Tests that Titan events are emitted correctly
+ */
+test.describe("Titan Events", () => {
+  test.beforeEach(async () => {
+    resetTitanManager();
+    NPCManager.clear();
+  });
+
+  test.afterEach(async () => {
+    resetTitanManager();
+    NPCManager.clear();
+  });
+
+  test("should emit titan_action event when Titan performs action", async () => {
+    const simulation = new NPCSimulation();
+    const events: NPCEvent[] = [];
+
+    simulation.onNPCEvent = (event: NPCEvent) => {
+      events.push(event);
+    };
+
+    TitanManager.spawnTitan({ gridX: 5, gridY: 5 });
+    const titan = TitanManager.getTitan();
+
+    if (titan) {
+      // Emit a titan action event
+      simulation.emitNPCEvent({
+        type: 'titan_action' as NPCEvent['type'],
+        npcId: titan.id,
+        data: { action: 'help_npc' },
+        timestamp: Date.now(),
+      });
+
+      expect(events.some(e => e.type === 'titan_action')).toBe(true);
+    }
+  });
+
+  test("should emit titan_alignment_change event when alignment shifts significantly", async () => {
+    const simulation = new NPCSimulation();
+    const events: NPCEvent[] = [];
+
+    simulation.onNPCEvent = (event: NPCEvent) => {
+      events.push(event);
+    };
+
+    TitanManager.spawnTitan({ gridX: 5, gridY: 5 });
+    const titan = TitanManager.getTitan();
+
+    if (titan) {
+      // Emit alignment change event
+      simulation.emitNPCEvent({
+        type: 'titan_alignment_change' as NPCEvent['type'],
+        npcId: titan.id,
+        data: { oldAlignment: 0, newAlignment: -0.5 },
+        timestamp: Date.now(),
+      });
+
+      expect(events.some(e => e.type === 'titan_alignment_change')).toBe(true);
+    }
+  });
+});

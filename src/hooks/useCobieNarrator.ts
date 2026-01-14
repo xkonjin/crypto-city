@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { msg } from 'gt-next';
-import { GameState } from '@/types/game';
+import { GameState, Tool } from '@/types/game';
 import { CryptoEvent, CryptoEconomyState, CryptoCategory } from '@/games/isocity/crypto/types';
 import { translateMessage as translateTerminology, getMode } from '@/lib/terminology';
 
@@ -195,6 +195,118 @@ const CLUSTER_REACTIONS = {
     msg("Chain synergy activated. Smart play."),
   ],
 };
+
+// =============================================================================
+// HOVER REACTIONS (Issue #179 - Enhanced Contextual Dialogue)
+// =============================================================================
+
+const HOVER_REACTIONS: Record<string, string[]> = {
+  high_risk_hover: [
+    msg("That one's spicy. The probability of a rug is... non-trivial."),
+    msg("Looking at the danger zone, I see."),
+    msg("High yield, high drama. Classic crypto equation."),
+  ],
+  legend_hover: [
+    msg("Ah, a relic of crypto history. Stories to tell."),
+    msg("The legends section. Where dreams went to die. Or thrive."),
+  ],
+  defi_hover: [
+    msg("DeFi. Where 'yield' is just a fancy word for 'hope'."),
+    msg("Composable money legos. What could go wrong?"),
+  ],
+  meme_hover: [
+    msg("Memecoins. The purest form of crypto gambling."),
+    msg("Number go up because funny picture. Don't overthink it."),
+  ],
+  exchange_hover: [
+    msg("Exchanges. The necessary evil of crypto."),
+    msg("Centralized, but that's where the liquidity is."),
+  ],
+  treasury_hover: [
+    msg("Counting your coins? Smart. Or paranoid. Same thing in crypto."),
+  ],
+  chain_hover: [
+    msg("Layer 1s. The foundation of everything. Choose wisely."),
+    msg("Chain infrastructure. Boring but essential."),
+  ],
+};
+
+// =============================================================================
+// TOOL REACTIONS (Issue #179 - Enhanced Contextual Dialogue)
+// =============================================================================
+
+const TOOL_REACTIONS: Partial<Record<Tool, string[]>> = {
+  bulldoze: [
+    msg("Destruction mode activated. Cathartic."),
+    msg("Sometimes you gotta tear it down to build it up."),
+    msg("Making room for something better. Or just venting."),
+  ],
+  zone_residential: [
+    msg("Housing for the degens. Noble work."),
+  ],
+  zone_commercial: [
+    msg("Retail space. Someone's gotta buy the bags."),
+  ],
+  zone_industrial: [
+    msg("Factories. The backbone of any economy, crypto or not."),
+  ],
+  road: [
+    msg("Roads. Connecting liquidity, one tile at a time."),
+  ],
+  select: [
+    msg("Taking a look around? Good instinct."),
+  ],
+};
+
+// =============================================================================
+// IDLE COMMENTARY (Issue #179 - Enhanced Contextual Dialogue)
+// =============================================================================
+
+const IDLE_COMMENTARY: Record<number, string[]> = {
+  30: [
+    msg("Taking a break? Markets don't sleep, but you should."),
+    msg("*taps glass* You still there?"),
+  ],
+  60: [
+    msg("I'll just be here. Watching. Waiting."),
+    msg("The metagame is patience, I guess."),
+  ],
+  90: [
+    msg("*looks around* Nice weather we're having. In the metaverse."),
+  ],
+  120: [
+    msg("*yawns* Wake me up when something interesting happens."),
+    msg("If you're AFK, I get it. Touch grass is valid."),
+  ],
+};
+
+// =============================================================================
+// PATTERN OBSERVATIONS (Issue #179 - Enhanced Contextual Dialogue)
+// =============================================================================
+
+const PATTERN_OBSERVATIONS: Record<string, string[]> = {
+  building_same_type: [
+    msg("Really committing to that strategy, huh?"),
+    msg("Concentration risk, but also... conviction. I respect it."),
+  ],
+  quick_bulldoze: [
+    msg("Buyer's remorse already? That was fast."),
+    msg("Second thoughts. Classic."),
+  ],
+  hovering_indecisively: [
+    msg("Analysis paralysis? Just pick one."),
+    msg("The longer you stare, the less certain you'll be."),
+  ],
+};
+
+// =============================================================================
+// COOLDOWN CONFIGURATION (Issue #179)
+// =============================================================================
+
+const HOVER_REACTION_COOLDOWN_MS = 30000;  // 30 seconds per category
+const TOOL_REACTION_COOLDOWN_MS = 0;        // Once per tool selection (no cooldown between different tools)
+const IDLE_REACTION_THRESHOLDS = [30, 60, 90, 120]; // Seconds
+const PATTERN_REACTION_COOLDOWN_MS = 60000; // 60 seconds
 
 // =============================================================================
 // ORIGINAL COBIE TIPS
@@ -501,6 +613,29 @@ function getRandomMessage(messages: string[]): string {
 const STORAGE_KEY = 'cryptocity-cobie-disabled';
 const SHOWN_TIPS_KEY = 'cryptocity-cobie-shown';
 const COBIE_TRACKING_KEY = 'cryptocity-cobie-tracking';
+
+function loadCobieTrackingState(): CobieTrackingState {
+  if (typeof window === 'undefined') return createInitialTrackingState();
+  try {
+    const tracking = localStorage.getItem(COBIE_TRACKING_KEY);
+    if (tracking) {
+      const parsed = JSON.parse(tracking);
+      // Ensure triggeredIdleThresholds is a Set (JSON.parse can't restore Sets)
+      const state = { ...createInitialTrackingState(), ...parsed };
+      if (!(state.triggeredIdleThresholds instanceof Set)) {
+        state.triggeredIdleThresholds = new Set(
+          Array.isArray(parsed.triggeredIdleThresholds) 
+            ? parsed.triggeredIdleThresholds 
+            : []
+        );
+      }
+      return state;
+    }
+  } catch (e) {
+    console.error('Failed to load Cobie tracking:', e);
+  }
+  return createInitialTrackingState();
+}
 const MIN_MESSAGE_INTERVAL_MS = 15000; // 15 seconds between messages (reduced from 20)
 const TIP_CHECK_INTERVAL_MS = 5000;
 const INITIAL_DELAY_MS = 2000;
@@ -522,6 +657,15 @@ interface CobieTrackingState {
   buildingCounts: Record<string, number>;
   hasReachedMillion: boolean;
   lastEventTime: number;
+  // Issue #179: Enhanced dialogue tracking
+  hoverCooldowns: Record<string, number>;        // category -> last trigger timestamp
+  lastToolReaction: Tool | null;                  // Last tool we reacted to
+  triggeredIdleThresholds: Set<number>;          // Which thresholds have been triggered this idle session
+  patternCooldowns: Record<string, number>;      // pattern -> last trigger timestamp
+  lastActionTime: number;                         // For idle tracking
+  lastBuildingPlacedCategory: string | null;     // For same-type pattern detection
+  lastBuildingPlacedTime: number;                // For quick-bulldoze detection
+  consecutiveSameTypeBuildings: number;          // Count of same type in a row
 }
 
 function createInitialTrackingState(): CobieTrackingState {
@@ -537,6 +681,15 @@ function createInitialTrackingState(): CobieTrackingState {
     buildingCounts: {},
     hasReachedMillion: false,
     lastEventTime: 0,
+    // Issue #179 additions
+    hoverCooldowns: {},
+    lastToolReaction: null,
+    triggeredIdleThresholds: new Set(),
+    patternCooldowns: {},
+    lastActionTime: Date.now(),
+    lastBuildingPlacedCategory: null,
+    lastBuildingPlacedTime: 0,
+    consecutiveSameTypeBuildings: 0,
   };
 }
 
@@ -559,54 +712,52 @@ export interface UseCobieNarratorReturn {
   triggerEventReaction: (event: CryptoEvent) => void;
   onEconomyUpdate: (economyState: CryptoEconomyState) => void;
   onBuildingPlaced: (buildingId: string, category: CryptoCategory, tier: string) => void;
+  // Issue #179: Enhanced contextual dialogue triggers
+  triggerHoverReaction: (category: string, riskLevel?: string) => void;
+  triggerToolReaction: (tool: Tool) => void;
+  triggerIdleReaction: (idleSeconds: number) => void;
+  triggerPatternReaction: (pattern: string) => void;
 }
 
 export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
-  const [cobieEnabled, setCobieEnabledState] = useState(true);
+  const [cobieEnabled, setCobieEnabledState] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      return localStorage.getItem(STORAGE_KEY) !== 'true';
+    } catch (e) {
+      console.error('Failed to load Cobie preference:', e);
+      return true;
+    }
+  });
   const [currentMessage, setCurrentMessage] = useState<CobieMessage | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [shownTips, setShownTips] = useState<Set<string>>(new Set());
+  const [shownTips, setShownTips] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const shown = localStorage.getItem(SHOWN_TIPS_KEY);
+      if (shown) {
+        const parsed = JSON.parse(shown);
+        if (Array.isArray(parsed)) {
+          return new Set(parsed);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load Cobie tips:', e);
+    }
+    return new Set();
+  });
   const lastMessageTimeRef = useRef<number>(0);
   const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const commentaryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const hasLoadedRef = useRef(false);
+  const hasLoadedRef = useRef(typeof window !== 'undefined');
   const stateRef = useRef(state);
   const messageQueueRef = useRef<CobieMessage[]>([]);
-  const trackingRef = useRef<CobieTrackingState>(createInitialTrackingState());
+  const trackingRef = useRef<CobieTrackingState>(loadCobieTrackingState());
   const shownWarningsRef = useRef<Set<string>>(new Set());
   
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
-
-  // Load preferences and tracking state
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    try {
-      const disabled = localStorage.getItem(STORAGE_KEY);
-      if (disabled === 'true') {
-        setCobieEnabledState(false);
-      }
-      
-      const shown = localStorage.getItem(SHOWN_TIPS_KEY);
-      if (shown) {
-        const parsed = JSON.parse(shown);
-        if (Array.isArray(parsed)) {
-          setShownTips(new Set(parsed));
-        }
-      }
-      
-      const tracking = localStorage.getItem(COBIE_TRACKING_KEY);
-      if (tracking) {
-        trackingRef.current = { ...createInitialTrackingState(), ...JSON.parse(tracking) };
-      }
-    } catch (e) {
-      console.error('Failed to load Cobie preferences:', e);
-    }
-    
-    hasLoadedRef.current = true;
-  }, []);
 
   // Save shown tips
   useEffect(() => {
@@ -714,6 +865,20 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
       const nextMessage = messageQueueRef.current.shift();
       if (nextMessage) {
         showMessage(nextMessage, true);
+      }
+    }
+
+    const happiness = currentState.stats.happiness;
+    if (happiness < 30) {
+      const warningKey = 'low_happiness_' + Math.floor(Date.now() / 300000);
+      if (!shownWarningsRef.current.has(warningKey)) {
+        shownWarningsRef.current.add(warningKey);
+        showMessage({
+          id: `low_happiness_${Date.now()}`,
+          type: 'warning',
+          message: getRandomMessage(PROACTIVE_WARNINGS.lowHappiness),
+          priority: 2,
+        });
       }
     }
   }, [cobieEnabled, isVisible, showMessage]);
@@ -985,25 +1150,6 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
     saveTrackingState();
   }, [cobieEnabled, showMessage, triggerReaction, saveTrackingState]);
 
-  // Check happiness warning
-  useEffect(() => {
-    if (!cobieEnabled || !hasLoadedRef.current) return;
-    
-    const happiness = state.stats.happiness;
-    if (happiness < 30) {
-      const warningKey = 'low_happiness_' + Math.floor(Date.now() / 300000);
-      if (!shownWarningsRef.current.has(warningKey)) {
-        shownWarningsRef.current.add(warningKey);
-        showMessage({
-          id: `low_happiness_${Date.now()}`,
-          type: 'warning',
-          message: getRandomMessage(PROACTIVE_WARNINGS.lowHappiness),
-          priority: 2,
-        });
-      }
-    }
-  }, [cobieEnabled, state.stats.happiness, showMessage]);
-
   // Set up periodic checks
   useEffect(() => {
     if (checkIntervalRef.current) {
@@ -1065,6 +1211,160 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
     setCurrentMessage(null);
   }, [setCobieEnabled]);
 
+  // =========================================================================
+  // Issue #179: Enhanced Contextual Dialogue Triggers
+  // =========================================================================
+
+  // Trigger hover reaction based on building category or risk level
+  const triggerHoverReaction = useCallback((category: string, riskLevel?: string) => {
+    if (!cobieEnabled) return;
+    
+    const tracking = trackingRef.current;
+    const now = Date.now();
+    
+    // Determine the reaction key
+    let reactionKey = `${category}_hover`;
+    if (riskLevel === 'high' || riskLevel === 'degen') {
+      reactionKey = 'high_risk_hover';
+    }
+    
+    // Check cooldown for this category
+    const lastTrigger = tracking.hoverCooldowns[reactionKey] || 0;
+    if (now - lastTrigger < HOVER_REACTION_COOLDOWN_MS) {
+      return; // Still on cooldown
+    }
+    
+    // Find matching reactions
+    const reactions = HOVER_REACTIONS[reactionKey];
+    if (!reactions || reactions.length === 0) {
+      return; // No reactions for this category
+    }
+    
+    // Update cooldown and show message
+    tracking.hoverCooldowns[reactionKey] = now;
+    tracking.lastActionTime = now;
+    
+    showMessage({
+      id: `hover_${reactionKey}_${now}`,
+      type: 'reaction',
+      message: getRandomMessage(reactions),
+      priority: 5, // Lower priority than events/milestones
+    });
+    
+    saveTrackingState();
+  }, [cobieEnabled, showMessage, saveTrackingState]);
+
+  // Trigger tool selection reaction
+  const triggerToolReaction = useCallback((tool: Tool) => {
+    if (!cobieEnabled) return;
+    
+    const tracking = trackingRef.current;
+    const now = Date.now();
+    
+    // Only react if this is a different tool than last time
+    if (tracking.lastToolReaction === tool) {
+      return; // Don't repeat for same tool
+    }
+    
+    // Find reactions for this tool
+    const reactions = TOOL_REACTIONS[tool];
+    if (!reactions || reactions.length === 0) {
+      tracking.lastToolReaction = tool;
+      return; // No reactions for this tool
+    }
+    
+    // Update tracking and show message
+    tracking.lastToolReaction = tool;
+    tracking.lastActionTime = now;
+    
+    // Reset idle thresholds on tool change
+    tracking.triggeredIdleThresholds = new Set();
+    
+    showMessage({
+      id: `tool_${tool}_${now}`,
+      type: 'reaction',
+      message: getRandomMessage(reactions),
+      priority: 6, // Lower priority
+    });
+    
+    saveTrackingState();
+  }, [cobieEnabled, showMessage, saveTrackingState]);
+
+  // Trigger idle commentary based on elapsed idle time
+  const triggerIdleReaction = useCallback((idleSeconds: number) => {
+    if (!cobieEnabled) return;
+    
+    const tracking = trackingRef.current;
+    const now = Date.now();
+    
+    // Find the appropriate threshold
+    let matchingThreshold: number | null = null;
+    for (const threshold of IDLE_REACTION_THRESHOLDS) {
+      if (idleSeconds >= threshold && !tracking.triggeredIdleThresholds.has(threshold)) {
+        matchingThreshold = threshold;
+        break; // Get the first untriggered threshold
+      }
+    }
+    
+    if (matchingThreshold === null) {
+      return; // No matching threshold or already triggered
+    }
+    
+    // Find reactions for this threshold
+    const reactions = IDLE_COMMENTARY[matchingThreshold];
+    if (!reactions || reactions.length === 0) {
+      return; // No reactions for this threshold
+    }
+    
+    // Mark threshold as triggered and show message
+    tracking.triggeredIdleThresholds.add(matchingThreshold);
+    
+    showMessage({
+      id: `idle_${matchingThreshold}_${now}`,
+      type: 'commentary',
+      message: getRandomMessage(reactions),
+      priority: 8, // Low priority, don't interrupt important messages
+    });
+    
+    saveTrackingState();
+  }, [cobieEnabled, showMessage, saveTrackingState]);
+
+  // Trigger pattern-based observations
+  const triggerPatternReaction = useCallback((pattern: string) => {
+    if (!cobieEnabled) return;
+    
+    const tracking = trackingRef.current;
+    const now = Date.now();
+    
+    // Check cooldown for this pattern
+    const lastTrigger = tracking.patternCooldowns[pattern] || 0;
+    if (now - lastTrigger < PATTERN_REACTION_COOLDOWN_MS) {
+      return; // Still on cooldown
+    }
+    
+    // Find reactions for this pattern
+    const reactions = PATTERN_OBSERVATIONS[pattern];
+    if (!reactions || reactions.length === 0) {
+      return; // No reactions for this pattern
+    }
+    
+    // Update cooldown and show message
+    tracking.patternCooldowns[pattern] = now;
+    tracking.lastActionTime = now;
+    
+    // Reset idle thresholds on meaningful activity
+    tracking.triggeredIdleThresholds = new Set();
+    
+    showMessage({
+      id: `pattern_${pattern}_${now}`,
+      type: 'reaction',
+      message: getRandomMessage(reactions),
+      priority: 4, // Medium priority
+    });
+    
+    saveTrackingState();
+  }, [cobieEnabled, showMessage, saveTrackingState]);
+
   return {
     currentMessage,
     isVisible,
@@ -1079,5 +1379,10 @@ export function useCobieNarrator(state: GameState): UseCobieNarratorReturn {
     triggerEventReaction,
     onEconomyUpdate,
     onBuildingPlaced,
+    // Issue #179: Enhanced contextual dialogue triggers
+    triggerHoverReaction,
+    triggerToolReaction,
+    triggerIdleReaction,
+    triggerPatternReaction,
   };
 }

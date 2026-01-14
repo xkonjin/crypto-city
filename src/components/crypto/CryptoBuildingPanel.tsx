@@ -2,26 +2,40 @@
  * Crypto Building Panel
  * 
  * UI panel for selecting and placing crypto buildings.
- * Shows building categories with icons and info.
+ * Features progressive disclosure, search, and filters.
+ * 
+ * Issues: #203 (Progressive Disclosure), #204 (Filter Chips),
+ *         #205 (Search), #206 (Risk Badges)
  * 
  * Adapted for IsoCity engine.
  */
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   CryptoCategory, 
-  CryptoBuildingDefinition 
+  CryptoTier,
+  CryptoBuildingDefinition,
+  CryptoChain,
 } from '../../games/isocity/crypto/types';
 import { 
   getCryptoBuildingsByCategory,
+  getAllCryptoBuildings,
   CRYPTO_BUILDING_COUNT,
 } from '../../games/isocity/crypto/buildings';
 import { CRYPTO_CATEGORIES } from '../../games/isocity/crypto/buildingRegistry';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import TimeLimitedBanner from '@/components/game/TimeLimitedBanner';
 import type { TimeLimitedOffer } from '@/lib/timeLimitedBuildings';
+import { preloadCryptoBuildingSpritesByCategory } from '@/components/game/placeholders';
+
+// New components for UX improvements
+import RiskBadge from './RiskBadge';
+import FilterChips, { FilterState, RiskFilter } from './FilterChips';
+import BuildingSearch, { HighlightedText, NoResults } from './BuildingSearch';
+import CategoryCard from './CategoryCard';
+import TierGroup from './TierGroup';
 
 // =============================================================================
 // TYPES
@@ -31,15 +45,23 @@ interface CryptoBuildingPanelProps {
   selectedBuilding: string | null;
   onSelectBuilding: (buildingId: string, offer?: TimeLimitedOffer) => void;
   treasury: number;
-  onOpenPortfolio?: () => void; // Issue #62: Portfolio analytics button
+  onOpenPortfolio?: () => void;
   className?: string;
 }
+
+interface PanelState {
+  expandedCategory: CryptoCategory | null;
+  expandedTier: CryptoTier | null;
+  showAllBuildings: boolean;
+}
+
+type ViewLevel = 'categories' | 'tiers' | 'buildings';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
-const CATEGORY_INFO = {
+const CATEGORY_INFO: Record<string, { name: string; icon: string; color: string }> = {
   defi: { name: 'DeFi', icon: '🏦', color: 'from-blue-500 to-blue-600' },
   exchange: { name: 'Exchange', icon: '📈', color: 'from-green-500 to-green-600' },
   chain: { name: 'Chain', icon: '⛓️', color: 'from-purple-500 to-purple-600' },
@@ -51,8 +73,95 @@ const CATEGORY_INFO = {
   legends: { name: 'Legends', icon: '🗿', color: 'from-amber-500 to-orange-600' },
 };
 
+const TIER_ORDER: CryptoTier[] = ['institution', 'whale', 'degen', 'retail'];
+
+const STORAGE_KEY = 'cryptoBuildingPanelState';
+
 // =============================================================================
-// BUILDING CARD COMPONENT
+// HELPERS
+// =============================================================================
+
+function getRiskCategory(risk: number): RiskFilter {
+  if (!risk || risk === 0) return 'low';
+  if (risk < 0.01) return 'low';
+  if (risk < 0.05) return 'medium';
+  if (risk < 0.1) return 'high';
+  return 'degen';
+}
+
+function loadPanelState(): PanelState {
+  if (typeof window === 'undefined') {
+    return { expandedCategory: null, expandedTier: null, showAllBuildings: false };
+  }
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return { expandedCategory: null, expandedTier: null, showAllBuildings: false };
+}
+
+function savePanelState(state: PanelState) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function matchesSearch(building: CryptoBuildingDefinition, searchTerm: string): boolean {
+  if (!searchTerm) return true;
+  const term = searchTerm.toLowerCase();
+  const name = building.name.toLowerCase();
+  const protocol = building.crypto?.protocol?.toLowerCase() || '';
+  const chain = building.crypto?.chain?.toLowerCase() || '';
+  const description = building.crypto?.description?.toLowerCase() || '';
+  
+  return name.includes(term) || 
+         protocol.includes(term) || 
+         chain.includes(term) || 
+         description.includes(term);
+}
+
+function matchesFilters(
+  building: CryptoBuildingDefinition, 
+  filters: FilterState
+): boolean {
+  const { chains, tiers, risks } = filters;
+  
+  // Chain filter
+  if (chains.length > 0) {
+    const buildingChain = building.crypto?.chain;
+    if (!buildingChain || !chains.includes(buildingChain)) {
+      return false;
+    }
+  }
+  
+  // Tier filter
+  if (tiers.length > 0) {
+    const buildingTier = building.crypto?.tier;
+    if (!buildingTier || !tiers.includes(buildingTier)) {
+      return false;
+    }
+  }
+  
+  // Risk filter
+  if (risks.length > 0) {
+    const riskCategory = getRiskCategory(building.crypto?.effects?.rugRisk || 0);
+    if (!risks.includes(riskCategory)) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+// =============================================================================
+// BUILDING CARD COMPONENT (Enhanced with RiskBadge)
 // =============================================================================
 
 interface BuildingCardProps {
@@ -60,30 +169,32 @@ interface BuildingCardProps {
   isSelected: boolean;
   canAfford: boolean;
   onClick: () => void;
+  searchTerm?: string;
 }
 
-function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCardProps) {
+function BuildingCard({ building, isSelected, canAfford, onClick, searchTerm = '' }: BuildingCardProps) {
   const crypto = building.crypto;
   const effects = crypto?.effects;
+  const rugRisk = effects?.rugRisk ?? 0;
   
   // Format risk level with detailed explanations
-  const getRiskLevel = (rugRisk: number | undefined) => {
-    if (!rugRisk || rugRisk === 0) return { 
+  const getRiskLevel = (risk: number | undefined) => {
+    if (!risk || risk === 0) return { 
       label: 'Very Low', 
       color: 'text-green-400',
       explanation: 'Battle-tested protocol with near-zero historical exploits.'
     };
-    if (rugRisk < 0.01) return { 
+    if (risk < 0.01) return { 
       label: 'Low', 
       color: 'text-green-400',
       explanation: 'Well-audited with strong track record. Safe choice.'
     };
-    if (rugRisk < 0.05) return { 
+    if (risk < 0.05) return { 
       label: 'Medium', 
       color: 'text-yellow-400',
       explanation: 'Newer protocol or complex mechanics. Monitor closely.'
     };
-    if (rugRisk < 0.1) return { 
+    if (risk < 0.1) return { 
       label: 'High', 
       color: 'text-orange-400',
       explanation: 'Experimental or unaudited. High yield = high risk.'
@@ -211,15 +322,16 @@ function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCard
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
         <button
+          data-testid="building-card"
           onClick={onClick}
           disabled={!canAfford}
           className={`
-            relative w-full p-3 rounded-lg text-left transition-all
+            relative w-full p-3 rounded text-left transition-all
             ${isSelected 
-              ? 'bg-gradient-to-br from-amber-500/30 to-orange-500/30 border-2 border-amber-400' 
+              ? 'bg-primary/20 border border-primary ring-1 ring-primary/50' 
               : canAfford 
-                ? 'bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500'
-                : 'bg-gray-900/50 border border-gray-700/30 opacity-50 cursor-not-allowed'
+                ? 'bg-muted/50 hover:bg-muted border border-border/50 hover:border-border'
+                : 'bg-muted/20 border border-border/30 opacity-50 cursor-not-allowed'
             }
           `}
         >
@@ -227,11 +339,22 @@ function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCard
           <div className="flex items-center gap-2 mb-2">
             <span className="text-2xl">{building.icon}</span>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm truncate">{building.name}</div>
+              <div className="font-semibold text-sm truncate">
+                {searchTerm ? (
+                  <HighlightedText text={building.name} highlight={searchTerm} />
+                ) : (
+                  building.name
+                )}
+              </div>
               <div className="text-xs text-gray-400">
                 {building.footprint.width}x{building.footprint.height}
               </div>
             </div>
+          </div>
+          
+          {/* Risk Badge - prominently displayed (#206) */}
+          <div className="mb-2">
+            <RiskBadge risk={rugRisk} compact />
           </div>
           
           {/* Stats */}
@@ -239,11 +362,6 @@ function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCard
             <span className={`font-mono ${canAfford ? 'text-amber-400' : 'text-red-400'}`}>
               ${building.cost.toLocaleString()}
             </span>
-            {effects?.rugRisk !== undefined && (
-              <span className={`${risk.color} text-[10px]`}>
-                {risk.label}
-              </span>
-            )}
           </div>
           
           {/* Yield info */}
@@ -255,7 +373,7 @@ function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCard
           
           {/* Selected indicator */}
           {isSelected && (
-            <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary animate-pulse" />
           )}
         </button>
       </TooltipTrigger>
@@ -263,6 +381,52 @@ function BuildingCard({ building, isSelected, canAfford, onClick }: BuildingCard
         {tooltipContent}
       </TooltipContent>
     </Tooltip>
+  );
+}
+
+// =============================================================================
+// BREADCRUMB COMPONENT
+// =============================================================================
+
+interface BreadcrumbProps {
+  level: ViewLevel;
+  categoryName: string | null;
+  tierName: string | null;
+  onClickAll: () => void;
+  onClickCategory: () => void;
+}
+
+function Breadcrumb({ level, categoryName, tierName, onClickAll, onClickCategory }: BreadcrumbProps) {
+  return (
+    <nav data-testid="breadcrumb" className="flex items-center gap-1 text-sm text-gray-400 px-3 py-2">
+      <button 
+        data-testid="breadcrumb-all"
+        onClick={onClickAll}
+        className={`hover:text-white transition-colors ${level === 'categories' ? 'text-white font-medium' : ''}`}
+      >
+        All
+      </button>
+      
+      {categoryName && (
+        <>
+          <span className="text-gray-600">›</span>
+          <button 
+            data-testid="breadcrumb-category"
+            onClick={onClickCategory}
+            className={`hover:text-white transition-colors ${level === 'tiers' ? 'text-white font-medium' : ''}`}
+          >
+            {categoryName}
+          </button>
+        </>
+      )}
+      
+      {tierName && (
+        <>
+          <span className="text-gray-600">›</span>
+          <span className="text-white font-medium">{tierName}</span>
+        </>
+      )}
+    </nav>
   );
 }
 
@@ -277,30 +441,189 @@ export default function CryptoBuildingPanel({
   onOpenPortfolio,
   className = '',
 }: CryptoBuildingPanelProps) {
-  const [activeCategory, setActiveCategory] = useState<CryptoCategory>('defi');
+  // State
+  const [panelState, setPanelState] = useState<PanelState>(loadPanelState);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState<FilterState>({
+    chains: [],
+    tiers: [],
+    risks: [],
+  });
   
-  const buildings = getCryptoBuildingsByCategory(activeCategory);
+  // Derived state
+  const { expandedCategory, expandedTier, showAllBuildings } = panelState;
+  
+  // Calculate current view level
+  const viewLevel: ViewLevel = useMemo(() => {
+    if (showAllBuildings || searchTerm) return 'buildings';
+    if (expandedTier) return 'buildings';
+    if (expandedCategory) return 'tiers';
+    return 'categories';
+  }, [showAllBuildings, searchTerm, expandedCategory, expandedTier]);
+  
+  // Get all buildings for filtering and counts
+  const allBuildings = useMemo(() => getAllCryptoBuildings(), []);
+  
+  // Calculate building counts for filter chips
+  const buildingCounts = useMemo(() => {
+    const chains: Record<string, number> = {};
+    const tiers: Record<string, number> = {};
+    const risks: Record<string, number> = {};
+    
+    for (const building of allBuildings) {
+      // Chain counts
+      const chain = building.crypto?.chain;
+      if (chain) {
+        chains[chain] = (chains[chain] || 0) + 1;
+      }
+      
+      // Tier counts
+      const tier = building.crypto?.tier;
+      if (tier) {
+        tiers[tier] = (tiers[tier] || 0) + 1;
+      }
+      
+      // Risk counts
+      const riskCategory = getRiskCategory(building.crypto?.effects?.rugRisk || 0);
+      risks[riskCategory] = (risks[riskCategory] || 0) + 1;
+    }
+    
+    return { chains, tiers, risks };
+  }, [allBuildings]);
+  
+  // Filter and search buildings
+  const filteredBuildings = useMemo(() => {
+    let buildings = allBuildings;
+    
+    // Apply category filter if in hierarchy mode
+    if (!showAllBuildings && !searchTerm && expandedCategory) {
+      buildings = getCryptoBuildingsByCategory(expandedCategory);
+      
+      // Further filter by tier if expanded
+      if (expandedTier) {
+        buildings = buildings.filter(b => b.crypto?.tier === expandedTier);
+      }
+    }
+    
+    // Apply search
+    if (searchTerm) {
+      buildings = buildings.filter(b => matchesSearch(b, searchTerm));
+    }
+    
+    // Apply filters
+    buildings = buildings.filter(b => matchesFilters(b, filters));
+    
+    return buildings;
+  }, [allBuildings, showAllBuildings, searchTerm, expandedCategory, expandedTier, filters]);
+  
+  // Group buildings by tier for Level 2 view
+  const buildingsByTier = useMemo(() => {
+    if (!expandedCategory || showAllBuildings || searchTerm) return null;
+    
+    const categoryBuildings = getCryptoBuildingsByCategory(expandedCategory);
+    const grouped: Record<CryptoTier, CryptoBuildingDefinition[]> = {
+      institution: [],
+      whale: [],
+      degen: [],
+      retail: [],
+    };
+    
+    for (const building of categoryBuildings) {
+      const tier = building.crypto?.tier;
+      if (tier && grouped[tier]) {
+        grouped[tier].push(building);
+      }
+    }
+    
+    return grouped;
+  }, [expandedCategory, showAllBuildings, searchTerm]);
+  
+  // Persist state changes
+  useEffect(() => {
+    savePanelState(panelState);
+  }, [panelState]);
+  
+  // Preload sprites for current category
+  useEffect(() => {
+    if (expandedCategory) {
+      preloadCryptoBuildingSpritesByCategory(expandedCategory);
+    }
+  }, [expandedCategory]);
+  
+  // Handlers
+  const handleCategoryClick = useCallback((category: CryptoCategory) => {
+    setPanelState(prev => ({
+      ...prev,
+      expandedCategory: prev.expandedCategory === category ? null : category,
+      expandedTier: null,
+    }));
+  }, []);
+  
+  const handleTierClick = useCallback((tier: CryptoTier) => {
+    setPanelState(prev => ({
+      ...prev,
+      expandedTier: prev.expandedTier === tier ? null : tier,
+    }));
+  }, []);
+  
+  const handleShowAllToggle = useCallback(() => {
+    setPanelState(prev => ({
+      ...prev,
+      showAllBuildings: !prev.showAllBuildings,
+      expandedCategory: null,
+      expandedTier: null,
+    }));
+  }, []);
+  
+  const handleBreadcrumbAll = useCallback(() => {
+    setPanelState(prev => ({
+      ...prev,
+      expandedCategory: null,
+      expandedTier: null,
+    }));
+    setSearchTerm('');
+  }, []);
+  
+  const handleBreadcrumbCategory = useCallback(() => {
+    setPanelState(prev => ({
+      ...prev,
+      expandedTier: null,
+    }));
+  }, []);
+  
+  const handleSearchSuggestion = useCallback((suggestion: string) => {
+    setSearchTerm(suggestion);
+  }, []);
+  
+  // Get category info for breadcrumb
+  const categoryName = expandedCategory ? CATEGORY_INFO[expandedCategory]?.name : null;
+  const tierName = expandedTier ? expandedTier.charAt(0).toUpperCase() + expandedTier.slice(1) : null;
 
   return (
-    <div className={`bg-gray-900/95 backdrop-blur-md border border-gray-700/50 rounded-lg overflow-hidden ${className}`}>
-      {/* Header */}
-      <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-3 border-b border-gray-700/50">
+    <div 
+      data-testid="crypto-building-panel"
+      className={`flex flex-col overflow-hidden ${className}`}
+    >
+      {/* Stats Bar - mini treasury display */}
+      <div className="px-4 py-2 bg-muted/30 border-b border-sidebar-border/50">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-lg">Crypto Buildings</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 text-sm font-mono">${treasury.toLocaleString()}</span>
+            <span className="text-xs text-muted-foreground">Treasury</span>
+          </div>
           <div className="flex items-center gap-2">
             {/* Portfolio Analytics Button (Issue #62) */}
             {onOpenPortfolio && (
               <button
                 onClick={onOpenPortfolio}
-                className="px-2 py-1 text-xs bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 rounded transition-colors flex items-center gap-1"
+                className="px-2 py-1 text-xs bg-primary/20 hover:bg-primary/30 text-primary rounded transition-colors flex items-center gap-1"
                 title="Portfolio Analytics"
                 data-testid="portfolio-analytics"
               >
                 <span>📊</span>
-                <span>Portfolio</span>
               </button>
             )}
-            <span className="text-xs text-gray-400">{CRYPTO_BUILDING_COUNT} total</span>
+            <span className="text-xs text-muted-foreground">{CRYPTO_BUILDING_COUNT} buildings</span>
           </div>
         </div>
       </div>
@@ -312,51 +635,142 @@ export default function CryptoBuildingPanel({
         className="mx-3 mt-3 mb-2"
       />
       
-      {/* Category tabs */}
-      <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-700/50">
-        {CRYPTO_CATEGORIES.map(category => {
-          const info = CATEGORY_INFO[category as keyof typeof CATEGORY_INFO];
-          if (!info) return null;
-          const isActive = activeCategory === category;
-          
-          return (
-            <button
-              key={category}
-              onClick={() => setActiveCategory(category)}
-              className={`
-                flex-shrink-0 px-4 py-2 flex items-center gap-1.5
-                transition-all text-sm
-                ${isActive 
-                  ? 'bg-gradient-to-r ' + info.color + ' text-white' 
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }
-              `}
-            >
-              <span>{info.icon}</span>
-              <span>{info.name}</span>
-            </button>
-          );
-        })}
+      {/* Search (#205) */}
+      <div className="px-3 pt-2">
+        <BuildingSearch
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Search by name, protocol, chain..."
+        />
       </div>
       
-      {/* Building grid */}
-      <div className="p-3 max-h-80 overflow-y-auto">
-        <div className="grid grid-cols-2 gap-2">
-          {buildings.map(building => (
-            <BuildingCard
-              key={building.id}
-              building={building}
-              isSelected={selectedBuilding === building.id}
-              canAfford={treasury >= building.cost}
-              onClick={() => onSelectBuilding(building.id)}
-            />
-          ))}
-        </div>
+      {/* Show All Toggle + Breadcrumb */}
+      <div className="flex items-center justify-between px-3 pt-2">
+        <Breadcrumb
+          level={viewLevel}
+          categoryName={categoryName}
+          tierName={tierName}
+          onClickAll={handleBreadcrumbAll}
+          onClickCategory={handleBreadcrumbCategory}
+        />
         
-        {buildings.length === 0 && (
-          <div className="text-center text-gray-500 py-8">
-            No buildings in this category
+        <label className="flex items-center gap-2 text-xs cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showAllBuildings}
+            onChange={handleShowAllToggle}
+            className="sr-only peer"
+          />
+          <span 
+            data-testid="show-all-toggle"
+            className={`
+              px-2 py-1 rounded transition-colors
+              ${showAllBuildings 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-700/50 text-gray-400 hover:text-white'
+              }
+            `}
+          >
+            Show All
+          </span>
+        </label>
+      </div>
+      
+      {/* Filter Chips (#204) - shown when in "Show All" mode or searching */}
+      {(showAllBuildings || searchTerm) && (
+        <div className="px-3 pt-3">
+          <FilterChips
+            filters={filters}
+            onFiltersChange={setFilters}
+            buildingCounts={buildingCounts}
+          />
+        </div>
+      )}
+      
+      {/* Content Area - flexible height */}
+      <div className="flex-1 p-3 overflow-y-auto scrollbar-hide">
+        {/* Level 1: Category Cards */}
+        {viewLevel === 'categories' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {CRYPTO_CATEGORIES.map(category => {
+              const info = CATEGORY_INFO[category];
+              if (!info) return null;
+              const buildings = getCryptoBuildingsByCategory(category);
+              
+              return (
+                <CategoryCard
+                  key={category}
+                  category={category}
+                  name={info.name}
+                  icon={info.icon}
+                  color={info.color}
+                  buildings={buildings}
+                  isExpanded={expandedCategory === category}
+                  onClick={() => handleCategoryClick(category)}
+                />
+              );
+            })}
           </div>
+        )}
+        
+        {/* Level 2: Tier Groups */}
+        {viewLevel === 'tiers' && buildingsByTier && (
+          <div className="space-y-2">
+            {TIER_ORDER.map(tier => {
+              const buildings = buildingsByTier[tier];
+              if (buildings.length === 0) return null;
+              
+              return (
+                <TierGroup
+                  key={tier}
+                  tier={tier}
+                  buildings={buildings}
+                  isExpanded={expandedTier === tier}
+                  onClick={() => handleTierClick(tier)}
+                >
+                  {expandedTier === tier && (
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      {buildings.map(building => (
+                        <BuildingCard
+                          key={building.id}
+                          building={building}
+                          isSelected={selectedBuilding === building.id}
+                          canAfford={treasury >= building.cost}
+                          onClick={() => onSelectBuilding(building.id)}
+                          searchTerm={searchTerm}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </TierGroup>
+              );
+            })}
+          </div>
+        )}
+        
+        {/* Level 3: Building Cards (flat list) */}
+        {viewLevel === 'buildings' && (
+          <>
+            {filteredBuildings.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {filteredBuildings.map(building => (
+                  <BuildingCard
+                    key={building.id}
+                    building={building}
+                    isSelected={selectedBuilding === building.id}
+                    canAfford={treasury >= building.cost}
+                    onClick={() => onSelectBuilding(building.id)}
+                    searchTerm={searchTerm}
+                  />
+                ))}
+              </div>
+            ) : (
+              <NoResults
+                searchTerm={searchTerm}
+                onSuggestionClick={handleSearchSuggestion}
+              />
+            )}
+          </>
         )}
       </div>
       
@@ -364,7 +778,7 @@ export default function CryptoBuildingPanel({
       {selectedBuilding && (
         <SelectedBuildingInfo 
           buildingId={selectedBuilding} 
-          buildings={buildings}
+          buildings={filteredBuildings}
         />
       )}
     </div>
@@ -389,19 +803,22 @@ function SelectedBuildingInfo({
   const effects = crypto.effects;
 
   return (
-    <div className="border-t border-gray-700/50 p-4 bg-gray-800/50">
+    <div className="border-t border-sidebar-border p-4 bg-muted/30 flex-shrink-0">
       <div className="flex items-center gap-3 mb-3">
         <span className="text-3xl">{building.icon}</span>
-        <div>
-          <div className="font-bold">{building.name}</div>
-          <div className="text-xs text-gray-400">
+        <div className="flex-1 min-w-0">
+          <div className="font-bold truncate">{building.name}</div>
+          <div className="text-xs text-muted-foreground">
             {crypto.protocol || crypto.chain || 'Crypto'}
           </div>
+        </div>
+        <div className="flex-shrink-0">
+          <RiskBadge risk={effects?.rugRisk ?? 0} />
         </div>
       </div>
       
       {crypto.description && (
-        <p className="text-sm text-gray-400 mb-3">
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
           {crypto.description}
         </p>
       )}
@@ -410,25 +827,25 @@ function SelectedBuildingInfo({
         <div className="grid grid-cols-2 gap-2 text-xs">
           {effects.yieldRate && (
             <div className="flex justify-between">
-              <span className="text-gray-500">Yield:</span>
+              <span className="text-muted-foreground">Yield:</span>
               <span className="text-green-400">+{effects.yieldRate}/day</span>
             </div>
           )}
           {effects.stakingBonus && effects.stakingBonus > 1 && (
             <div className="flex justify-between">
-              <span className="text-gray-500">Staking:</span>
-              <span className="text-blue-400">{effects.stakingBonus}x</span>
+              <span className="text-muted-foreground">Staking:</span>
+              <span className="text-primary">{effects.stakingBonus}x</span>
             </div>
           )}
           {effects.zoneRadius && (
             <div className="flex justify-between">
-              <span className="text-gray-500">Radius:</span>
-              <span className="text-purple-400">{effects.zoneRadius} tiles</span>
+              <span className="text-muted-foreground">Radius:</span>
+              <span className="text-accent">{effects.zoneRadius} tiles</span>
             </div>
           )}
           {effects.volatility !== undefined && (
             <div className="flex justify-between">
-              <span className="text-gray-500">Volatility:</span>
+              <span className="text-muted-foreground">Volatility:</span>
               <span className="text-yellow-400">{(effects.volatility * 100).toFixed(0)}%</span>
             </div>
           )}
@@ -437,13 +854,13 @@ function SelectedBuildingInfo({
       
       {/* Synergies */}
       {effects?.chainSynergy && effects.chainSynergy.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-gray-700/50">
-          <div className="text-xs text-gray-500 mb-1">Chain synergies:</div>
+        <div className="mt-3 pt-3 border-t border-sidebar-border/50">
+          <div className="text-xs text-muted-foreground mb-1">Chain synergies:</div>
           <div className="flex flex-wrap gap-1">
             {effects.chainSynergy.map(chain => (
               <span 
                 key={chain}
-                className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs"
+                className="px-2 py-0.5 bg-accent/20 text-accent rounded text-xs"
               >
                 {chain}
               </span>
@@ -454,4 +871,3 @@ function SelectedBuildingInfo({
     </div>
   );
 }
-

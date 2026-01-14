@@ -47,7 +47,7 @@ function createMockNPC(overrides: Partial<CryptoNPC> = {}): CryptoNPC {
     currentActivity: null,
     needs: createDefaultNeeds(),
     memory: createDefaultMemory(),
-    movement: createInitialMovement(5, 5),
+    movement: createInitialMovement(),
     personality: createDefaultPersonality(),
     relationships: {},
     ...overrides,

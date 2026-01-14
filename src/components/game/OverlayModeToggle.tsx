@@ -60,6 +60,8 @@ const OVERLAY_ICONS: Record<OverlayMode, React.ReactNode> = {
   crypto_risk: <span className="text-[14px]">⚠️</span>,
   crypto_protection: <span className="text-[14px]">🛡️</span>,
   crypto_density: <span className="text-[14px]">🏙️</span>,
+  // Zone overlay icon (Issue #208)
+  zone: <span className="text-[14px]">🗺️</span>,
 };
 
 // ============================================================================

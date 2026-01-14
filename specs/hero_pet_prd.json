@@ -1,0 +1,482 @@
+{
+  "project": "Hero Pet System",
+  "version": "1.0.0",
+  "description": "A trainable companion creature system inspired by Black & White, featuring a Hero Pet that learns through observation and reinforcement, morphs visually based on alignment, and interacts with the NPC system via a God Hand interface.",
+  "spec_file": "specs/HERO_PET_SYSTEM.md",
+  "phases": [
+    {
+      "id": "phase-1",
+      "name": "Core Titan Infrastructure",
+      "description": "Basic Titan that spawns, has needs, and integrates with game loop",
+      "tasks": [
+        {
+          "id": "task-1-1",
+          "title": "Core Titan Type Definitions",
+          "description": "Create foundational TypeScript types for the Titan Pet system in src/games/isocity/types/titan.ts",
+          "files_to_create": ["src/games/isocity/types/titan.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "TitanSpecies enum with 6 species",
+            "AlignmentState type (-1.0 to +1.0)",
+            "TitanSkill type with all skills",
+            "TitanGoal type for BDI",
+            "ActionBelief interface",
+            "TitanNeeds interface extending NPCNeeds",
+            "TitanMood interface extending InternalWorld",
+            "TitanBDI interface",
+            "TitanPet main interface",
+            "SerializedTitan for persistence",
+            "All types compile without errors"
+          ],
+          "estimated_hours": 3,
+          "dependencies": []
+        },
+        {
+          "id": "task-1-2",
+          "title": "TitanManager Singleton",
+          "description": "Create singleton manager class for Titan in src/lib/titan/TitanManager.ts",
+          "files_to_create": ["src/lib/titan/TitanManager.ts", "src/lib/titan/index.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Singleton pattern implementation",
+            "spawnTitan method",
+            "getTitan method",
+            "despawnTitan method",
+            "updateTitan method",
+            "saveToStorage method",
+            "loadFromStorage method",
+            "Only one Titan can exist at a time"
+          ],
+          "estimated_hours": 4,
+          "dependencies": ["task-1-1"]
+        },
+        {
+          "id": "task-1-3",
+          "title": "Titan Needs System",
+          "description": "Extend NPC needs system for Titan with additional needs in src/lib/titan/TitanNeeds.ts",
+          "files_to_create": ["src/lib/titan/TitanNeeds.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Extended needs: attention, growth",
+            "Modified decay rates",
+            "createDefaultTitanNeeds function",
+            "updateTitanNeeds function",
+            "satisfyTitanNeed function",
+            "getMostUrgentTitanNeed function"
+          ],
+          "estimated_hours": 3,
+          "dependencies": ["task-1-1"]
+        },
+        {
+          "id": "task-1-4",
+          "title": "Basic Titan Spawner",
+          "description": "Create system for spawning and initializing a new Titan in src/lib/titan/TitanSpawner.ts",
+          "files_to_create": ["src/lib/titan/TitanSpawner.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "createTitan function with TitanSpawnOptions",
+            "Default personality generation per species",
+            "Initial stats based on species",
+            "Name generation for Titan"
+          ],
+          "estimated_hours": 2,
+          "dependencies": ["task-1-1", "task-1-3"]
+        },
+        {
+          "id": "task-1-5",
+          "title": "Titan Alignment System",
+          "description": "Implement good/evil alignment system in src/lib/titan/TitanAlignment.ts",
+          "files_to_create": ["src/lib/titan/TitanAlignment.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "calculateAlignment function",
+            "shiftAlignment function",
+            "getAlignmentState function",
+            "ALIGNMENT_ACTION_IMPACTS constant",
+            "Good and evil actions lists",
+            "Alignment decay toward neutral"
+          ],
+          "estimated_hours": 4,
+          "dependencies": ["task-1-1"]
+        },
+        {
+          "id": "task-1-6",
+          "title": "Titan Integration with Game Loop",
+          "description": "Integrate Titan into main game simulation loop and create React hook",
+          "files_to_create": ["src/hooks/useTitan.ts"],
+          "files_to_modify": ["src/lib/npc/NPCSimulation.ts"],
+          "acceptance_criteria": [
+            "Titan updates every simulation tick",
+            "Titan-NPC proximity detection",
+            "LOD applied to Titan updates",
+            "useTitan hook exposes state to React",
+            "Performance impact minimal"
+          ],
+          "estimated_hours": 3,
+          "dependencies": ["task-1-2", "task-1-3", "task-1-4", "task-1-5"]
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "name": "Learning & Training System",
+      "description": "BDI AI, learning system, and God Hand training mechanics",
+      "tasks": [
+        {
+          "id": "task-2-1",
+          "title": "BDI AI Core",
+          "description": "Implement Belief-Desire-Intention architecture in src/lib/titan/TitanAI.ts",
+          "files_to_create": ["src/lib/titan/TitanAI.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "TitanBDI class implementation",
+            "updateBeliefs method",
+            "computeDesires method",
+            "formIntention method",
+            "executeIntention method",
+            "Belief decay system",
+            "Desire prioritization"
+          ],
+          "estimated_hours": 6,
+          "dependencies": ["task-1-1"]
+        },
+        {
+          "id": "task-2-2",
+          "title": "Action Belief Learning System",
+          "description": "Implement system for Titan to learn good/bad actions in src/lib/titan/TitanLearning.ts",
+          "files_to_create": ["src/lib/titan/TitanLearning.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "ActionBeliefMap class",
+            "reinforceAction method",
+            "getActionBelief method",
+            "decayBeliefs method",
+            "Confidence calculation",
+            "LRU eviction for old beliefs",
+            "Action history tracking"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-2-1"]
+        },
+        {
+          "id": "task-2-3",
+          "title": "Observation Learning from NPCs",
+          "description": "Allow Titan to learn by observing NPC behaviors",
+          "files_to_create": [],
+          "files_to_modify": ["src/lib/titan/TitanLearning.ts"],
+          "acceptance_criteria": [
+            "onObserveNPC method",
+            "recordObservation method",
+            "Mimicry chance based on personality",
+            "Learning from observed outcomes",
+            "Integration with NPC interaction system"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-2-1", "task-2-2"]
+        },
+        {
+          "id": "task-2-4",
+          "title": "God Hand Cursor System",
+          "description": "Implement God Hand cursor mode for divine interaction",
+          "files_to_create": ["src/components/titan/GodHandCursor.tsx"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Custom cursor rendering",
+            "Cursor states (default/active/grasping/praising/punishing)",
+            "Drag gesture detection",
+            "Visual feedback",
+            "Keyboard shortcut (G) toggle"
+          ],
+          "estimated_hours": 5,
+          "dependencies": []
+        },
+        {
+          "id": "task-2-5",
+          "title": "Praise/Punish Training Mechanics",
+          "description": "Implement core training loop in src/lib/titan/TitanTraining.ts",
+          "files_to_create": ["src/lib/titan/TitanTraining.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "praise function",
+            "punish function",
+            "recordAction function",
+            "3 second timing window",
+            "Integration with ActionBeliefMap",
+            "Alignment shifts appropriately"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-2-2", "task-2-4"]
+        },
+        {
+          "id": "task-2-6",
+          "title": "Training Feedback UI",
+          "description": "Create visual feedback for training interactions",
+          "files_to_create": ["src/components/titan/TitanTrainingFeedback.tsx"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Rainbow particles for praise",
+            "Red particles for punishment",
+            "Floating text feedback",
+            "Sound effect triggers",
+            "Titan reaction animations"
+          ],
+          "estimated_hours": 4,
+          "dependencies": ["task-2-5"]
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "name": "Visual & Animation System",
+      "description": "Sprite system, alignment morphing, and animations",
+      "tasks": [
+        {
+          "id": "task-3-1",
+          "title": "Titan Sprite System Architecture",
+          "description": "Create sprite loading and management system",
+          "files_to_create": ["src/lib/titan/TitanSprite.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Sprite sheet loading for species/alignment",
+            "Animation state machine",
+            "Direction handling (4 directions)",
+            "Frame interpolation",
+            "Sprite naming convention defined"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-1-1"]
+        },
+        {
+          "id": "task-3-2",
+          "title": "Alignment Visual Morphing",
+          "description": "Implement visual changes based on alignment state",
+          "files_to_create": [],
+          "files_to_modify": ["src/lib/titan/TitanSprite.ts"],
+          "acceptance_criteria": [
+            "5 visual variants specification",
+            "Transition animations between states",
+            "Gradual morphing during gameplay",
+            "Particle effects for aligned states"
+          ],
+          "estimated_hours": 6,
+          "dependencies": ["task-3-1"]
+        }
+      ]
+    },
+    {
+      "id": "phase-4",
+      "name": "NPC Integration",
+      "description": "Titan-NPC interactions and relationships",
+      "tasks": [
+        {
+          "id": "task-4-1",
+          "title": "Titan-NPC Interaction System",
+          "description": "Implement full range of Titan-NPC interactions",
+          "files_to_create": ["src/lib/titan/TitanInteractions.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "InteractionType enum",
+            "initiateInteraction method",
+            "processInteraction method",
+            "INTERACTION_ALIGNMENT_IMPACTS constant",
+            "INTERACTION_EFFECTS on relationships"
+          ],
+          "estimated_hours": 6,
+          "dependencies": ["task-2-1"]
+        },
+        {
+          "id": "task-4-2",
+          "title": "NPC Reactions to Titan",
+          "description": "Make NPCs react appropriately to Titan",
+          "files_to_create": ["src/lib/titan/NPCTitanReactions.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "getNPCReaction function",
+            "Reaction types: approach/ignore/flee/worship",
+            "Alignment-based fear calculation",
+            "Relationship-based trust calculation",
+            "NPC pathfinding modifications"
+          ],
+          "estimated_hours": 4,
+          "dependencies": ["task-4-1"]
+        },
+        {
+          "id": "task-4-3",
+          "title": "Titan Relationship Tracking",
+          "description": "Track Titan relationships with individual NPCs",
+          "files_to_create": [],
+          "files_to_modify": ["src/games/isocity/types/titan.ts", "src/lib/titan/TitanManager.ts"],
+          "acceptance_criteria": [
+            "relationships Record in Titan type",
+            "Relationship update methods",
+            "Integration with RelationshipManager",
+            "Persistence in save data"
+          ],
+          "estimated_hours": 4,
+          "dependencies": ["task-4-1"]
+        }
+      ]
+    },
+    {
+      "id": "phase-5",
+      "name": "Advanced Features",
+      "description": "Skills, miracles, multiple species, and Titan Den",
+      "tasks": [
+        {
+          "id": "task-5-1",
+          "title": "Titan Skill Progression System",
+          "description": "Implement skill leveling system",
+          "files_to_create": ["src/lib/titan/TitanSkills.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "All skill types defined",
+            "XP thresholds",
+            "grantXP method",
+            "getSkillLevel method",
+            "getSkillModifier method",
+            "Species aptitude modifiers",
+            "Skill decay for unused skills"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-1-1"]
+        },
+        {
+          "id": "task-5-2",
+          "title": "Miracles System",
+          "description": "Implement special abilities for high-level Titans",
+          "files_to_create": ["src/lib/titan/TitanMiracles.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Miracle types defined",
+            "Alignment requirements",
+            "Skill requirements",
+            "canUseMiracle method",
+            "useMiracle method",
+            "Cooldown system"
+          ],
+          "estimated_hours": 6,
+          "dependencies": ["task-1-5", "task-5-1"]
+        },
+        {
+          "id": "task-5-3",
+          "title": "Titan Den Building",
+          "description": "Create special Titan Den building",
+          "files_to_create": [],
+          "files_to_modify": ["src/data/buildings.ts"],
+          "acceptance_criteria": [
+            "titan_den in buildings registry",
+            "5 upgrade levels",
+            "Den mechanics (feeding, sleeping, training)",
+            "Den sprite placeholders"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-1-1"]
+        }
+      ]
+    },
+    {
+      "id": "phase-6",
+      "name": "UI & Polish",
+      "description": "Status panels, tutorials, and optimization",
+      "tasks": [
+        {
+          "id": "task-6-1",
+          "title": "Titan Status Panel UI",
+          "description": "Create persistent UI panel showing Titan status",
+          "files_to_create": ["src/components/titan/TitanStatusPanel.tsx"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Titan name and species icon",
+            "Alignment bar",
+            "Needs bars",
+            "Current mood display",
+            "Current goal display",
+            "Quick action buttons",
+            "Collapsible design"
+          ],
+          "estimated_hours": 4,
+          "dependencies": ["task-1-3", "task-1-5"]
+        },
+        {
+          "id": "task-6-2",
+          "title": "Titan Detail View UI",
+          "description": "Create full-screen detailed Titan view",
+          "files_to_create": ["src/components/titan/TitanDetailView.tsx"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Large Titan sprite display",
+            "Full skill breakdown",
+            "Relationship list",
+            "Action history log",
+            "Beliefs inspector (debug)",
+            "Tab navigation"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-4-3", "task-5-1", "task-6-1"]
+        },
+        {
+          "id": "task-6-3",
+          "title": "Performance Optimization",
+          "description": "Optimize Titan system for performance",
+          "files_to_create": [],
+          "files_to_modify": ["src/lib/titan/TitanLearning.ts", "src/lib/titan/TitanAI.ts"],
+          "acceptance_criteria": [
+            "Belief map LRU eviction",
+            "Sprite lazy loading",
+            "Action history cap at 500",
+            "BDI update optimization",
+            "LOD for zoomed out view"
+          ],
+          "estimated_hours": 4,
+          "dependencies": ["task-2-2", "task-2-1"]
+        },
+        {
+          "id": "task-6-4",
+          "title": "Comprehensive Testing",
+          "description": "Create full test suite for Titan system",
+          "files_to_create": [
+            "tests/titanAlignment.spec.ts",
+            "tests/titanLearning.spec.ts",
+            "tests/titanNeeds.spec.ts",
+            "tests/titanAI.spec.ts"
+          ],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Unit tests for all Titan modules",
+            "Integration tests for Titan-NPC",
+            "Save/load persistence tests",
+            "E2E tests for training workflow",
+            "80%+ code coverage"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-1-6", "task-2-5", "task-4-1"]
+        }
+      ]
+    }
+  ],
+  "total_estimated_hours": 115,
+  "priority_order": [
+    "phase-1",
+    "phase-2",
+    "phase-3",
+    "phase-4",
+    "phase-5",
+    "phase-6"
+  ],
+  "tech_stack": {
+    "language": "TypeScript 5",
+    "framework": "Next.js 16 + React 19",
+    "game_engine": "Canvas-based isometric (existing)",
+    "testing": "Playwright + Jest",
+    "styling": "Tailwind CSS 4"
+  },
+  "integration_points": [
+    "src/lib/npc/NPCSimulation.ts - Game loop integration",
+    "src/lib/npc/needs.ts - Base needs system",
+    "src/lib/npc/mood.ts - Mood/internal world",
+    "src/lib/npc/learning.ts - Learning patterns",
+    "src/lib/npc/relationships.ts - Relationship tracking",
+    "src/data/buildings.ts - Titan Den building",
+    "src/hooks/useNPCSimulation.ts - React hook pattern"
+  ]
+}

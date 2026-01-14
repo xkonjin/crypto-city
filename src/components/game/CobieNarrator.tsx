@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { X, Volume2, VolumeX } from 'lucide-react';
@@ -52,28 +52,7 @@ function getMessageTypeGradient(type: CobieMessageType): string {
 }
 
 function CobieNarratorContent({ message, isVisible, onDismiss, onDisableCobie }: CobieNarratorProps) {
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [shouldRender, setShouldRender] = useState(false);
-
-  useEffect(() => {
-    if (isVisible && message) {
-      setShouldRender(true);
-      const frame = requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setIsAnimating(true);
-        });
-      });
-      return () => cancelAnimationFrame(frame);
-    } else {
-      setIsAnimating(false);
-      const timer = setTimeout(() => {
-        setShouldRender(false);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isVisible, message]);
-
-  if (!shouldRender || !message) return null;
+  if (!message) return null;
 
   const borderColor = getMessageTypeColor(message.type);
   const gradientColor = getMessageTypeGradient(message.type);
@@ -87,9 +66,9 @@ function CobieNarratorContent({ message, isVisible, onDismiss, onDisableCobie }:
         'bottom-16 left-3 right-3',
         // Desktop: bottom left position
         'md:bottom-20 md:left-4 md:right-auto md:max-w-md',
-        isAnimating 
+        isVisible 
           ? 'opacity-100 translate-y-0' 
-          : 'opacity-0 translate-y-4'
+          : 'opacity-0 translate-y-4 pointer-events-none'
       )}
     >
       <div className={cn(
@@ -173,13 +152,7 @@ function CobieNarratorContent({ message, isVisible, onDismiss, onDisableCobie }:
 }
 
 export function CobieNarrator(props: CobieNarratorProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted || typeof document === 'undefined') {
+  if (typeof document === 'undefined') {
     return null;
   }
 

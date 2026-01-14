@@ -22,6 +22,8 @@ import type { Relationship } from '@/lib/npc/relationships';
 import type { InternalWorld } from '@/lib/npc/mood';
 import type { NPCWallet, NPCFinances } from '@/lib/npc/economy';
 import type { NPCLearning } from '@/lib/npc/learning';
+import type { PoliticalBeliefs } from '@/lib/npc/politicalBeliefs';
+import type { ThoughtStream } from '@/lib/npc/ThoughtEngine';
 
 /**
  * Occupation types for NPCs - each with their own crypto-flavored sardonic descriptions
@@ -72,6 +74,12 @@ export type NPCDirection = 'north' | 'south' | 'east' | 'west';
  */
 export type NPCSpriteType = 'apple' | 'banana';
 
+export interface IngestedNPCProfile {
+  profileId: string;
+  avatarSpritesheet?: string;
+  dialogueSeeds: string[];
+}
+
 /**
  * Core NPC entity interface
  * 
@@ -105,6 +113,9 @@ export interface CryptoNPC {
   // === VISUAL ===
   /** Which character sprite to use */
   spriteType: NPCSpriteType;
+
+  /** Optional ingested profile metadata for user-generated NPCs */
+  ingestedProfile?: IngestedNPCProfile;
   
   /** Which way they're facing */
   direction: NPCDirection;
@@ -203,6 +214,14 @@ export interface CryptoNPC {
    */
   factionId?: string | null;
   
+  // === POLITICAL BELIEFS SYSTEM ===
+  /**
+   * Political beliefs formed from personality, experiences, and social influence.
+   * Affects faction alignment, voting behavior, and political dialogue.
+   * @see src/lib/npc/politicalBeliefs.ts for the political beliefs implementation
+   */
+  politicalBeliefs?: PoliticalBeliefs;
+  
   // === LEARNING SYSTEM ===
   /**
    * Skill learning, progression, and social learning from other NPCs.
@@ -210,6 +229,37 @@ export interface CryptoNPC {
    * @see src/lib/npc/learning.ts for the learning system implementation
    */
   learning?: NPCLearning;
+  
+  // === THOUGHT STREAM ===
+  /**
+   * Real-time thought generation and internal monologue.
+   * Contains current thoughts, observations, plans, and reflections.
+   * @see src/lib/npc/ThoughtEngine.ts for the thought system implementation
+   */
+  thoughtStream?: ThoughtStream;
+  
+  // === X402 ECONOMY ===
+  /**
+   * Whether this NPC has an on-chain wallet for x402 payments.
+   * If true, the NPC can earn/spend real USDT₮ on Plasma testnet.
+   */
+  hasX402Wallet?: boolean;
+  
+  /**
+   * The x402 wallet address for this NPC (if hasX402Wallet is true).
+   */
+  x402WalletAddress?: string;
+  
+  // === INGESTED USER FLAGS ===
+  /**
+   * Whether this NPC was ingested from a real X/Twitter profile.
+   */
+  isIngestedUser?: boolean;
+  
+  /**
+   * The X/Twitter username if this is an ingested user.
+   */
+  xUsername?: string;
 }
 
 /**
@@ -276,8 +326,12 @@ export interface SerializedNPC {
   finances?: NPCFinances;
   /** Serialized faction membership */
   factionId?: string | null;
+  /** Serialized political beliefs state */
+  politicalBeliefs?: PoliticalBeliefs;
   /** Serialized learning state */
   learning?: NPCLearning;
+  /** Serialized ingested profile data */
+  ingestedProfile?: IngestedNPCProfile;
 }
 
 /**

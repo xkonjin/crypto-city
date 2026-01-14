@@ -1,0 +1,93 @@
+Category,Name,Cost,Yield/Day,ROI Days,Risk Level,Risk %,Tier,Notes
+# Building Economics
+defi,Aave Lending Tower,15000,15,1000,Low,0.5%,DeFi,Battle-tested lending protocol
+defi,Uniswap Exchange,10000,12,833,Low,0.5%,DeFi,AMM pioneer
+defi,Lido Staking Hub,12000,18,667,Low,0.3%,DeFi,Liquid staking
+defi,Pendle Yield Factory,8000,25,320,Low,1%,DeFi,Yield tokenization
+defi,Curve Finance Pool,11000,10,1100,Low,0.3%,DeFi,Stablecoin AMM
+defi,MakerDAO Vault,14000,8,1750,Low,0.2%,DeFi,OG CDP system
+exchange,Binance Tower,20000,20,1000,Low,0.5%,Exchange,Largest CEX
+exchange,Coinbase Campus,18000,15,1200,Low,0.3%,Exchange,US compliant
+meme,Doge Park,5000,30,167,High,5%,Meme,Much wow
+meme,Pepe Plaza,4000,40,100,Extreme,10%,Meme,Degen central
+meme,Shib Shrine,3000,25,120,High,7%,Meme,Army strong
+legends,Cobie Corner,25000,25,1000,Low,0.1%,Legends,CT wisdom
+legends,GCR Observatory,30000,30,1000,Low,0.1%,Legends,Based predictions
+
+# Service Coverage
+Category,Building,Cost,Radius,Effect,Effect Value,Monthly Cost,Notes
+service,Police Station,5000,10,Crime Reduction,-40%,100,Essential for safety
+service,Fire Station,4000,8,Fire Risk,-50%,80,Prevents disasters
+service,Hospital,8000,15,Health,+30%,150,Increases land value
+service,School,6000,12,Education,+25%,100,Unlocks progression
+service,University,12000,15,Education,+40%,200,High tier unlock
+
+# Zone Growth
+Demand Level,Growth Chance/Tick,Requirements,Land Value Multiplier
+Very High,20%,Road + Power + Water,1.5x
+High,10%,Road + Power,1.2x
+Medium,5%,Road,1.0x
+Low,1%,Road,0.8x
+Negative,0%,N/A,0.5x
+
+# Tax Rates
+Rate,Happiness Impact,R Demand,C Demand,I Demand,Revenue Multiplier
+5%,+5,+15%,+10%,+5%,0.5x
+7%,+2,+5%,+5%,+2%,0.7x
+9%,0,0%,0%,0%,1.0x (baseline)
+11%,-5,-10%,-5%,-5%,1.1x
+13%,-10,-20%,-15%,-10%,1.2x
+15%,-20,-35%,-25%,-15%,1.3x
+
+# NPC Needs Decay (per game hour)
+Need,Decay Rate,Critical Threshold,Satisfiers,Max Value
+Hunger,-4,20,"Restaurant, Home, Food Stand",100
+Energy,-2,15,"Home, Hotel, Park Bench",100
+Social,-1.5,25,"Bar, Park, Commercial Zone",100
+Fun,-2,20,"Park, Stadium, Entertainment",100
+Wealth,-0.5,10,"Work, Trading, Staking",100
+Purpose,-1,30,"Work, Community, Civic",100
+Security,-0.3,40,"Home, Police Coverage",100
+Status,-0.2,20,"Achievements, Wealth",100
+
+# Rug Risk Probabilities (per game day)
+Risk Level,Base Probability,Auditor Reduction,Insurance Recovery,Visual Warning
+None,0%,N/A,N/A,None
+Low,0.1%,-50%,50%,None
+Medium,0.5%,-50%,75%,Yellow glow
+High,2%,-50%,90%,Orange glow + shake
+Extreme,10%,-50%,95%,Red glow + heavy shake
+
+# Market Cycle Multipliers (4-year cycle)
+Phase,Duration,Yield Multiplier,Growth Multiplier,Risk Multiplier,Mood
+Accumulation,12 months,0.5x,0.8x,0.7x,Cautious
+Bull,12 months,2.0x,1.5x,1.2x,Euphoric
+Distribution,12 months,1.2x,1.0x,1.5x,Anxious
+Bear,12 months,0.3x,0.5x,2.0x,Fearful
+
+# Gift Point Values (NPC Relationships)
+Gift Type,Point Value,Weekly Limit,Birthday Bonus
+Loved,+80,2,3x
+Liked,+45,2,3x
+Neutral,+20,2,3x
+Disliked,-20,2,1x
+Hated,-40,2,1x
+
+# Titan Training Reinforcement
+Action,Base Magnitude,Confidence Gain,Decay Rate,Window
+Praise,+0.3,+0.1,0.01/hour,3 seconds
+Punish,-0.3,+0.1,0.01/hour,3 seconds
+Observed (NPC),+/- 0.15,+0.05,0.02/hour,5 seconds
+Natural Decay,toward 0,0,0.005/hour,N/A
+
+# Building Categories
+Category,Count,Avg Cost,Avg Yield,Avg Risk,Theme
+DeFi,15,$12000,+15,Low,Lending & DEX protocols
+Exchange,8,$15000,+12,Low,CEX & trading platforms
+Chain,10,$14000,+14,Low,L1/L2 headquarters
+CT,8,$8000,+18,Medium,Crypto Twitter culture
+Meme,12,$4000,+30,High,Meme coin buildings
+Plasma,5,$10000,+20,Low,Plasma chain specific
+Stablecoin,6,$11000,+8,Very Low,Stable value buildings
+Infrastructure,10,$13000,+10,Low,Bridges & oracles
+Legends,8,$25000,+25,Very Low,CT personalities

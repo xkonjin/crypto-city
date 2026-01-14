@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { X, ShoppingBag, Wallet, Check, Sparkles } from 'lucide-react';
 import { usePlasmaWallet } from '@/hooks/usePlasmaWallet';
 import { useUSDT0Balance } from '@/hooks/useUSDT0Balance';
@@ -40,15 +40,8 @@ export function StorePanel({ isOpen, onClose }: StorePanelProps) {
   
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('all');
   const [selectedItem, setSelectedItem] = useState<StoreItem | null>(null);
-  const [ownedItems, setOwnedItems] = useState<string[]>([]);
+  const [ownedItems, setOwnedItems] = useState<string[]>(() => getOwnedItems());
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-
-  // Load owned items
-  useEffect(() => {
-    if (isOpen) {
-      setOwnedItems(getOwnedItems());
-    }
-  }, [isOpen]);
 
   // Filter items by category
   const filteredItems = selectedCategory === 'all'

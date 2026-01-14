@@ -58,7 +58,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2020,
       tvlTier: 'massive',
-      description: 'The iconic Aave Lending Tower dominates the DeFi district skyline.',
+      description: "The Aave Lending Tower looms over the DeFi district like a benevolent money printer that somehow hasn't exploded yet. Locals whisper that it's 'battle-tested' - crypto speak for 'hasn't been hacked THIS month.' Residents enjoy yields that would make traditional bankers weep, assuming the smart contracts don't decide to take a surprise vacation with everyone's deposits.",
       effects: {
         yieldRate: 15,
         stakingBonus: 1.15,
@@ -89,7 +89,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2018,
       tvlTier: 'massive',
-      description: 'The pink unicorn-topped Uniswap Exchange processes millions in trades daily.',
+      description: "A pink unicorn-topped building where hopes go to provide liquidity and dreams go to experience impermanent loss. The locals insist it's not gambling if you call it 'yield farming.' Founded by a guy who was 'just building,' this DEX turned the simple act of swapping tokens into an extreme sport with gas fees as the admission price.",
       effects: {
         yieldRate: 12,
         tradingFees: 20,
@@ -120,7 +120,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2020,
       tvlTier: 'massive',
-      description: 'The serene Lido Staking Hub offers liquid staking for ETH.',
+      description: "The serene Lido Staking Hub lets you stake ETH while keeping it liquid - like having your cake and eating it too, if cake were made of validator nodes and eating it meant receiving stETH. Currently controls enough ETH to make Vitalik nervously tweet about decentralization.",
       effects: {
         yieldRate: 18,
         stakingBonus: 1.2,
@@ -151,7 +151,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2021,
       tvlTier: 'high',
-      description: 'The Pendle Yield Factory splits yield into principal and yield tokens.',
+      description: "The Pendle Yield Factory performs financial alchemy by splitting your yield into 'principal' and 'yield' tokens - because apparently regular DeFi wasn't confusing enough. Residents spend their days trading future money as if present money weren't already imaginary enough.",
       effects: {
         yieldRate: 25,
         stakingBonus: 1.1,
@@ -183,7 +183,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2020,
       tvlTier: 'massive',
-      description: 'The curved Curve Finance building specializes in stablecoin swaps.',
+      description: "The architecturally distinctive Curve building, shaped like an actual curve, hosts the most boringly reliable stablecoin swaps in DeFi. Yield farmers flock here during 'Curve Wars' - a conflict fought entirely with governance tokens and aggressive bribery. Very civilized.",
       effects: {
         yieldRate: 10,
         stakingBonus: 1.08,
@@ -214,7 +214,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2017,
       tvlTier: 'massive',
-      description: 'The MakerDAO Vault mints DAI stablecoin from collateralized assets.',
+      description: "The MakerDAO Vault, a temple to the original DeFi gods, lets you borrow stablecoins against your ETH - essentially a pawn shop with better PR. Now rebranded to 'Sky' because nothing says 'decentralized finance' like a corporate rebrand nobody asked for.",
       effects: {
         yieldRate: 8,
         stakingBonus: 1.05,
@@ -245,7 +245,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2018,
       tvlTier: 'high',
-      description: 'Compound Bank pioneered algorithmic money markets.',
+      description: "Compound Bank pioneered the art of lending money to strangers on the internet. Remember when they accidentally gave away $90M in free tokens? Neither does their treasury. The OG money market that taught degens the difference between 'supply APY' and 'bankruptcy.'",
       effects: {
         yieldRate: 11,
         stakingBonus: 1.12,
@@ -276,7 +276,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2023,
       tvlTier: 'massive',
-      description: 'EigenLayer enables restaking of ETH for additional yield.',
+      description: "EigenLayer invented 'restaking' - the DeFi equivalent of double-dipping your chips. Why stake once when you can stake the same ETH multiple times and pretend that's not going to end badly? The building's foundation rests on an intricate Jenga tower of recursive yield.",
       effects: {
         yieldRate: 22,
         stakingBonus: 1.25,
@@ -308,7 +308,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2020,
       tvlTier: 'high',
-      description: 'Balancer Vault enables customizable liquidity pools.',
+      description: "Balancer Vault lets you create liquidity pools with whatever ratio your heart desires, because who says pools need to be 50/50? Perfect for the degen who looked at Uniswap and thought 'not complicated enough.' The building's scales are perpetually unbalanced, which is somehow the point.",
       effects: {
         yieldRate: 14,
         tradingFees: 15,
@@ -339,7 +339,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2020,
       tvlTier: 'high',
-      description: 'Yearn Vault automatically optimizes yield strategies.',
+      description: "Yearn Vault promises to do the yield farming for you - a robotic money farmer that never sleeps, never eats, and never panic sells at 3am like you do. Built by a mad scientist who kept 'fair launching' protocols like a DeFi Santa Claus until he got tired and took a nap.",
       effects: {
         yieldRate: 16,
         stakingBonus: 1.18,
@@ -359,7 +359,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '🏭',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2convex_factory_south.png',
+    },
     cost: 7000,
     crypto: {
       tier: 'whale',
@@ -367,7 +370,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2021,
       tvlTier: 'high',
-      description: 'Convex Factory boosts Curve LP rewards.',
+      description: "Convex Factory exists solely to make Curve rewards even more complicated. It's yield farming inception - stake your LP tokens to get tokens that let you vote on which pools get more tokens. The building's interior is just a hall of mirrors reflecting infinite yield.",
       effects: {
         yieldRate: 13,
         stakingBonus: 1.15,
@@ -387,7 +390,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '💱',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2frax_mint_south.png',
+    },
     cost: 8000,
     crypto: {
       tier: 'whale',
@@ -395,7 +401,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2020,
       tvlTier: 'high',
-      description: 'Frax Mint produces the algorithmic stablecoin FRAX.',
+      description: "Frax Mint produces the stablecoin that's 'partially algorithmic' - like being partially pregnant or somewhat decentralized. Survived the Terra collapse by being only slightly unhinged instead of completely bonkers. The building's architecture is 90% solid walls and 10% trust us bro.",
       effects: {
         yieldRate: 9,
         stakingBonus: 1.1,
@@ -415,7 +421,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 3, height: 3 },
     icon: '🔄',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/3x3eigenlayer_vault_south.png',
+    },
     cost: 20000,
     crypto: {
       tier: 'institution',
@@ -423,7 +432,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2023,
       tvlTier: 'massive',
-      description: 'Eigenlayer Vault enables restaking for additional yield.',
+      description: "The Eigenlayer Vault takes restaking to its logical extreme - stake your staked stakes. Critics call it 'systemic risk with extra steps.' Supporters call it 'innovation.' The truth, as always, is that the yield looks really good until it doesn't.",
       effects: {
         yieldRate: 12, // Reduced from 20 - restaking is complex/risky
         stakingBonus: 1.35,
@@ -444,7 +453,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '🦋',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2morpho_optimizer_south.png',
+    },
     cost: 11000,
     crypto: {
       tier: 'whale',
@@ -452,7 +464,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2022,
       tvlTier: 'high',
-      description: 'Morpho Optimizer improves lending rates with P2P matching.',
+      description: "Morpho Optimizer is like a dating app for lenders and borrowers - cutting out the middleman pool and letting money find love directly. The building hums with the beautiful sound of supply meeting demand, or possibly just server fans working overtime.",
       effects: {
         yieldRate: 14,
         stakingBonus: 1.12,
@@ -472,7 +484,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '🍁',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2maple_finance_south.png',
+    },
     cost: 15000,
     crypto: {
       tier: 'institution',
@@ -480,7 +495,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2021,
       tvlTier: 'high',
-      description: 'Maple Finance provides undercollateralized institutional loans.',
+      description: "Maple Finance provides undercollateralized loans to institutions - essentially trusting that hedge funds will pay you back. Spoiler: some didn't. The building's welcome mat says 'We Believe in Due Diligence' but the door is always open.",
       effects: {
         yieldRate: 12,
         stakingBonus: 1.08,
@@ -500,7 +515,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '✨',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2spark_protocol_south.png',
+    },
     cost: 10000,
     crypto: {
       tier: 'whale',
@@ -508,7 +526,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2023,
       tvlTier: 'high',
-      description: 'Spark Protocol brings lending to the MakerDAO ecosystem.',
+      description: "Spark Protocol is MakerDAO's attempt at being a normal lending protocol instead of a complicated governance nightmare. Like watching a protocol have a midlife crisis and buy a sports car. The interest rates are competitive with the added bonus of governance drama.",
       effects: {
         yieldRate: 10,
         stakingBonus: 1.1,
@@ -528,7 +546,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '🏛️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2ondo_finance_south.png',
+    },
     cost: 16000,
     crypto: {
       tier: 'institution',
@@ -536,7 +557,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2022,
       tvlTier: 'high',
-      description: 'Ondo Finance tokenizes real-world assets like US Treasuries.',
+      description: "Ondo Finance tokenizes US Treasuries on-chain, finally letting degens earn boomer yields without leaving the metaverse. It's RWA - Real World Assets - for people who find the real world overrated but still need somewhere to park profits from their last pump.",
       effects: {
         yieldRate: 8,
         stakingBonus: 1.05,
@@ -556,7 +577,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 3, height: 2 },
     icon: '☁️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/3x2sky_money_south.png',
+    },
     cost: 14000,
     crypto: {
       tier: 'institution',
@@ -564,7 +588,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2024,
       tvlTier: 'high',
-      description: 'Sky.money is the evolution of MakerDAO with USDS stablecoin.',
+      description: "Sky.money is what happens when MakerDAO looks in the mirror and decides it needs a rebrand. Same protocol, new name, fresh marketing budget. The USDS stablecoin is totally different from DAI, they promise. Please don't check if they're essentially the same thing.",
       effects: {
         yieldRate: 9,
         stakingBonus: 1.08,
@@ -585,7 +609,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '🪐',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2jupiter_terminal_south.png',
+    },
     cost: 12000,
     crypto: {
       tier: 'whale',
@@ -593,7 +620,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'solana',
       launchYear: 2021,
       tvlTier: 'high',
-      description: 'Jupiter Terminal aggregates the best swap routes on Solana.',
+      description: "Jupiter Terminal aggregates every DEX on Solana so you can get the best price for your tokens - assuming Solana is running that day. The building features a giant routing engine that makes your simple swap look like an air traffic control map. The JUP airdrop created more instant millionaires than a lottery.",
       effects: {
         yieldRate: 15,
         tradingFees: 25,
@@ -614,7 +641,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '💧',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2raydium_pool_south.png',
+    },
     cost: 9000,
     crypto: {
       tier: 'degen',
@@ -622,7 +652,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'solana',
       launchYear: 2021,
       tvlTier: 'high',
-      description: 'Raydium Pool provides AMM liquidity on Solana.',
+      description: "Raydium Pool is where Solana degens come to experience impermanent loss at 400 millisecond speeds. The building's pools glow with concentrated liquidity that evaporates faster than your profits when memecoin season ends. Pairs well with existential dread.",
       effects: {
         yieldRate: 18,
         tradingFees: 20,
@@ -642,7 +672,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '🐋',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2orca_whirlpool_south.png',
+    },
     cost: 10000,
     crypto: {
       tier: 'degen',
@@ -650,7 +683,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'solana',
       launchYear: 2021,
       tvlTier: 'high',
-      description: 'Orca Whirlpool offers concentrated liquidity on Solana.',
+      description: "Orca Whirlpool offers concentrated liquidity with an adorable whale mascot, because nothing says 'I'm about to lose money' like a cute cartoon orca. The whirlpools are specifically designed to concentrate your liquidity in ranges you'll constantly need to adjust.",
       effects: {
         yieldRate: 16,
         tradingFees: 18,
@@ -670,7 +703,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 2, height: 2 },
     icon: '🎯',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/2x2kamino_finance_south.png',
+    },
     cost: 11000,
     crypto: {
       tier: 'whale',
@@ -678,7 +714,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'solana',
       launchYear: 2022,
       tvlTier: 'high',
-      description: 'Kamino Finance auto-compounds concentrated liquidity positions.',
+      description: "Kamino Finance auto-manages your Orca positions because manually adjusting concentrated liquidity ranges is a full-time job nobody signed up for. The building's robots work tirelessly to ensure you lose money optimally instead of chaotically.",
       effects: {
         yieldRate: 20,
         stakingBonus: 1.15,
@@ -699,7 +735,10 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'defi',
     footprint: { width: 3, height: 3 },
     icon: '💧',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/defi/3x3hyperliquid_vault_south.png',
+    },
     cost: 18000,
     crypto: {
       tier: 'institution',
@@ -707,7 +746,7 @@ export const DEFI_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'hyperliquid',
       launchYear: 2023,
       tvlTier: 'massive',
-      description: 'Hyperliquid Vault powers the fastest perps DEX on its own L1.',
+      description: "Hyperliquid built its own L1 just to trade perps faster - the crypto equivalent of buying a race car to get groceries. The airdrop was legendary, the trading is degenerate, and the chain's entire purpose is helping you lose money at unprecedented speeds.",
       effects: {
         yieldRate: 14, // Reduced from 22 - perps are risky
         tradingFees: 35,
@@ -747,7 +786,7 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'bnb',
       launchYear: 2017,
       tvlTier: 'massive',
-      description: 'The massive Binance Tower is the largest crypto exchange HQ.',
+      description: "The massive Binance Tower dominates the skyline like CZ dominates legal proceedings. Once the undisputed king of exchanges, now operating with 'enhanced compliance measures' - which is corporate speak for 'we met the DOJ.' Still processes more volume than most countries' GDP.",
       effects: {
         yieldRate: 20,
         tradingFees: 50,
@@ -778,7 +817,7 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'base',
       launchYear: 2012,
       tvlTier: 'massive',
-      description: 'The Coinbase HQ brings institutional legitimacy to crypto.',
+      description: "The Coinbase HQ - the exchange your parents might actually trust. Publicly traded, SEC-compliant, and boringly reliable. The building hosts compliance officers who actually sleep at night, which makes it practically an alien structure in crypto city. Fees are high but so is the probability you can withdraw.",
       effects: {
         yieldRate: 15,
         tradingFees: 40,
@@ -809,7 +848,7 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2011,
       tvlTier: 'high',
-      description: 'The Kraken Exchange is a veteran trading platform.',
+      description: "The Kraken Exchange - older than most people's crypto attention span. Named after a sea monster, which is oddly appropriate for the depths of leverage trading that happens inside. One of the few exchanges to survive multiple crypto winters through the revolutionary strategy of 'not committing fraud.'",
       effects: {
         yieldRate: 12,
         tradingFees: 30,
@@ -840,7 +879,7 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2017,
       tvlTier: 'high',
-      description: 'OKX Center serves global crypto traders.',
+      description: "OKX Center - the exchange that rebranded from OKEx because nothing cleanses regulatory concerns like dropping a few letters. Sponsors everything from F1 to football because brand rehabilitation requires a lot of sports logos. The trading interface has more features than anyone knows how to use.",
       effects: {
         yieldRate: 11,
         tradingFees: 28,
@@ -871,7 +910,7 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2018,
       tvlTier: 'high',
-      description: 'Bybit Arena hosts derivatives trading competitions.',
+      description: "Bybit Arena hosts derivatives trading competitions where retail traders compete to see who can lose their life savings fastest. The building features a Hall of Liquidations honoring the bravest degens who went 100x long at the top. Free entry, expensive exits.",
       effects: {
         yieldRate: 14,
         tradingFees: 35,
@@ -891,7 +930,10 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'exchange',
     footprint: { width: 2, height: 2 },
     icon: '🥝',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/exchange/2x2kucoin_plaza_south.png',
+    },
     cost: 10000,
     crypto: {
       tier: 'whale',
@@ -899,7 +941,7 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2017,
       tvlTier: 'medium',
-      description: 'KuCoin Plaza lists emerging altcoins.',
+      description: "KuCoin Plaza - where altcoins go to get their first listing and sometimes their last. Known for having every token imaginable, including several that probably shouldn't exist. The building's motto: 'If it has a contract address, we'll list it.' Due diligence sold separately.",
       effects: {
         yieldRate: 10,
         tradingFees: 25,
@@ -920,7 +962,10 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'exchange',
     footprint: { width: 2, height: 2 },
     icon: '♊',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/exchange/2x2gemini_office_south.png',
+    },
     cost: 11000,
     crypto: {
       tier: 'whale',
@@ -928,7 +973,7 @@ export const EXCHANGE_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2014,
       tvlTier: 'medium',
-      description: 'Gemini Office emphasizes regulatory compliance.',
+      description: "Gemini Office - built by the Winklevoss twins after their Facebook adventure. The building radiates institutional energy and regulatory compliance. Features include: lawyers on every floor, cold storage you can actually trust, and a gift shop selling 'Tyler was right' merchandise. Boring, but reliably boring.",
       effects: {
         yieldRate: 8,
         tradingFees: 20,
@@ -966,7 +1011,7 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2015,
       tvlTier: 'massive',
-      description: 'The Ethereum Beacon tower symbolizes the proof-of-stake transition.',
+      description: "The Ethereum Beacon tower glows with the merged spirit of proof-of-stake - a transition that only took 7 years and countless 'few understand' tweets. Home to an ever-growing ecosystem of protocols building protocols on protocols. Gas fees have improved from 'refinance your house' to merely 'skip lunch.'",
       effects: {
         yieldRate: 25,
         stakingBonus: 1.3,
@@ -996,7 +1041,7 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'solana',
       launchYear: 2020,
       tvlTier: 'massive',
-      description: 'The ultra-fast Solana Tower processes thousands of TPS.',
+      description: "The ultra-fast Solana Tower processes thousands of TPS when it's working, which is most of the time now (a significant improvement from 'sometimes'). The building features a giant clock that occasionally stops for 'scheduled unscheduled maintenance.' Speed is everything; uptime is negotiable.",
       effects: {
         yieldRate: 20,
         stakingBonus: 1.25,
@@ -1026,7 +1071,7 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'bitcoin',
       launchYear: 2009,
       tvlTier: 'massive',
-      description: 'The legendary Bitcoin Vault holds the original crypto treasure.',
+      description: "The legendary Bitcoin Vault - where 21 million coins were born and where true believers come to worship at the altar of Satoshi. Maxis gather here to explain why everything else is a shitcoin. The building has remained unchanged since 2009, which is either a bug or a feature depending on who you ask.",
       effects: {
         yieldRate: 5,
         stakingBonus: 1.0,
@@ -1056,7 +1101,7 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'arbitrum',
       launchYear: 2021,
       tvlTier: 'high',
-      description: 'The Arbitrum Bridge connects L1 to fast L2 execution.',
+      description: "The Arbitrum Bridge connects your expensive ETH transactions to the affordable promised land of L2. Home to more DeFi TVL than most L1s, proving that 'rollup' is just a fancy word for 'Ethereum but cheaper.' The ARB airdrop created a new class of accidental thousandaires.",
       effects: {
         yieldRate: 18,
         stakingBonus: 1.15,
@@ -1087,7 +1132,7 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'optimism',
       launchYear: 2021,
       tvlTier: 'high',
-      description: 'The Optimism Hub spreads positive vibes and fast transactions.',
+      description: "The Optimism Hub radiates aggressively positive energy with its red logo and retroactive airdrops. The building runs on something called 'optimistic rollups' - because assuming everything is fine until proven otherwise is peak crypto energy. Free OP tokens for early believers; FOMO for everyone else.",
       effects: {
         yieldRate: 16,
         stakingBonus: 1.12,
@@ -1118,7 +1163,7 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'polygon',
       launchYear: 2017,
       tvlTier: 'high',
-      description: 'Polygon Plaza offers cheap and fast scaling solutions.',
+      description: "Polygon Plaza - formerly Matic, because crypto loves a rebrand. The purple palace of scaling solutions offers transactions so cheap it feels illegal. Made deals with every brand from Disney to Starbucks, becoming the enterprise blockchain that other chains pretend not to envy.",
       effects: {
         yieldRate: 14,
         stakingBonus: 1.1,
@@ -1148,7 +1193,7 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'base',
       launchYear: 2023,
       tvlTier: 'high',
-      description: 'Base Camp is the launchpad for onchain activities.',
+      description: "Base Camp - Coinbase's L2 that exists because 'if you can't beat DEXs, become one.' The building promises to 'bring the next billion users onchain,' which is optimistic given the current billion haven't figured out seed phrases yet. Home to memecoins and serious builders in equal measure.",
       effects: {
         yieldRate: 15,
         stakingBonus: 1.1,
@@ -1169,14 +1214,17 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 2, height: 2 },
     icon: '🏔️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/2x2avalanche_summit_south.png',
+    },
     cost: 11000,
     crypto: {
       tier: 'whale',
       chain: 'avalanche',
       launchYear: 2020,
       tvlTier: 'medium',
-      description: 'Avalanche Summit rises above with subnet technology.',
+      description: "Avalanche Summit rises above the competition with subnet technology - basically L1s on an L1, for when one blockchain isn't confusing enough. The building's three chains (C, X, P) leave visitors asking 'which one do I use?' The answer is always 'the C-chain, probably.'",
       effects: {
         yieldRate: 12,
         stakingBonus: 1.08,
@@ -1206,7 +1254,7 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'zksync',
       launchYear: 2023,
       tvlTier: 'high',
-      description: 'zkSync Era Tower uses zero-knowledge proofs for scaling.',
+      description: "zkSync Era Tower uses zero-knowledge proofs - math so complex that even the developers need post-it notes to explain it. The airdrop farmers worked this chain like a second job for months, only to discover that the term 'patience' had a very long definition in zkSync's dictionary.",
       effects: {
         yieldRate: 16,
         stakingBonus: 1.12,
@@ -1227,14 +1275,17 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 2, height: 2 },
     icon: '📜',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/2x2scroll_campus_south.png',
+    },
     cost: 12000,
     crypto: {
       tier: 'whale',
       chain: 'scroll',
       launchYear: 2023,
       tvlTier: 'medium',
-      description: 'Scroll Campus advances EVM-equivalent zkRollup technology.',
+      description: "Scroll Campus advances the noble art of zkRollups with academic rigor and Chinese engineering. The building is EVM-equivalent, meaning your Ethereum apps work here without changes - a miracle in an industry that loves breaking things. Airdrop hunters study here like it's finals week.",
       effects: {
         yieldRate: 14,
         stakingBonus: 1.08,
@@ -1255,14 +1306,17 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 2, height: 2 },
     icon: '🚉',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/2x2linea_station_south.png',
+    },
     cost: 11000,
     crypto: {
       tier: 'whale',
       chain: 'linea',
       launchYear: 2023,
       tvlTier: 'medium',
-      description: 'Linea Station connects the ConsenSys ecosystem.',
+      description: "Linea Station - ConsenSys's L2 entry into the rollup wars. The building was built by MetaMask's parent company, which means your wallet probably has a Linea network already even if you've never used it. Enterprise-grade infrastructure with startup-grade token allocation coming... eventually.",
       effects: {
         yieldRate: 12,
         stakingBonus: 1.06,
@@ -1283,14 +1337,17 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 2, height: 2 },
     icon: '💥',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/2x2blast_arena_south.png',
+    },
     cost: 10000,
     crypto: {
       tier: 'degen',
       chain: 'blast',
       launchYear: 2024,
       tvlTier: 'high',
-      description: 'Blast Arena offers native yield on ETH and stablecoins.',
+      description: "Blast Arena offers native yield on your ETH while you wait - revolutionary or reckless depending on your risk tolerance. Built by the Blur team who somehow made 'stake your ETH in a new L2' sound reasonable. The yield comes from... somewhere. Don't ask too many questions.",
       effects: {
         yieldRate: 20,
         stakingBonus: 1.15,
@@ -1311,14 +1368,17 @@ export const CHAIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'chain',
     footprint: { width: 2, height: 2 },
     icon: '🧥',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/chain/2x2mantle_hub_south.png',
+    },
     cost: 12000,
     crypto: {
       tier: 'whale',
       chain: 'mantle',
       launchYear: 2023,
       tvlTier: 'high',
-      description: 'Mantle Hub is backed by BitDAO treasury.',
+      description: "Mantle Hub - the L2 with a treasury so large it could probably buy a small country. Backed by BitDAO money, which came from Bybit, which means this chain is basically your trading fees achieving sentience. The building features modular architecture that nobody really understands but sounds impressive.",
       effects: {
         yieldRate: 14,
         stakingBonus: 1.1,
@@ -1354,7 +1414,7 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The CT Studio broadcasts alpha to thousands of followers. ⚠️ High contagion risk!',
+      description: "A neon-lit studio where influencers broadcast 'alpha' to followers who will definitely screenshot your buy and front-run it. Features include a blue checkmark dispenser and a wall of ratio'd takes. The studio runs 24/7 because bad takes don't sleep. ⚠️ High contagion risk!",
       effects: {
         yieldRate: 6, // Issue #70: Reduced from 8 (25% reduction)
         volatility: 0.3,
@@ -1381,7 +1441,7 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'institution',
       chain: 'ethereum',
-      description: 'The VC Office funds the next generation of protocols.',
+      description: "The VC Office - where rich people decide which tokens to dump on you later. Partners here 'provide value' by tweeting about their portfolio while secretly selling. Office amenities include: a cap table, a discount on your seed round, and the audacity to call a 50x markup 'fair value.'",
       effects: {
         yieldRate: 5,
         volatility: 0.1,
@@ -1401,12 +1461,15 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'ct',
     footprint: { width: 1, height: 2 },
     icon: '📞',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/ct/1x2alpha_call_center_south.png',
+    },
     cost: 10000, // Issue #70: Doubled from $5k
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The Alpha Call Center shares insider tips 24/7. ⚠️ High contagion risk!',
+      description: "A bunker filled with anons sharing 'insider tips' that somehow always get you in right before the dump. The phone lines are encrypted but your exit liquidity status is not. Proudly operating on the boundary between 'alpha' and 'market manipulation.' ⚠️ High contagion risk!",
       effects: {
         yieldRate: 10, // Issue #70: Reduced from 12 (17% reduction)
         volatility: 0.4,
@@ -1425,12 +1488,15 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'ct',
     footprint: { width: 2, height: 2 },
     icon: '🎧',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/ct/2x2podcast_tower_south.png',
+    },
     cost: 14000, // Issue #70: Doubled from $7k
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The Podcast Tower hosts crypto thought leaders. ⚠️ High contagion risk!',
+      description: "The Podcast Tower - where three-hour conversations about monetary policy happen between people who learned economics from Twitter threads. Every episode ends with 'not financial advice' as if that means anything. Sound quality varies; financial quality varies more. ⚠️ High contagion risk!",
       effects: {
         yieldRate: 5, // Issue #70: Reduced from 6 (17% reduction)
         volatility: 0.15,
@@ -1457,7 +1523,7 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'The NFT Gallery displays digital art collections.',
+      description: "The NFT Gallery displays JPEGs that sold for more than your house and now sell for less than your lunch. Features include a 'Right-Click Museum' and a memorial wall for apes who paid 100 ETH for a picture of a monkey. Art appreciation, redefined for the terminally online.",
       effects: {
         yieldRate: 4,
         volatility: 0.5,
@@ -1484,7 +1550,7 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'The DAO HQ coordinates decentralized governance.',
+      description: "The DAO HQ - where 'decentralized governance' means voting on proposals that one whale will decide anyway. Features endless Snapshot votes, Forum drama, and the eternal question: 'Is this governance attack or just bad vibes?' Democracy, but make it blockchain.",
       effects: {
         yieldRate: 7,
         stakingBonus: 1.1,
@@ -1504,12 +1570,15 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'ct',
     footprint: { width: 1, height: 1 },
     icon: '🕵️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/ct/1x1anon_bunker_south.png',
+    },
     cost: 8000, // Issue #70: Doubled from $4k
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The Anon Bunker protects pseudonymous identities. ⚠️ High contagion risk!',
+      description: "A shadowy bunker where pseudonymous builders hide from the SEC, their ex, and the consequences of their tweets. Entry requires a PFP, a strong opinion about L2s, and complete inability to reveal your face. The WiFi password is the seed phrase you swore you memorized. ⚠️ High contagion risk!",
       effects: {
         yieldRate: 8, // Issue #70: Reduced from 10 (20% reduction)
         volatility: 0.35,
@@ -1536,7 +1605,7 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'degen',
       chain: 'solana',
-      description: 'The Degen Lounge is where apes gather to trade. ⚠️ High contagion risk!',
+      description: "A smoke-filled lounge where apes gather to yolo their savings into things they don't understand. The bar serves pure hopium, the lighting is red or green depending on the market, and everyone's watching the same charts while pretending they have different strategies. ⚠️ High contagion risk!",
       effects: {
         yieldRate: 12, // Issue #70: Reduced from 15 (20% reduction)
         volatility: 0.6,
@@ -1555,12 +1624,15 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'ct',
     footprint: { width: 1, height: 2 },
     icon: '🐋',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/ct/1x2whale_watching_tower_south.png',
+    },
     cost: 6500,
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'The Whale Watching Tower tracks large wallet movements.',
+      description: "A glass tower equipped with on-chain binoculars to spot whale movements. Analysts here spend 18 hours a day watching wallets move ETH and tweeting 'this is huge' about perfectly normal transactions. The coffee machine only accepts stablecoins because nobody here trusts anything volatile.",
       effects: {
         yieldRate: 8,
         volatility: 0.2,
@@ -1579,12 +1651,15 @@ export const CT_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'ct',
     footprint: { width: 1, height: 1 },
     icon: '😱',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/ct/1x1fud_factory_south.png',
+    },
     cost: 3000,
     crypto: {
       tier: 'retail',
       chain: 'ethereum',
-      description: 'The FUD Factory spreads fear, uncertainty, and doubt.',
+      description: "The FUD Factory - mass-producing fear, uncertainty, and doubt since 2017. Assembly lines of bears craft bearish narratives while researchers cite 'on-chain data' that supports whatever conclusion they already reached. Surprisingly profitable despite the perpetual pessimism. The break room serves only decaf.",
       effects: {
         yieldRate: -5,
         volatility: 0.4,
@@ -1619,7 +1694,7 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The iconic Pepe Statue brings good luck to degens. ⚠️ High contagion risk!',
+      description: "The iconic Pepe Statue - a monument to internet culture that somehow became worth billions. Visitors rub the frog's belly for good luck before aping into their next trade. The statue's expression changes between 'smug' and 'concerned' depending on market conditions. ⚠️ High contagion risk!",
       effects: {
         yieldRate: 4, // Issue #70: Reduced from 5 (20% reduction)
         volatility: 0.5,
@@ -1646,7 +1721,7 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The Doge Fountain celebrates the OG meme coin. ⚠️ High contagion risk!',
+      description: "The Doge Fountain - where water flows endlessly like the tweets from one particular CEO. This monument to the original meme coin has survived more cycles than most marriages. Such longevity. Much persistence. Wow. Still waiting for that dollar milestone though. ⚠️ High contagion risk!",
       effects: {
         yieldRate: 6, // Issue #70: Reduced from 8 (25% reduction)
         volatility: 0.45,
@@ -1673,7 +1748,7 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The Shiba Shrine honors the SHIB army.',
+      description: "The Shiba Shrine - a temple to the token that tried to be 'the Dogecoin killer' and ended up being 'the token that's not quite Dogecoin.' The army gathers here to pray for a new all-time high and discuss whether Shibarium will save them. Faith is required; fundamentals are optional.",
       effects: {
         yieldRate: 7,
         volatility: 0.5,
@@ -1692,12 +1767,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 1, height: 1 },
     icon: '😭',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/1x1wojak_memorial_south.png',
+    },
     cost: 1500,
     crypto: {
       tier: 'retail',
       chain: 'ethereum',
-      description: 'The Wojak Memorial remembers all the losses.',
+      description: "The Wojak Memorial - a somber tribute to every retail trader who bought the top and sold the bottom. The faces on the wall cycle through stages of grief: denial, anger, bargaining, depression, and 'maybe I should try leverage.' Tissues are provided at the entrance.",
       effects: {
         yieldRate: 2,
         volatility: 0.3,
@@ -1716,12 +1794,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 2 },
     icon: '🦍',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x2ape_enclosure_south.png',
+    },
     cost: 4000,
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'The Ape Enclosure houses BAYC and friends.',
+      description: "The Ape Enclosure - where bored apes and their owners stare at each other through the glass, both wondering who made the worse life choices. Membership includes a yacht party invite and access to a community of people who definitely didn't just buy a JPEG for their personality.",
       effects: {
         yieldRate: 6,
         volatility: 0.4,
@@ -1748,7 +1829,7 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The Moon Monument points to where we\'re all heading.',
+      description: "The Moon Monument - a rocket ship pointing eternally upward, commemorating the destination we're all 'inevitably' heading. The monument was built in 2021 when everything was definitely going to moon. Still pointing up. Still waiting. Any day now. Probably.",
       effects: {
         yieldRate: 10,
         volatility: 0.5,
@@ -1775,7 +1856,7 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'The Lambo Dealership fulfills every degen\'s dream.',
+      description: "The Lambo Dealership - the ultimate proof that you made it, bro. Features include: vehicles you'll only afford during bull markets, financing terms that expire with your portfolio, and a parking lot full of repossessed dreams from the last cycle. The slogan: 'When Lambo?' Answer: 'Probably Not Soon.'",
       effects: {
         yieldRate: 4,
         volatility: 0.3,
@@ -1802,7 +1883,7 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'Diamond Hands Plaza honors those who never sell.',
+      description: "Diamond Hands Plaza - a monument to those who held through 80% drawdowns and emerged either victorious or completely broke. The statues here depict hands made of actual diamonds, which is ironic because selling would have let most of these people afford actual diamonds.",
       effects: {
         yieldRate: 6,
         stakingBonus: 1.2,
@@ -1822,12 +1903,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 1, height: 1 },
     icon: '📄',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/1x1paper_hands_recycling_south.png',
+    },
     cost: 1000,
     crypto: {
       tier: 'retail',
       chain: 'ethereum',
-      description: 'Paper Hands Recycling processes panic sells.',
+      description: "Paper Hands Recycling - the municipal service that processes panic sells and premature exits. The building pulps discarded trading strategies and turns them into cautionary tales. Workers here have seen things: people selling ETH at $80, Bitcoin at $3k, and Solana at $8. The trauma is free.",
       effects: {
         yieldRate: -2,
         volatility: 0.4,
@@ -1846,12 +1930,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 1, height: 2 },
     icon: '🏃',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/1x2fomo_tower_south.png',
+    },
     cost: 7000, // Issue #70: Doubled from $3.5k
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'FOMO Tower broadcasts urgency signals 24/7. ⚠️ High contagion risk!',
+      description: "FOMO Tower broadcasts 'last chance to buy' signals 24/7, 365 days a year. The tower's alarm never stops because there's always something pumping somewhere. Residents develop a Pavlovian response to green candles. Side effects include: impulse buying, sleep deprivation, and empty wallets. ⚠️ High contagion risk!",
       effects: {
         yieldRate: 12, // Issue #70: Reduced from 15 (20% reduction)
         volatility: 0.6,
@@ -1870,12 +1957,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 2 },
     icon: '🏠',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x2hodl_bunker_south.png',
+    },
     cost: 5000,
     crypto: {
       tier: 'whale',
       chain: 'bitcoin',
-      description: 'The HODL Bunker protects long-term holdings.',
+      description: "The HODL Bunker - a nuclear-grade shelter for those who refuse to sell regardless of market conditions. The vault door only opens every four years, coinciding with halvings. Inside: canned food, cold storage devices, and a wall covered in 'HODL' written in various fonts. No sell buttons allowed.",
       effects: {
         yieldRate: 3,
         stakingBonus: 1.3,
@@ -1895,12 +1985,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 1, height: 1 },
     icon: '☕',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/1x1wagmi_cafe_south.png',
+    },
     cost: 2000,
     crypto: {
       tier: 'retail',
       chain: 'ethereum',
-      description: 'WAGMI Café serves hopium to all visitors.',
+      description: "WAGMI Café - a cozy establishment serving fresh hopium with every order. The menu includes: Bullish Blend, Mocha Moon, and the ever-popular 'We're Early' Espresso. The baristas are required to say 'WAGMI' after every transaction. Refills are free because conviction shouldn't have a price limit.",
       effects: {
         yieldRate: 4,
         volatility: 0.2,
@@ -1919,12 +2012,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 1, height: 1 },
     icon: '🚫',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/1x1ngmi_alley_south.png',
+    },
     cost: 500,
     crypto: {
       tier: 'retail',
       chain: 'ethereum',
-      description: 'NGMI Alley is where bad trades end up.',
+      description: "NGMI Alley - a dark corner where bad trades go to die and traders go to cry. The alley is littered with expired options, liquidated positions, and dreams that just needed 'one more 10x.' Locals share war stories about tokens that went to zero. Admission is technically free, but everyone who enters has already paid too much.",
       effects: {
         yieldRate: -3,
         volatility: 0.5,
@@ -1943,12 +2039,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 1, height: 2 },
     icon: '🌅',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/1x2gm_gn_tower_south.png',
+    },
     cost: 2500,
     crypto: {
       tier: 'retail',
       chain: 'ethereum',
-      description: 'The GM/GN Tower greets the crypto community.',
+      description: "The GM/GN Tower - a beacon that broadcasts 'gm' at sunrise and 'gn' at sunset without fail. The tower's primary function is reminding the community that they're all in this together, even when 'this' means watching their portfolio bleed. The tower has never missed a greeting. Consistency is key.",
       effects: {
         yieldRate: 5,
         volatility: 0.1,
@@ -1975,7 +2074,7 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'degen',
       chain: 'solana',
-      description: 'The WIF Temple celebrates the legendary dogwifhat.',
+      description: "The WIF Temple - a sacred site dedicated to a dog wearing a hat, because that's apparently worth billions now. Pilgrims come from across the Solana chain to pay respects to the hat. Nobody questions why a hat is significant. In crypto, it's better not to ask why. Just accept that the dog has a hat.",
       effects: {
         yieldRate: 12,
         volatility: 0.55,
@@ -2002,7 +2101,7 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'degen',
       chain: 'solana',
-      description: 'The BONK Arena where Shiba Inu memes come to play.',
+      description: "The BONK Arena - where Solana's Christmas airdrop became everyone's favorite memecoin. The arena features competitive BONK-ing and a gift shop selling baseball bats. Built during the depths of the bear market, this building proves that sometimes the best investments are the ones that make absolutely no sense.",
       effects: {
         yieldRate: 10,
         volatility: 0.5,
@@ -2021,12 +2120,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 2 },
     icon: '🐱',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x2popcat_pavilion_south.png',
+    },
     cost: 3800,
     crypto: {
       tier: 'degen',
       chain: 'solana',
-      description: 'The POPCAT Pavilion echoes with endless clicking sounds.',
+      description: "The POPCAT Pavilion echoes with the endless sound of mouths opening and closing, a tribute to the internet's strangest auction item - a clicking cat. The building's architecture mimics a cat mouth, opening periodically to release new tokens. Scientists still can't explain the appeal. That's the point.",
       effects: {
         yieldRate: 11,
         volatility: 0.52,
@@ -2053,7 +2155,7 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'degen',
       chain: 'base',
-      description: 'Brett Base is the home of Base chain\'s favorite frog.',
+      description: "Brett Base - home of Base chain's favorite blue frog, a Pepe derivative that somehow became its own thing. The building serves as embassy for the Boy's Club extended universe, where cartoon frogs achieve market caps larger than actual companies. The gift shop sells Matt Furie merch. Very limited liability.",
       effects: {
         yieldRate: 13,
         volatility: 0.48,
@@ -2072,12 +2174,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 3 },
     icon: '⚔️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x3floki_fortress_south.png',
+    },
     cost: 5500,
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'Floki Fortress stands as a Viking tribute to meme culture.',
+      description: "Floki Fortress - a Viking-themed structure built on the premise that Elon's dog could be a cultural institution. Features include: aggressive Twitter marketing, Valhalla-themed tokenomics, and a community that will pillage your mentions if you express skepticism. The fortress has survived more FUD raids than actual Vikings faced.",
       effects: {
         yieldRate: 9,
         volatility: 0.42,
@@ -2096,12 +2201,15 @@ export const MEME_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'meme',
     footprint: { width: 2, height: 2 },
     icon: '😎',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/meme/2x2mog_mansion_south.png',
+    },
     cost: 4500,
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'MOG Mansion is where the cool cats hang out.',
+      description: "MOG Mansion - headquarters for the token that embodies peak internet irony. The mansion is filled with sunglasses-wearing cats who exude an energy that can only be described as 'aggressively nonchalant.' Entry requires proving you don't care, which paradoxically means you do care. Very MOG.",
       effects: {
         yieldRate: 14,
         volatility: 0.55,
@@ -2136,7 +2244,7 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'institution',
       chain: 'ethereum',
-      description: 'The central Plasma headquarters.',
+      description: "The central Plasma headquarters - a gleaming tower that somehow makes DeFi feel like a proper institution. Inside, engineers work on making crypto 'simple' while the complexity grows exponentially. The building's slogan: 'We're building the future.' The footnote: 'Terms and conditions may apply.'",
       effects: {
         yieldRate: 18, // Reduced from 30 - still highest but more balanced
         stakingBonus: 1.5,
@@ -2164,7 +2272,7 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'A Plasma network node.',
+      description: "A humble Plasma node that processes transactions while you sleep. These nodes are the unsung heroes of the network - like internet janitors, but with better tokenomics. The LED lights blink green when things are good, red when you should check Twitter nervously.",
       effects: {
         yieldRate: 10,
         stakingBonus: 1.1,
@@ -2192,7 +2300,7 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'The Plasma cross-chain bridge.',
+      description: "The Plasma Bridge - where tokens go on vacation to other chains. Cross-chain bridges are either revolutionary infrastructure or ticking time bombs, depending on who you ask and which Tuesday it is. This one hasn't been exploited yet, which in crypto means it's basically ancient and trusted.",
       effects: {
         yieldRate: 15,
         tradingFees: 20,
@@ -2220,7 +2328,7 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'institution',
       chain: 'ethereum',
-      description: 'Secure Plasma token storage.',
+      description: "The Plasma Vault - where tokens go to feel safe and earn yield without judgment. The vault's security features include: multi-sig, timelock, and a really strong password that nobody has written on a Post-it note. Probably. The vault door is very heavy. Trust us.",
       effects: {
         yieldRate: 8,
         stakingBonus: 1.25,
@@ -2240,12 +2348,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 2, height: 2 },
     icon: '🔬',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/2x2plasma_lab_south.png',
+    },
     cost: 10000,
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'Plasma research and development.',
+      description: "The Plasma Lab - where researchers try to solve problems that didn't exist until crypto invented them. Current projects include: making gas fees negative, achieving infinite scalability, and figuring out what 'Web5' even means. Coffee consumption is mandatory; sleep is discouraged.",
       effects: {
         yieldRate: 12,
         airdropChance: 0.05,
@@ -2273,7 +2384,7 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'institution',
       chain: 'ethereum',
-      description: 'The Plasma community arena.',
+      description: "The Plasma Arena - where community events, hackathons, and spirited debates about tokenomics take place. The arena hosts weekly 'DAO Drama' viewing parties and monthly airdrop ceremonies. Seating is arranged by wallet size, because decentralization has its limits.",
       effects: {
         yieldRate: 5,
         volatility: 0.1,
@@ -2292,12 +2403,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 2, height: 3 },
     icon: '🗼',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/2x3plasma_tower_south.png',
+    },
     cost: 18000,
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'A Plasma signal tower.',
+      description: "The Plasma Tower broadcasts network health to the entire ecosystem. The signal is always bullish, even when the charts suggest otherwise. The tower's beacon can be seen from any L2, serving as a reminder that somewhere, someone is still building regardless of market conditions.",
       effects: {
         yieldRate: 14,
         volatility: 0.08,
@@ -2316,12 +2430,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 2, height: 2 },
     icon: '🌳',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/2x2plasma_garden_south.png',
+    },
     cost: 6000,
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'A peaceful Plasma garden.',
+      description: "The Plasma Garden - a rare oasis of tranquility in the chaotic crypto landscape. Here, yield is grown organically through sustainable protocols. The garden features a 'Patience Tree' where long-term holders meditate and a 'Panic Hedge' for when things get too calm.",
       effects: {
         yieldRate: 6,
         volatility: 0.05,
@@ -2340,12 +2457,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 1, height: 1 },
     icon: '⛲',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/1x1plasma_fountain_south.png',
+    },
     cost: 4000,
     crypto: {
       tier: 'retail',
       chain: 'ethereum',
-      description: 'A decorative Plasma fountain.',
+      description: "The Plasma Fountain sprays liquidity into the air and catches it again, symbolizing the circular nature of DeFi economics. Visitors throw tokens in and make wishes. Statistically, the tokens perform better than the wishes, but hope springs eternal.",
       effects: {
         yieldRate: 3,
         volatility: 0.03,
@@ -2364,12 +2484,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 2, height: 2 },
     icon: '🗿',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/2x2plasma_monument_south.png',
+    },
     cost: 8000,
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'A Plasma historical monument.',
+      description: "The Plasma Monument commemorates the founding of the protocol, back when gas was cheap and optimism was high. The monument's plaque reads: 'Here, someone said we should build something.' And they did. Against all odds. Despite everything.",
       effects: {
         yieldRate: 4,
         volatility: 0.05,
@@ -2388,12 +2511,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 2, height: 1 },
     icon: '🚪',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/2x1plasma_gateway_south.png',
+    },
     cost: 7000,
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'The Plasma city entrance.',
+      description: "The Plasma Gateway - the grand entrance to the ecosystem. A sign above reads 'Abandon Traditional Finance, All Ye Who Enter Here.' Entry is permissionless, but exit might require several confirmations and an uncomfortable amount of patience.",
       effects: {
         yieldRate: 5,
         volatility: 0.06,
@@ -2412,12 +2538,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 2, height: 2 },
     icon: '🔭',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/2x2plasma_observatory_south.png',
+    },
     cost: 9000,
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'The Plasma research observatory.',
+      description: "The Plasma Observatory - where analysts watch on-chain data through giant telescopes and pretend to understand what it means. Current research focus: predicting the next narrative rotation. Accuracy rate: slightly better than coin flipping. Slightly.",
       effects: {
         yieldRate: 8,
         airdropChance: 0.03,
@@ -2445,7 +2574,7 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     crypto: {
       tier: 'institution',
       chain: 'ethereum',
-      description: 'The Plasma energy reactor.',
+      description: "The Plasma Reactor generates yield through a complex process nobody fully understands but everyone agrees is 'safe' and 'sustainable.' The reactor's core runs on pure conviction and the collective belief that number will, in fact, go up. Please don't tap on the glass.",
       effects: {
         yieldRate: 25,
         stakingBonus: 1.3,
@@ -2465,12 +2594,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 3, height: 2 },
     icon: '🎓',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/3x2plasma_academy_south.png',
+    },
     cost: 12000,
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'The Plasma education center.',
+      description: "The Plasma Academy - where aspiring degens learn the ways of DeFi. The curriculum covers: reading smart contracts (advanced), interpreting tokenomics (expert), and managing emotional responses to red candles (required). Graduation requires surviving at least one market correction.",
       effects: {
         yieldRate: 7,
         volatility: 0.05,
@@ -2489,12 +2621,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 2, height: 2 },
     icon: '🏛️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/2x2plasma_museum_south.png',
+    },
     cost: 10000,
     crypto: {
       tier: 'whale',
       chain: 'ethereum',
-      description: 'The Plasma history museum.',
+      description: "The Plasma Museum chronicles the short but eventful history of the protocol. Exhibits include: 'The First Exploit Scare,' 'That Time We Almost Rugged Ourselves,' and 'Screenshots of FUD We Survived.' The gift shop sells commemorative hardware wallets.",
       effects: {
         yieldRate: 4,
         volatility: 0.04,
@@ -2513,12 +2648,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 4, height: 3 },
     icon: '🏟️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/4x3plasma_stadium_south.png',
+    },
     cost: 30000,
     crypto: {
       tier: 'institution',
       chain: 'ethereum',
-      description: 'The grand Plasma stadium.',
+      description: "The grand Plasma Stadium hosts the most anticipated events in the ecosystem: token launches, governance votes, and the annual 'Liquidation Games.' The Jumbotron displays portfolio values in real-time, causing coordinated gasps and cheers. Refreshments are priced in stablecoins.",
       effects: {
         yieldRate: 8,
         volatility: 0.08,
@@ -2537,12 +2675,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 1, height: 2 },
     icon: '🗼',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/1x2plasma_spire_south.png',
+    },
     cost: 8000,
     crypto: {
       tier: 'degen',
       chain: 'ethereum',
-      description: 'A tall Plasma spire.',
+      description: "The Plasma Spire pierces the sky like an optimistic price prediction. From its peak, you can see the entire DeFi landscape - the yield farms, the liquidation pools, the memecoin swamps. On clear days, you can almost see Ethereum L1. The elevator only goes up; stairs down.",
       effects: {
         yieldRate: 9,
         volatility: 0.07,
@@ -2561,12 +2702,15 @@ export const PLASMA_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'plasma',
     footprint: { width: 3, height: 3 },
     icon: '🔮',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/plasma/3x3plasma_nexus_south.png',
+    },
     cost: 22000,
     crypto: {
       tier: 'institution',
       chain: 'ethereum',
-      description: 'The Plasma connection nexus.',
+      description: "The Plasma Nexus - where all the protocol's components connect in beautiful, incomprehensible harmony. Data flows through cables that glow with the light of a thousand transactions. Engineers here speak in a language that's 40% jargon, 40% acronyms, and 20% hopeful speculation.",
       effects: {
         yieldRate: 20,
         stakingBonus: 1.2,
@@ -2606,7 +2750,7 @@ export const STABLECOIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2014,
       tvlTier: 'massive',
-      description: 'The Tether HQ anchors stability with $120B+ in reserves.',
+      description: "The Tether HQ - where $120B+ in reserves are definitely, absolutely, totally backed by real dollars. Audit reports are 'coming soon' since 2017. The building is somehow both the backbone of crypto and the thing that keeps everyone slightly nervous. Don't think about it too hard.",
       effects: {
         yieldRate: 4,
         stakingBonus: 1.0,
@@ -2637,7 +2781,7 @@ export const STABLECOIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2018,
       tvlTier: 'massive',
-      description: 'Circle Tower issues USDC with full regulatory compliance.',
+      description: "Circle Tower - the stablecoin for people who read the fine print. USDC is what happens when you want to be in crypto but also want your banker parents to not disown you. Regular audits, regulatory compliance, and the boring reliability that somehow feels exotic in this industry.",
       effects: {
         yieldRate: 3,
         stakingBonus: 1.02,
@@ -2668,7 +2812,7 @@ export const STABLECOIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2017,
       tvlTier: 'high',
-      description: 'DAI Vault generates the OG decentralized stablecoin.',
+      description: "DAI Vault - the OG decentralized stablecoin that's survived more existential crises than a philosophy major. Over-collateralized because degens can't be trusted, and somehow that works. The building runs on pure game theory and the collective hope that liquidation bots stay hungry.",
       effects: {
         yieldRate: 5,
         stakingBonus: 1.08,
@@ -2688,7 +2832,10 @@ export const STABLECOIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'stablecoin',
     footprint: { width: 2, height: 2 },
     icon: '⚗️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/stablecoin/2x2ethena_labs_south.png',
+    },
     cost: 12000,
     crypto: {
       tier: 'whale',
@@ -2696,7 +2843,7 @@ export const STABLECOIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2024,
       tvlTier: 'high',
-      description: 'Ethena Labs creates USDe, a high-yield synthetic dollar.',
+      description: "Ethena Labs - where 'synthetic dollar' somehow pays 20%+ APY and everyone pretends that's normal. The building runs on delta-neutral strategies that definitely work until they don't. Residents enjoy yields that would make TradFi cry and risk managers twitch.",
       effects: {
         yieldRate: 25,
         stakingBonus: 1.25,
@@ -2718,7 +2865,10 @@ export const STABLECOIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'stablecoin',
     footprint: { width: 2, height: 2 },
     icon: '🏦',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/stablecoin/2x2stablecoin_reserve_south.png',
+    },
     cost: 8000,
     crypto: {
       tier: 'retail',
@@ -2726,7 +2876,7 @@ export const STABLECOIN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
       chain: 'ethereum',
       launchYear: 2024,
       tvlTier: 'medium',
-      description: 'A diversified stablecoin reserve. Low yield but immune to market sentiment swings. The ultimate safe haven.',
+      description: "The Stablecoin Reserve - a boring bunker for boring money. No pumps, no dumps, just the gentle accumulation of predictable yield. Perfect for the reformed degen who finally realized that 'making it' sometimes means 'not losing it.' The sign reads: 'Excitement Not Included.'",
       effects: {
         yieldRate: 3, // Low yield
         stakingBonus: 1.0,
@@ -2767,7 +2917,7 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: 'ethereum',
       launchYear: 2017,
       tvlTier: 'massive',
-      description: 'Chainlink Hub provides price feeds powering all DeFi.',
+      description: "Chainlink Hub - the oracle that tells DeFi what things are worth, making it arguably the most important building nobody talks about at parties. Without these price feeds, your liquidation would be based on vibes instead of data. The marines here keep the oracles honest and the memes fresh.",
       effects: {
         yieldRate: 8,
         stakingBonus: 1.15,
@@ -2798,7 +2948,7 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: 'ethereum',
       launchYear: 2020,
       tvlTier: 'medium',
-      description: 'The Graph Indexer organizes blockchain data for apps.',
+      description: "The Graph Indexer - the Google of blockchain, if Google were decentralized and run by curators who stake tokens to serve your queries. Without this building, your favorite dApp would take 47 minutes to load. The indexers here believe in the power of organized data and GRT staking rewards.",
       effects: {
         yieldRate: 6,
         stakingBonus: 1.08,
@@ -2829,7 +2979,7 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: 'solana',
       launchYear: 2021,
       tvlTier: 'medium',
-      description: 'Pyth Observatory delivers high-frequency price data.',
+      description: "Pyth Observatory - Solana's answer to 'what if oracles were fast?' The building updates prices so quickly that by the time you've read this description, they've already changed 17 times. Built by Jump Trading, so you know it's serious about milliseconds.",
       effects: {
         yieldRate: 10,
         stakingBonus: 1.1,
@@ -2861,7 +3011,7 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: 'ethereum',
       launchYear: 2022,
       tvlTier: 'high',
-      description: 'LayerZero Bridge enables omnichain messaging.',
+      description: "LayerZero Bridge - the postal service of blockchain, delivering messages between chains that otherwise refuse to talk to each other. 'Omnichain' sounds impressive until you realize it mostly means 'we've integrated a lot of chains.' The airdrop farmers here set international records for bridge transactions.",
       effects: {
         yieldRate: 12,
         tradingFees: 15,
@@ -2893,7 +3043,7 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: 'solana',
       launchYear: 2021,
       tvlTier: 'high',
-      description: 'Wormhole Portal connects Solana to 20+ blockchains.',
+      description: "Wormhole Portal - the bridge that connects Solana to everywhere, famous for that one time $320M went on an unscheduled vacation. They fixed it, rebuilt trust, and kept bridging. The building's sign now reads: 'Under New Management (Same Great Bridging!)' Security audits are framed on every wall.",
       effects: {
         yieldRate: 11,
         tradingFees: 12,
@@ -2914,7 +3064,10 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
     category: 'infrastructure',
     footprint: { width: 2, height: 2 },
     icon: '🔍',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/infrastructure/2x2security_auditor_south.png',
+    },
     cost: 15000,
     crypto: {
       tier: 'institution',
@@ -2922,7 +3075,7 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: 'ethereum',
       launchYear: 2018,
       tvlTier: 'medium',
-      description: 'Security Auditor reduces rug pull risk for nearby buildings by 25%. Essential protection for your DeFi district.',
+      description: "Security Auditor - the building that reads code so you don't have to. Auditors here spend their days finding bugs, exploits, and 'creative accounting' before the bad guys do. Having one nearby reduces rug risk by 25% - still not zero, because this is crypto, but better than nothing.",
       effects: {
         yieldRate: 2,
         volatility: 0.02,
@@ -2944,7 +3097,10 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
     category: 'infrastructure',
     footprint: { width: 2, height: 2 },
     icon: '🛡️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/infrastructure/2x2crypto_insurance_south.png',
+    },
     cost: 20000,
     crypto: {
       tier: 'institution',
@@ -2952,7 +3108,7 @@ export const INFRASTRUCTURE_BUILDINGS: Record<string, CryptoBuildingDefinition> 
       chain: 'ethereum',
       launchYear: 2019,
       tvlTier: 'high',
-      description: 'Crypto Insurance covers nearby buildings - recover 50% of building value on rug pull. Sleep better at night.',
+      description: "Crypto Insurance - because even in DeFi, sometimes you need a safety net. This building covers nearby protocols, letting you recover 50% if something goes wrong. Yes, it's insurance in an industry built on 'code is law.' The irony is not lost on anyone. Sleep better anyway.",
       effects: {
         yieldRate: 1,
         volatility: 0.03,
@@ -2986,7 +3142,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 3, height: 3 },
     icon: '🏚️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/3x3ftx_ruins_south.png',
+    },
     cost: 1, // Basically worthless, like FTX customer deposits
     crypto: {
       tier: 'institution',
@@ -3012,7 +3171,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 2 },
     icon: '🌑',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x2luna_crater_south.png',
+    },
     cost: 100,
     crypto: {
       tier: 'degen',
@@ -3038,7 +3200,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 4, height: 2 },
     icon: '🚢',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/4x2three_ac_yacht_south.png',
+    },
     cost: 500,
     crypto: {
       tier: 'whale',
@@ -3063,7 +3228,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 2 },
     icon: '🧊',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x2celsius_freezer_south.png',
+    },
     cost: 200,
     crypto: {
       tier: 'whale',
@@ -3092,7 +3260,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 3 },
     icon: '🗼',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x3vitalik_tower_south.png',
+    },
     cost: 30000,
     crypto: {
       tier: 'institution',
@@ -3118,7 +3289,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 2 },
     icon: '❓',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x2satoshi_monument_south.png',
+    },
     cost: 50000,
     crypto: {
       tier: 'institution',
@@ -3144,7 +3318,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 3, height: 2 },
     icon: '🏦',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/3x2cz_safu_fund_south.png',
+    },
     cost: 25000,
     crypto: {
       tier: 'institution',
@@ -3171,7 +3348,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 2 },
     icon: '🦄',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x2hayden_fountain_south.png',
+    },
     cost: 15000,
     crypto: {
       tier: 'whale',
@@ -3198,7 +3378,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 3 },
     icon: '🗼',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x3solana_spire_south.png',
+    },
     cost: 20000,
     crypto: {
       tier: 'institution',
@@ -3224,7 +3407,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 2 },
     icon: '🏰',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x2andre_fortress_south.png',
+    },
     cost: 18000,
     crypto: {
       tier: 'whale',
@@ -3253,7 +3439,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 1 },
     icon: '📺',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x1hfsp_billboard_south.png',
+    },
     cost: 5000,
     crypto: {
       tier: 'degen',
@@ -3277,7 +3466,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 3, height: 3 },
     icon: '🌅',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/3x3wagmi_plaza_south.png',
+    },
     cost: 12000,
     crypto: {
       tier: 'whale',
@@ -3301,7 +3493,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 2 },
     icon: '🏛️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x2probably_nothing_museum_south.png',
+    },
     cost: 8000,
     crypto: {
       tier: 'degen',
@@ -3326,7 +3521,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 1, height: 2 },
     icon: '🪦',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/1x2ngmi_alley_memorial_south.png',
+    },
     cost: 1000,
     crypto: {
       tier: 'retail',
@@ -3350,7 +3548,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 2 },
     icon: '📈',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x2ngu_tech_center_south.png',
+    },
     cost: 15000,
     crypto: {
       tier: 'whale',
@@ -3377,7 +3578,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 3, height: 2 },
     icon: '🐦',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/3x2ct_headquarters_south.png',
+    },
     cost: 10000,
     crypto: {
       tier: 'whale',
@@ -3401,7 +3605,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 2 },
     icon: '🎰',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x2pump_fun_factory_south.png',
+    },
     cost: 5000,
     crypto: {
       tier: 'degen',
@@ -3427,7 +3634,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 2 },
     icon: '🏚️',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x2alpha_bunker_south.png',
+    },
     cost: 20000,
     crypto: {
       tier: 'whale',
@@ -3452,7 +3662,10 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
     category: 'legends',
     footprint: { width: 2, height: 1 },
     icon: '🧞',
-    isProcedural: true,
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/legends/2x1rug_magic_carpet_south.png',
+    },
     cost: 3000,
     crypto: {
       tier: 'degen',
@@ -3473,6 +3686,150 @@ export const LEGENDS_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
 };
 
 // =============================================================================
+// TITAN BUILDINGS (5)
+// =============================================================================
+// Special buildings for the Titan Pet system.
+// These serve as the Titan's home base with upgradeable features.
+
+export const TITAN_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
+  'titan-den-1': {
+    id: 'titan-den-1',
+    name: 'Titan Den (Basic)',
+    category: 'titan',
+    footprint: { width: 2, height: 2 },
+    icon: '🏠',
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/titan/2x2titan-den-1_south.png',
+    },
+    cost: 5000,
+    crypto: {
+      tier: 'retail',
+      chain: 'ethereum',
+      description: 'A cozy den for your Titan companion. Provides basic rest and feeding. "Every creature needs a place to call home, even digital ones." - Hitchhiker\'s Guide to Crypto City',
+      effects: {
+        yieldRate: 0,
+        volatility: 0,
+        rugRisk: 0,
+        populationBoost: 10,
+        happinessEffect: 20,
+        zoneRadius: 2,
+        chainSynergy: ['ethereum'],
+        categorySynergy: ['titan'],
+      },
+    },
+  },
+  'titan-den-2': {
+    id: 'titan-den-2',
+    name: 'Titan Den (Improved)',
+    category: 'titan',
+    footprint: { width: 2, height: 2 },
+    icon: '🏡',
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/titan/2x2titan-den-2_south.png',
+    },
+    cost: 10000,
+    crypto: {
+      tier: 'degen',
+      chain: 'ethereum',
+      description: 'An improved den with toy storage and a training dummy. Your Titan can now practice looking intimidating in the mirror.',
+      effects: {
+        yieldRate: 0,
+        volatility: 0,
+        rugRisk: 0,
+        populationBoost: 15,
+        happinessEffect: 25,
+        zoneRadius: 3,
+        chainSynergy: ['ethereum'],
+        categorySynergy: ['titan'],
+      },
+    },
+  },
+  'titan-den-3': {
+    id: 'titan-den-3',
+    name: 'Titan Den (Advanced)',
+    category: 'titan',
+    footprint: { width: 3, height: 3 },
+    icon: '🏘️',
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/titan/3x3titan-den-3_south.png',
+    },
+    cost: 20000,
+    crypto: {
+      tier: 'whale',
+      chain: 'ethereum',
+      description: 'A spacious den featuring a miracle altar. Perfect for a Titan developing divine aspirations.',
+      effects: {
+        yieldRate: 0,
+        volatility: 0,
+        rugRisk: 0,
+        populationBoost: 25,
+        happinessEffect: 35,
+        zoneRadius: 4,
+        chainSynergy: ['ethereum'],
+        categorySynergy: ['titan'],
+      },
+    },
+  },
+  'titan-den-4': {
+    id: 'titan-den-4',
+    name: 'Titan Den (Deluxe)',
+    category: 'titan',
+    footprint: { width: 3, height: 3 },
+    icon: '🏰',
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/titan/3x3titan-den-4_south.png',
+    },
+    cost: 40000,
+    crypto: {
+      tier: 'whale',
+      chain: 'ethereum',
+      description: 'A luxurious den with a memory shrine that prevents belief decay. Your Titan will never forget who taught it that stealing is bad.',
+      effects: {
+        yieldRate: 0,
+        volatility: 0,
+        rugRisk: 0,
+        populationBoost: 35,
+        happinessEffect: 45,
+        zoneRadius: 5,
+        chainSynergy: ['ethereum'],
+        categorySynergy: ['titan'],
+      },
+    },
+  },
+  'titan-den-5': {
+    id: 'titan-den-5',
+    name: 'Titan Den (Premium)',
+    category: 'titan',
+    footprint: { width: 4, height: 4 },
+    icon: '🏯',
+    isProcedural: false,
+    sprites: {
+      south: '/Building/crypto/titan/4x4titan-den-5_south.png',
+    },
+    cost: 100000,
+    crypto: {
+      tier: 'institution',
+      chain: 'ethereum',
+      description: 'The ultimate Titan sanctuary featuring an evolution chamber. Your Titan can now undergo species transformation. Side effects may include existential crises and temporary identity confusion.',
+      effects: {
+        yieldRate: 0,
+        volatility: 0,
+        rugRisk: 0,
+        populationBoost: 50,
+        happinessEffect: 60,
+        zoneRadius: 6,
+        chainSynergy: ['ethereum'],
+        categorySynergy: ['titan'],
+      },
+    },
+  },
+};
+
+// =============================================================================
 // ALL CRYPTO BUILDINGS
 // =============================================================================
 // Combined registry of all crypto buildings.
@@ -3487,6 +3844,7 @@ export const ALL_CRYPTO_BUILDINGS: Record<string, CryptoBuildingDefinition> = {
   ...STABLECOIN_BUILDINGS,
   ...INFRASTRUCTURE_BUILDINGS,
   ...LEGENDS_BUILDINGS,
+  ...TITAN_BUILDINGS,
 };
 
 // Get crypto building by ID

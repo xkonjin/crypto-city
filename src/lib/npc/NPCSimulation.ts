@@ -28,6 +28,34 @@ import { EconomyManager } from './EconomyManager';
 import { FactionManager } from './FactionManager';
 import { ConflictManager } from './ConflictManager';
 import { LearningManager } from './LearningManager';
+import { thoughtEngine, type ThoughtContext } from './ThoughtEngine';
+
+// X402 Economy imports
+import {
+  serviceExchange,
+  giftSystem,
+  getNPCWalletManager,
+  ensureNPCHasWallet,
+  ensureNPCHasServices,
+  processNPCEconomyTick,
+  DEFAULT_ECONOMY_OPTIONS,
+  type EconomyTickResult,
+} from './x402';
+
+// Disaster imports
+import {
+  processNPCDisasterReaction,
+  applyReactionToNPC,
+  type NPCDisasterReaction,
+} from '@/lib/disasters/npcReactions';
+import { playerDisasterManager } from '@/lib/disasters/DisasterManager';
+import type { ActivePlayerDisaster } from '@/lib/disasters/types';
+
+// Titan imports
+import { TitanManager } from '@/lib/titan';
+import { updateTitanNeeds } from '@/lib/titan/TitanNeeds';
+import { decayAlignment, getAlignmentState } from '@/lib/titan/TitanAlignment';
+import type { TitanPet, AlignmentState } from '@/games/isocity/types/titan';
 
 // =============================================================================
 // TYPES
@@ -47,6 +75,12 @@ export interface SimulationConfig {
   enableLLM: boolean;
   /** Whether Level of Detail optimization is enabled */
   lodEnabled: boolean;
+  /** Whether X402 economy is enabled for NPC transactions */
+  x402Enabled: boolean;
+  /** Initial balance for NPC X402 wallets (in USDT micro units) */
+  x402InitialBalance: bigint;
+  /** Whether disaster reactions are enabled */
+  disasterReactionsEnabled: boolean;
 }
 
 /**
@@ -64,12 +98,25 @@ export interface SimulationState {
 }
 
 /**
- * Event emitted when something significant happens to an NPC
+ * Event emitted when something significant happens to an NPC or Titan
  */
 export interface NPCEvent {
   /** Type of event */
-  type: 'spawn' | 'despawn' | 'interaction' | 'trade' | 'conflict' | 'level_up' | 'mood_change';
-  /** ID of the NPC involved */
+  type: 
+    | 'spawn' 
+    | 'despawn' 
+    | 'interaction' 
+    | 'trade' 
+    | 'conflict' 
+    | 'level_up' 
+    | 'mood_change' 
+    | 'titan_action' 
+    | 'titan_level_up' 
+    | 'titan_alignment_change'
+    | 'service_exchange'   // X402: NPC received a service from another NPC
+    | 'gift_given'         // X402: NPC gave a gift to another NPC
+    | 'disaster_reaction'; // Disaster: NPC reacted to a disaster
+  /** ID of the NPC or Titan involved */
   npcId: string;
   /** Additional event-specific data */
   data: unknown;
@@ -103,6 +150,9 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
   maxNPCs: 100,
   enableLLM: false,
   lodEnabled: true,
+  x402Enabled: true,
+  x402InitialBalance: BigInt(5_000_000), // $5 USDT in micro units
+  disasterReactionsEnabled: true,
 };
 
 /**
@@ -163,6 +213,10 @@ export class NPCSimulation {
   private factionManager: FactionManager;
   private conflictManager: ConflictManager;
   private learningManager: LearningManager;
+
+  // Active disaster tracking
+  private activeDisaster: ActivePlayerDisaster | null = null;
+  private processedDisasterNPCs: Set<string> = new Set();
 
   // Event callbacks
   public onTick: ((state: SimulationState) => void) | null = null;
@@ -265,8 +319,14 @@ export class NPCSimulation {
       this.advanceDay();
     }
 
+    // Check for active disasters
+    if (this.config.disasterReactionsEnabled) {
+      this.checkForActiveDisaster();
+    }
+
     // Update each NPC
-    for (const npc of NPCManager.getAllNPCs()) {
+    const allNPCs = NPCManager.getAllNPCs();
+    for (const npc of allNPCs) {
       // Check LOD for this NPC
       if (this.config.lodEnabled) {
         const lod = this.calculateLOD(npc, this.cameraPosition);
@@ -281,10 +341,22 @@ export class NPCSimulation {
       this.updateNPC(npc, deltaMinutes);
     }
 
+    // Update Titan if exists
+    const titan = TitanManager.getTitan();
+    if (titan) {
+      this.updateTitan(titan, deltaMinutes);
+    }
+
     // Periodic updates (not every tick)
     if (this.state.tickCount % 10 === 0) {
       this.processInteractions();
       this.updateRelationships();
+    }
+
+    // X402 Economy tick - process autonomous economic behavior
+    // Run every 30 ticks (~3 seconds) to allow economic activity without being overwhelming
+    if (this.config.x402Enabled && this.state.tickCount % 30 === 0) {
+      this.processX402Economy(allNPCs);
     }
 
     if (this.state.tickCount % 60 === 0) {
@@ -303,10 +375,25 @@ export class NPCSimulation {
    * @param deltaMinutes - Game minutes elapsed this tick
    */
   updateNPC(npc: CryptoNPC, deltaMinutes: number): void {
-    // 1. Update needs (decay)
+    // 0. Initialize X402 wallet if enabled and not yet done
+    // "A wallet in crypto is like a towel in the galaxy - never leave home without it."
+    if (this.config.x402Enabled && !npc.hasX402Wallet) {
+      this.initializeNPCX402(npc);
+    }
+
+    // 1. Check if disaster override applies
+    // Disasters override normal behavior - when the sky is falling, you don't check your portfolio
+    if (this.activeDisaster && this.config.disasterReactionsEnabled) {
+      if (!this.processedDisasterNPCs.has(npc.id)) {
+        this.handleDisasterForNPC(npc);
+        return; // Skip normal update during disaster reaction
+      }
+    }
+
+    // 2. Update needs (decay)
     npc.needs = this.needsManager.updateNeeds(npc.needs, deltaMinutes);
 
-    // 2. Check schedule
+    // 3. Check schedule
     const scheduledActivity = ScheduleManager.getCurrentActivity(
       {
         id: npc.id,
@@ -323,12 +410,12 @@ export class NPCSimulation {
       this.getGameHour()
     );
 
-    // 3. Check for urgent needs override
+    // 4. Check for urgent needs override
     const urgentNeed = this.needsManager.getMostUrgentNeed(npc.needs);
     const shouldOverride =
       urgentNeed && urgentNeed.need.current < urgentNeed.need.criticalThreshold;
 
-    // 4. Decide what to do
+    // 5. Decide what to do
     if (shouldOverride) {
       this.handleUrgentNeed(npc, urgentNeed);
     } else if (scheduledActivity) {
@@ -337,13 +424,13 @@ export class NPCSimulation {
       this.doIdleActivity(npc);
     }
 
-    // 5. Update movement
+    // 6. Update movement
     this.movementManager.update(npc, deltaMinutes / 60); // Convert to seconds
 
-    // 6. Update mood
+    // 7. Update mood
     this.moodManager.decayMoodIntensity(npc, deltaMinutes);
 
-    // 7. Process interactions if near other NPCs and should interact
+    // 8. Process interactions if near other NPCs and should interact
     if (this.interactionManager.shouldInitiateInteraction(npc)) {
       const nearbyNPCs = this.getNearbyNPCs(npc, 3); // Within 3 tiles
       if (nearbyNPCs.length > 0) {
@@ -352,6 +439,12 @@ export class NPCSimulation {
           this.processInteraction(npc, target);
         }
       }
+    }
+
+    // 9. Update thought stream every 10 ticks
+    // "The unexamined NPC life is not worth simulating." — Socrates, probably
+    if (this.state.tickCount % 10 === 0) {
+      this.updateThoughtStream(npc);
     }
   }
 
@@ -433,6 +526,108 @@ export class NPCSimulation {
     npc.currentActivity = 'idle';
     // Slight fun gain from idle time
     npc.needs = this.needsManager.satisfyNeed(npc.needs, 'fun', 0.1);
+  }
+
+  // ===========================================================================
+  // TITAN METHODS
+  // ===========================================================================
+
+  /**
+   * Update the Titan for this tick
+   *
+   * @param titan - The Titan to update
+   * @param deltaMinutes - Game minutes elapsed this tick
+   */
+  private updateTitan(titan: TitanPet, deltaMinutes: number): void {
+    // Store previous alignment state for event emission
+    const previousAlignment = titan.alignment;
+    const previousState = getAlignmentState(previousAlignment);
+
+    // 1. Update needs (decay)
+    titan.needs = updateTitanNeeds(titan.needs, deltaMinutes);
+
+    // 2. Update alignment (decay toward neutral)
+    titan.alignment = decayAlignment(titan.alignment, deltaMinutes);
+
+    // 3. Update appearance based on alignment
+    const newState = getAlignmentState(titan.alignment);
+    if (newState !== previousState) {
+      titan.currentAppearance = newState;
+      // Emit alignment change event
+      this.emitNPCEvent({
+        type: 'titan_alignment_change',
+        npcId: titan.id,
+        data: {
+          oldAlignment: previousAlignment,
+          newAlignment: titan.alignment,
+          oldState: previousState,
+          newState,
+        },
+        timestamp: Date.now(),
+      });
+    }
+
+    // 4. Check for nearby NPCs for potential interactions
+    const nearbyNPCs = this.getTitanNearbyNPCs(titan, 3);
+    if (nearbyNPCs.length > 0) {
+      // Titan might interact with NPCs based on its current state
+      // This is a placeholder for more complex Titan AI behavior
+      // For now, just satisfy social need slightly if NPCs are nearby
+      if (titan.needs.social.current < 80) {
+        titan.needs.social.current = Math.min(
+          titan.needs.social.max,
+          titan.needs.social.current + 0.5
+        );
+      }
+    }
+
+    // 5. Update Titan age
+    titan.age += deltaMinutes / 1440; // 1440 minutes = 1 day
+
+    // 6. Update movement if Titan is moving
+    // (Movement handled by movement manager if integrated)
+    // For now, Titan position updates are handled via TitanManager.updateTitanPosition
+
+    // Note: LOD for Titan is handled in calculateTitanLOD - Titan always gets
+    // at least 'medium' LOD to ensure it's always updated reasonably
+  }
+
+  /**
+   * Get NPCs within a certain distance of the Titan
+   *
+   * @param titan - The Titan
+   * @param maxDistance - Maximum distance in tiles
+   * @returns Array of nearby NPCs
+   */
+  getTitanNearbyNPCs(titan: TitanPet, maxDistance: number): CryptoNPC[] {
+    const allNPCs = NPCManager.getAllNPCs();
+
+    return allNPCs.filter((npc) => {
+      const distance = Math.sqrt(
+        Math.pow(npc.gridX - titan.gridX, 2) + Math.pow(npc.gridY - titan.gridY, 2)
+      );
+      return distance <= maxDistance;
+    });
+  }
+
+  /**
+   * Calculate the LOD level for the Titan
+   * Titan always gets at least 'medium' LOD even when far from camera
+   *
+   * @param titan - The Titan
+   * @returns The LOD level (at least 'medium')
+   */
+  calculateTitanLOD(titan: TitanPet): NPCLODLevel {
+    const distance = Math.sqrt(
+      Math.pow(titan.gridX - this.cameraPosition.x, 2) +
+        Math.pow(titan.gridY - this.cameraPosition.y, 2)
+    );
+
+    // Regular LOD calculation
+    if (distance < 5) return 'full';
+    if (distance < 15) return 'high';
+    // Titan minimum is 'medium' - never goes lower
+    return 'medium';
   }
 
   /**
@@ -523,6 +718,252 @@ export class NPCSimulation {
           this.conflictManager.deescalateConflict(conflict.id, 1);
         }
       }
+    }
+  }
+
+  // ===========================================================================
+  // THOUGHT STREAM
+  // ===========================================================================
+
+  /**
+   * Update an NPC's thought stream based on their current context.
+   * Generates new thoughts using the ThoughtEngine and updates the NPC's internal state.
+   *
+   * @param npc - The NPC to update thoughts for
+   */
+  private updateThoughtStream(npc: CryptoNPC): void {
+    // Initialize thought stream if not present
+    if (!npc.thoughtStream) {
+      npc.thoughtStream = thoughtEngine.createDefaultThoughtStream();
+    }
+
+    // Build thought context from current simulation state
+    const nearbyNPCs = this.getNearbyNPCs(npc, 5);
+    const context: ThoughtContext = {
+      nearbyNPCs,
+      marketCondition: this.getCurrentMarketCondition(),
+      timeOfDay: this.getTimeOfDay(),
+      recentEvents: [], // Could be populated from event log
+      gameDay: this.state.currentGameDay,
+    };
+
+    // Update the thought stream
+    npc.thoughtStream = thoughtEngine.updateThoughtStream(npc, context, npc.thoughtStream);
+  }
+
+  /**
+   * Get the current market condition based on crypto economy state.
+   * Returns 'bull' | 'bear' | 'crab' | 'volatile'
+   */
+  private getCurrentMarketCondition(): 'bull' | 'bear' | 'crab' | 'volatile' {
+    // Placeholder - could integrate with CryptoEconomyManager
+    // For now, return a semi-random condition based on game day
+    const day = this.state.currentGameDay;
+    if (day % 7 < 2) return 'bull';
+    if (day % 7 < 4) return 'crab';
+    if (day % 7 < 6) return 'bear';
+    return 'volatile';
+  }
+
+  /**
+   * Get the time of day category based on game hour.
+   */
+  private getTimeOfDay(): 'morning' | 'afternoon' | 'evening' | 'night' {
+    const hour = this.getGameHour();
+    if (hour >= 5 && hour < 12) return 'morning';
+    if (hour >= 12 && hour < 17) return 'afternoon';
+    if (hour >= 17 && hour < 21) return 'evening';
+    return 'night';
+  }
+
+  // ===========================================================================
+  // X402 ECONOMY INTEGRATION
+  // ===========================================================================
+
+  /**
+   * Initialize X402 wallet and services for an NPC.
+   * Called when an NPC is first updated and doesn't have a wallet yet.
+   * 
+   * "In the beginning, there was the wallet. And the wallet was good.
+   * And then came the gas fees, and things got complicated."
+   * 
+   * @param npc - The NPC to initialize
+   */
+  private initializeNPCX402(npc: CryptoNPC): void {
+    // Create wallet and fund with initial balance
+    ensureNPCHasWallet(npc);
+    ensureNPCHasServices(npc);
+    
+    // Set initial balance from config
+    const walletManager = getNPCWalletManager();
+    walletManager.setSimulatedBalance(npc.id, this.config.x402InitialBalance);
+  }
+
+  /**
+   * Process autonomous X402 economic behavior for all NPCs.
+   * NPCs will seek services when needs are low and occasionally give gifts to friends.
+   * 
+   * "The economy, much like the universe, is vast and mysterious.
+   * Unlike the universe, it's also occasionally profitable."
+   * 
+   * @param allNPCs - All NPCs in the simulation
+   */
+  private async processX402Economy(allNPCs: CryptoNPC[]): Promise<void> {
+    // Process a subset of NPCs each tick to spread the load
+    const npcCount = allNPCs.length;
+    const processIndex = this.state.tickCount % Math.max(1, Math.floor(npcCount / 3));
+    const npcToProcess = allNPCs[processIndex % npcCount];
+    
+    if (!npcToProcess || !npcToProcess.hasX402Wallet) return;
+
+    try {
+      const result = await processNPCEconomyTick(
+        npcToProcess,
+        allNPCs,
+        this.state.currentGameDay,
+        DEFAULT_ECONOMY_OPTIONS
+      );
+
+      if (result.hadActivity) {
+        this.handleX402EconomyResult(npcToProcess, result);
+      }
+    } catch (error) {
+      // Silently handle errors - economy operations shouldn't crash the simulation
+      console.debug('X402 economy tick error:', error);
+    }
+  }
+
+  /**
+   * Handle the result of an X402 economy tick and emit appropriate events.
+   * 
+   * @param npc - The NPC that performed the action
+   * @param result - The result of the economy tick
+   */
+  private handleX402EconomyResult(npc: CryptoNPC, result: EconomyTickResult): void {
+    // Emit service exchange event
+    if (result.serviceResult) {
+      this.emitNPCEvent({
+        type: 'service_exchange',
+        npcId: npc.id,
+        data: {
+          providerId: result.serviceResult.providerId,
+          serviceName: result.serviceResult.serviceName,
+          needsSatisfied: result.serviceResult.needsSatisfied,
+        },
+        timestamp: Date.now(),
+      });
+    }
+
+    // Emit gift given event
+    if (result.giftResult) {
+      this.emitNPCEvent({
+        type: 'gift_given',
+        npcId: npc.id,
+        data: {
+          receiverId: result.giftResult.receiverId,
+          itemName: result.giftResult.itemName,
+          reaction: result.giftResult.reaction,
+        },
+        timestamp: Date.now(),
+      });
+    }
+
+    // Emit item purchase as trade event
+    if (result.itemResult) {
+      this.emitNPCEvent({
+        type: 'trade',
+        npcId: npc.id,
+        data: {
+          sellerId: result.itemResult.sellerId,
+          itemName: result.itemResult.itemName,
+          needsSatisfied: result.itemResult.needsSatisfied,
+        },
+        timestamp: Date.now(),
+      });
+    }
+  }
+
+  // ===========================================================================
+  // DISASTER REACTION INTEGRATION
+  // ===========================================================================
+
+  /**
+   * Check for active disasters and update tracking state.
+   * When a new disaster starts, reset the processed NPCs set.
+   * When a disaster ends, clear the tracking state.
+   */
+  private checkForActiveDisaster(): void {
+    const activeDisasters = playerDisasterManager.getActiveDisasters();
+    const currentDisaster = activeDisasters.length > 0 ? activeDisasters[0] : null;
+    
+    if (currentDisaster && !this.activeDisaster) {
+      // New disaster started
+      this.activeDisaster = currentDisaster;
+      this.processedDisasterNPCs.clear();
+    } else if (!currentDisaster && this.activeDisaster) {
+      // Disaster ended
+      this.activeDisaster = null;
+      this.processedDisasterNPCs.clear();
+    }
+  }
+
+  /**
+   * Handle disaster reaction for a single NPC.
+   * Processes the NPC's response to the active disaster and emits events.
+   * 
+   * "Panic is merely a natural response to unnatural circumstances.
+   * In crypto, unnatural circumstances are Tuesday."
+   * 
+   * @param npc - The NPC to process disaster reaction for
+   */
+  private handleDisasterForNPC(npc: CryptoNPC): void {
+    if (!this.activeDisaster) return;
+
+    // Generate reaction based on NPC personality and disaster type
+    const reaction = processNPCDisasterReaction(npc, this.activeDisaster);
+    
+    // Apply reaction to NPC (updates mood, thought, activity, creates memory)
+    applyReactionToNPC(npc, reaction);
+    
+    // Mark as processed for this disaster
+    this.processedDisasterNPCs.add(npc.id);
+
+    // Emit disaster reaction event for UI
+    this.emitNPCEvent({
+      type: 'disaster_reaction',
+      npcId: npc.id,
+      data: {
+        disasterId: this.activeDisaster.disaster.id,
+        disasterName: this.activeDisaster.disaster.name,
+        intensity: reaction.intensity,
+        behavior: reaction.behavior,
+        thought: reaction.thought,
+        mood: reaction.mood.type,
+      },
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
+   * Get the active disaster if any.
+   * Useful for external systems to check disaster state.
+   */
+  getActiveDisaster(): ActivePlayerDisaster | null {
+    return this.activeDisaster;
+  }
+
+  /**
+   * Set an active disaster manually (for testing purposes).
+   * 
+   * @param disaster - The disaster to set as active
+   */
+  setActiveDisaster(disaster: ActivePlayerDisaster | null): void {
+    if (disaster && !this.activeDisaster) {
+      this.activeDisaster = disaster;
+      this.processedDisasterNPCs.clear();
+    } else if (!disaster) {
+      this.activeDisaster = null;
+      this.processedDisasterNPCs.clear();
     }
   }
 

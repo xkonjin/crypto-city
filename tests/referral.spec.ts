@@ -110,7 +110,7 @@ test.describe("Referral System", () => {
     
     // Dispatch click event directly via JS to bypass any overlay issues
     await referralButton.evaluate((btn) => {
-      btn.click();
+      (btn as HTMLButtonElement).click();
     });
     
     // Wait for the dialog to appear
@@ -125,7 +125,7 @@ test.describe("Referral System", () => {
     // Open the Referral panel
     const referralButton = page.locator('button[title="Referral"]').first();
     await expect(referralButton).toBeVisible({ timeout: 10000 });
-    await referralButton.evaluate((btn) => btn.click());
+    await referralButton.evaluate((btn) => (btn as HTMLButtonElement).click());
     await page.waitForTimeout(500);
     
     // Check that a 6-character referral code is displayed
@@ -144,7 +144,7 @@ test.describe("Referral System", () => {
     // Open the Referral panel
     const referralButton = page.locator('button[title="Referral"]').first();
     await expect(referralButton).toBeVisible({ timeout: 10000 });
-    await referralButton.evaluate((btn) => btn.click());
+    await referralButton.evaluate((btn) => (btn as HTMLButtonElement).click());
     await page.waitForTimeout(500);
     
     // Look for copy button
@@ -156,7 +156,7 @@ test.describe("Referral System", () => {
     // Open the Referral panel
     const referralButton = page.locator('button[title="Referral"]').first();
     await expect(referralButton).toBeVisible({ timeout: 10000 });
-    await referralButton.evaluate((btn) => btn.click());
+    await referralButton.evaluate((btn) => (btn as HTMLButtonElement).click());
     await page.waitForTimeout(500);
     
     // Check for referral count display
@@ -172,7 +172,7 @@ test.describe("Referral System", () => {
     // Open the Referral panel
     const referralButton = page.locator('button[title="Referral"]').first();
     await expect(referralButton).toBeVisible({ timeout: 10000 });
-    await referralButton.evaluate((btn) => btn.click());
+    await referralButton.evaluate((btn) => (btn as HTMLButtonElement).click());
     await page.waitForTimeout(500);
     
     // Look for input field to enter a referral code
@@ -184,7 +184,7 @@ test.describe("Referral System", () => {
     // Open the Referral panel
     const referralButton = page.locator('button[title="Referral"]').first();
     await expect(referralButton).toBeVisible({ timeout: 10000 });
-    await referralButton.evaluate((btn) => btn.click());
+    await referralButton.evaluate((btn) => (btn as HTMLButtonElement).click());
     await page.waitForTimeout(500);
     
     // Check for shareable link text containing the referral URL pattern

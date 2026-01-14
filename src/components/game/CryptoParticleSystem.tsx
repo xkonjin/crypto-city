@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import {
   ParticleConfig,
   MAX_PARTICLES_PER_BUILDING,
@@ -183,7 +183,7 @@ export function CryptoParticleSystem({
   containerSize,
 }: CryptoParticleSystemProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const poolRef = useRef<ParticlePool>(new ParticlePool(MAX_TOTAL_PARTICLES));
+  const particlePool = useMemo(() => new ParticlePool(MAX_TOTAL_PARTICLES), []);
   const sourcesRef = useRef<Map<string, ParticleSource>>(new Map());
   const animationFrameRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
@@ -194,10 +194,10 @@ export function CryptoParticleSystem({
     const spawnInterval = 1000 / (source.config.count || 5); // Particles per second
     
     if (now - source.lastSpawn >= spawnInterval) {
-      poolRef.current.spawn(source.x, source.y, source.config);
+      particlePool.spawn(source.x, source.y, source.config);
       source.lastSpawn = now;
     }
-  }, []);
+  }, [particlePool]);
 
   // Handle trigger events (yield collection, achievements, etc.)
   const handleTriggerEvent = useCallback((event: TriggerEvent) => {
@@ -206,9 +206,9 @@ export function CryptoParticleSystem({
 
     // Spawn burst of particles at position
     for (let i = 0; i < particles.count; i++) {
-      poolRef.current.spawn(event.position.x, event.position.y, particles);
+      particlePool.spawn(event.position.x, event.position.y, particles);
     }
-  }, []);
+  }, [particlePool]);
 
   // Animation loop
   useEffect(() => {
@@ -224,10 +224,10 @@ export function CryptoParticleSystem({
       });
 
       // Update all particles
-      poolRef.current.update(deltaTime);
+      particlePool.update(deltaTime);
 
       // Trigger re-render if we have active particles
-      if (poolRef.current.activeCount > 0) {
+      if (particlePool.activeCount > 0) {
         setRenderKey(k => k + 1);
       }
 
@@ -241,7 +241,7 @@ export function CryptoParticleSystem({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [enabled, spawnFromSource]);
+  }, [enabled, spawnFromSource, particlePool]);
 
   // Listen for custom events
   useEffect(() => {
@@ -297,13 +297,13 @@ export function CryptoParticleSystem({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      poolRef.current.clear();
+      particlePool.clear();
     };
-  }, []);
+  }, [particlePool]);
+
+  const activeParticles = particlePool.getActive();
 
   if (!enabled) return null;
-
-  const activeParticles = poolRef.current.getActive();
 
   return (
     <div

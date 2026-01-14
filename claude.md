@@ -1,105 +1,65 @@
 # Project Guidelines for Claude
 
+> **Full Codebase Map:** See `docs/CODEBASE_MAP.md` for comprehensive architecture documentation
+
 ## Notifications
 
-Play a system ping sound (`afplay /System/Library/Sounds/Ping.aiff`) when:
-- Finishing a long-running task
-- Needing user input or asking a question
-- Encountering an error that blocks progress
+Play system sound (`afplay /System/Library/Sounds/Ping.aiff`) when finishing long tasks, needing input, or hitting errors.
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 with React 19, TypeScript 5, App Router
-- **Game Engine:** Phaser 3.90 (loaded dynamically, no SSR)
-- **Styling:** Tailwind CSS 4 + custom RCT1-themed CSS
-- **GIF Support:** gifuct-js for character animations
+- **Framework:** Next.js 16, React 19, TypeScript 5, App Router
+- **Rendering:** Canvas 2D (multi-layer isometric)
+- **Styling:** Tailwind CSS 4 + shadcn/ui
+- **Testing:** Playwright (3,791+ tests)
 
 ## Commands
 
 ```bash
-npm run dev     # Development server (localhost:3000)
+npm run dev     # Development (localhost:3000)
 npm run build   # Production build
 npm run lint    # ESLint
+npm run test    # Playwright tests
 ```
 
-## Project Structure
+## Architecture Summary
 
 ```
-/app
-  /components
-    /game
-      /phaser        # Phaser game engine code
-        MainScene.ts   # Core game logic, rendering, entities
-        PhaserGame.tsx # React wrapper with imperative handle
-      GameBoard.tsx    # Main React component, grid state
-      types.ts         # Enums: TileType, ToolType, Direction
-      roadUtils.ts     # Road connection logic
-    /ui              # React UI components (ToolWindow, Modal, etc.)
-  /data
-    buildings.ts     # Building registry (single source of truth)
-  /utils
-    sounds.ts        # Audio effects
-/public
-  /Building          # Building sprites by category
-  /Tiles             # Ground tiles (grass, road, asphalt, snow)
-  /Characters        # Walking GIF animations (4 directions)
-  /cars              # Vehicle sprites (4 directions)
+LAYER 1: SIMULATION (React) - Source of Truth
+  GameContext.tsx, simulation.ts - grid, budget, population
+
+LAYER 2: RENDERING (Canvas) - Visualization  
+  CanvasIsometricGrid.tsx - 6-layer canvas, depth sorting
+
+LAYER 3: AGENTS - Eye Candy
+  NPCSimulation.ts, vehicleSystems - cosmetic only
 ```
 
-## Architecture
+**Golden Rule:** Simulation computes NUMBERS. Canvas shows PICTURES. Pictures never change numbers.
 
-**React-Phaser Communication:**
-- React manages: grid state (48x48), UI, tool selection
-- Phaser manages: rendering, characters, cars, animations
-- React → Phaser: via ref methods (`spawnCharacter()`, `shakeScreen()`)
-- Phaser → React: via callbacks (`onTileClick`, `onTilesDrag`)
-
-**Isometric System:**
-- Tile size: 44x22 pixels
-- Roads snap to 4x4 grid segments
-- Depth sorting: `depth = (x + y) * DEPTH_Y_MULT`
-
-## Key Files to Modify
+## Key Files
 
 | Task | File |
 |------|------|
-| Add new buildings | `app/data/buildings.ts` |
-| Game logic/rendering | `app/components/game/phaser/MainScene.ts` |
-| UI/grid state | `app/components/game/GameBoard.tsx` |
-| Types/enums | `app/components/game/types.ts` |
-| Road behavior | `app/components/game/roadUtils.ts` |
+| City simulation | `src/lib/simulation.ts` (6k lines) |
+| Game state | `src/context/GameContext.tsx` |
+| Main renderer | `src/components/game/CanvasIsometricGrid.tsx` |
+| Crypto buildings | `src/games/isocity/crypto/buildings.ts` |
+| Crypto economy | `src/games/isocity/crypto/CryptoEconomyManager.ts` |
+| NPC simulation | `src/lib/npc/NPCSimulation.ts` |
+| Titan/Pet AI | `src/lib/titan/TitanAI.ts` |
+| UI panels | `src/components/game/panels/*.tsx` |
 
-## Adding Buildings
-
-Buildings are defined in `app/data/buildings.ts`. Structure:
+## Isometric Math
 
 ```typescript
-"building-id": {
-  id: "building-id",
-  name: "Display Name",
-  category: "residential" | "commercial" | "civic" | "landmark" | "props" | "christmas",
-  footprint: { south: [width, height], east: [width, height], ... },
-  sprites: {
-    south: "/Building/category/WxHname_south.png",
-    east: "/Building/category/WxHname_east.png",
-    // ... other orientations
-  },
-  icon: "/Building/category/WxHname_south.png",
-  canRotate: true | false
-}
+const TILE_WIDTH = 64;
+const TILE_HEIGHT = 38.4; // 64 * 0.6
+
+// Grid → Screen
+screenX = (gridX - gridY) * (TILE_WIDTH / 2);
+screenY = (gridX + gridY) * (TILE_HEIGHT / 2);
 ```
-
-**Sprite naming convention:** `{width}x{height}{name}_{direction}.png`
-
-## Phaser Resources
-
-When troubleshooting Phaser issues, check these resources first:
-
-- **Official Examples:** https://phaser.io/examples/v3.85.0 (searchable, covers most use cases)
-- **API Docs:** https://newdocs.phaser.io/docs/3.90.0
-- **Community Forum:** https://phaser.discourse.group
-
-Common solutions exist for: camera zoom/pan, input handling, tilemaps, physics, animations.
 
 ## Code Conventions
 
@@ -107,22 +67,32 @@ Common solutions exist for: camera zoom/pan, input handling, tilemaps, physics, 
 - Functions: camelCase
 - Constants: SCREAMING_SNAKE_CASE
 - Building IDs: kebab-case
-- Enums: PascalCase values
 
-## Grid Cell Structure
+## Key Systems
 
-```typescript
-{
-  type: TileType,
-  x, y: number,
-  isOrigin?: boolean,        // Top-left of multi-cell building
-  originX?, originY?: number,
-  buildingId?: string,
-  buildingOrientation?: Direction,
-  underlyingTileType?: TileType  // For props preserving ground
-}
-```
+### Crypto Economy
+- 127 buildings across 10 categories (DeFi, Exchange, Chain, CT, Meme, etc.)
+- 4 tiers: retail → degen → whale → institution
+- Chain synergies, rug risk, protection buildings
+
+### NPC System
+- 6-tier LOD (FULL → SUSPENDED based on distance)
+- Needs-driven behavior, episodic + semantic + vector memory
+- X402 economy for NPC transactions
+
+### Titan/Pet
+- BDI AI (Belief-Desire-Intention)
+- God Hand praise/punish for training
+- 12 skills, moral alignment (-1 angelic to +1 demonic)
 
 ## Save/Load
 
-Saves to localStorage as JSON with: grid, character count, car count, zoom level, visual settings, timestamp.
+localStorage with lz-string compression, Web Worker serialization.
+
+## Skills & Droids
+
+Use `ask-questions` skill (by @the-vampiire) before asking users for input, making decisions with options, or gathering requirements. Core principles:
+- Context first: analyze codebase before asking (don't ask about decided things)
+- Quality over quantity: max 4-6 questions per interaction
+- Options with tradeoffs: each option must include context
+See `.factory/skills/ask-questions/` for templates, examples, and anti-patterns.

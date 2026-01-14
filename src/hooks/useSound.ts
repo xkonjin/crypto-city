@@ -18,6 +18,15 @@ export const SOUND_EFFECTS = {
   rugPull: '/audio/destruction.mp3', // Reuse destruction for now
   milestone: '/audio/open.mp3', // Reuse open for now
   cobie: '/audio/click.mp3', // Cobie message sound
+  
+  // Disaster sounds
+  market_crash: '/audio/destruction.mp3', // Market crash alarm
+  fire_alarm: '/audio/open.mp3', // Fire alarm
+  earthquake: '/audio/destruction.mp3', // Earthquake rumble
+  whale_dump: '/audio/destruction.mp3', // Whale dump splash
+  hack_alarm: '/audio/open.mp3', // 51% attack alarm
+  siren: '/audio/open.mp3', // SEC raid siren
+  repair: '/audio/build.mp3', // Building repair
 } as const;
 
 // Music tracks by category
@@ -101,40 +110,40 @@ interface UseSoundReturn {
 }
 
 export function useSound(): UseSoundReturn {
-  const [settings, setSettings] = useState<SoundSettings>(DEFAULT_SETTINGS);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState<string | null>(null);
-  const [hasLoadedSettings, setHasLoadedSettings] = useState(false);
-  
-  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
-  const currentTrackIndexRef = useRef(0);
-  
-  // Load settings from localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
+  const [settings, setSettings] = useState<SoundSettings>(() => {
+    if (typeof window === 'undefined') return DEFAULT_SETTINGS;
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        setSettings({ ...DEFAULT_SETTINGS, ...parsed });
+        return { ...DEFAULT_SETTINGS, ...parsed };
       }
     } catch (e) {
       console.error('Failed to load sound settings:', e);
     }
-    setHasLoadedSettings(true);
+    return DEFAULT_SETTINGS;
+  });
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState<string | null>(null);
+  
+  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
+  const currentTrackIndexRef = useRef(0);
+  const playNextTrackRef = useRef<() => void>(() => {});
+
+  const handleTrackEnded = useCallback(() => {
+    playNextTrackRef.current();
   }, []);
   
   // Save settings to localStorage
   useEffect(() => {
-    if (!hasLoadedSettings || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
     
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     } catch (e) {
       console.error('Failed to save sound settings:', e);
     }
-  }, [settings, hasLoadedSettings]);
+  }, [settings]);
   
   // Update music volume when settings change
   useEffect(() => {
@@ -170,12 +179,12 @@ export function useSound(): UseSoundReturn {
     
     if (musicAudioRef.current) {
       musicAudioRef.current.pause();
-      musicAudioRef.current.removeEventListener('ended', playNextTrack);
+      musicAudioRef.current.removeEventListener('ended', handleTrackEnded);
     }
     
     const audio = new Audio(track);
     audio.volume = settings.masterVolume * settings.musicVolume;
-    audio.addEventListener('ended', playNextTrack);
+    audio.addEventListener('ended', handleTrackEnded);
     musicAudioRef.current = audio;
     setCurrentTrack(track);
     
@@ -183,7 +192,11 @@ export function useSound(): UseSoundReturn {
       // Autoplay blocked
       setIsMusicPlaying(false);
     });
-  }, [settings.musicEnabled, settings.musicCategory, settings.masterVolume, settings.musicVolume]);
+  }, [settings.musicEnabled, settings.musicCategory, settings.masterVolume, settings.musicVolume, handleTrackEnded]);
+
+  useEffect(() => {
+    playNextTrackRef.current = playNextTrack;
+  }, [playNextTrack]);
   
   // Start music
   const playMusic = useCallback(() => {
@@ -195,30 +208,30 @@ export function useSound(): UseSoundReturn {
     
     if (musicAudioRef.current) {
       musicAudioRef.current.pause();
-      musicAudioRef.current.removeEventListener('ended', playNextTrack);
+      musicAudioRef.current.removeEventListener('ended', handleTrackEnded);
     }
     
     const audio = new Audio(track);
     audio.volume = settings.masterVolume * settings.musicVolume;
-    audio.addEventListener('ended', playNextTrack);
+    audio.addEventListener('ended', handleTrackEnded);
     musicAudioRef.current = audio;
     setCurrentTrack(track);
     
     audio.play()
       .then(() => setIsMusicPlaying(true))
       .catch(() => setIsMusicPlaying(false));
-  }, [settings.musicEnabled, settings.musicCategory, settings.masterVolume, settings.musicVolume, playNextTrack]);
+  }, [settings.musicEnabled, settings.musicCategory, settings.masterVolume, settings.musicVolume, handleTrackEnded]);
   
   // Stop music
   const stopMusic = useCallback(() => {
     if (musicAudioRef.current) {
       musicAudioRef.current.pause();
-      musicAudioRef.current.removeEventListener('ended', playNextTrack);
+      musicAudioRef.current.removeEventListener('ended', handleTrackEnded);
       musicAudioRef.current = null;
     }
     setIsMusicPlaying(false);
     setCurrentTrack(null);
-  }, [playNextTrack]);
+  }, [handleTrackEnded]);
   
   // Cleanup on unmount
   useEffect(() => {

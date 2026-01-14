@@ -382,7 +382,7 @@ export function getAnimationStyles(animation: BuildingAnimation | null): Record<
 // EXPORTS
 // =============================================================================
 
-export default {
+const buildingAnimations = {
   getBuildingAnimation,
   getBuildingParticles,
   getTriggerParticles,
@@ -394,3 +394,5 @@ export default {
   MAX_PARTICLES_PER_BUILDING,
   MAX_TOTAL_PARTICLES,
 };
+
+export default buildingAnimations;

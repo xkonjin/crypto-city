@@ -273,10 +273,11 @@ test.describe("Rug Pull Animation Component", () => {
     // Check for shake animation on building element
     const hasCollapseAnimation = await page.evaluate(() => {
       const animations = document.getAnimations();
-      return animations.some(a => 
-        a.animationName?.includes('shake') || 
-        a.animationName?.includes('collapse')
-      );
+      return animations.some(a => {
+        const cssAnim = a as CSSAnimation;
+        return cssAnim.animationName?.includes('shake') || 
+               cssAnim.animationName?.includes('collapse');
+      });
     }).catch(() => false);
     
     expect(hasCollapseAnimation || true).toBeTruthy();

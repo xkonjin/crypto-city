@@ -1,0 +1,465 @@
+{
+  "project": "NPC Emotional Engagement System - Phase 1",
+  "branchName": "ralph/npc-emotional-engagement-phase1",
+  "description": "Implement dialogue pools, memory-aware dialogue, and token gift system for deeper NPC engagement",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create dialogue system types and interfaces",
+      "description": "As a developer, I want type definitions for the dialogue system so that I have a foundation for implementing dialogue pools",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/types.ts with DialogueLine, DialogueContext, DialoguePool interfaces",
+        "DialogueContext includes: 'greeting', 'market_commentary', 'player_reaction', 'idle_chatter', 'relationship_level'",
+        "DialogueLine includes: id, text, archetype, context, marketConditions, relationshipLevel, cooldown, lastUsed",
+        "Export MarketCondition type: 'bull' | 'bear' | 'crab' | 'volatile'",
+        "Export RelationshipLevel type: 'stranger' | 'acquaintance' | 'friend' | 'close_friend' | 'best_friend'",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Create bitcoin_maxi dialogue pool",
+      "description": "As a player, I want Bitcoin Maxis to have unique personality-driven dialogue so that interactions feel authentic",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/pools/bitcoinMaxi.ts",
+        "Contains 50+ unique dialogue lines across all 5 contexts",
+        "Lines reflect bitcoin_maxi archetype: skeptical of alts, laser-eye references, HODL mentality",
+        "Each line has appropriate marketConditions and relationshipLevel tags",
+        "Export as BITCOIN_MAXI_POOL: DialoguePool",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Create eth_builder dialogue pool",
+      "description": "As a player, I want Ethereum Builders to have unique personality-driven dialogue so that interactions feel authentic",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/pools/ethBuilder.ts",
+        "Contains 50+ unique dialogue lines across all 5 contexts",
+        "Lines reflect eth_builder archetype: technical talk, gas fees, smart contracts, building references",
+        "Each line has appropriate marketConditions and relationshipLevel tags",
+        "Export as ETH_BUILDER_POOL: DialoguePool",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Create degen_trader dialogue pool",
+      "description": "As a player, I want Degen Traders to have unique personality-driven dialogue so that interactions feel authentic",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/pools/degenTrader.ts",
+        "Contains 50+ unique dialogue lines across all 5 contexts",
+        "Lines reflect degen_trader archetype: YOLO, ape-in mentality, leverage, memecoins",
+        "Each line has appropriate marketConditions and relationshipLevel tags",
+        "Export as DEGEN_TRADER_POOL: DialoguePool",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Create privacy_maxi dialogue pool",
+      "description": "As a player, I want Privacy Maxis to have unique personality-driven dialogue so that interactions feel authentic",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/pools/privacyMaxi.ts",
+        "Contains 50+ unique dialogue lines across all 5 contexts",
+        "Lines reflect privacy_maxi archetype: paranoid, Monero references, distrust of surveillance",
+        "Each line has appropriate marketConditions and relationshipLevel tags",
+        "Export as PRIVACY_MAXI_POOL: DialoguePool",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Create normie_investor dialogue pool",
+      "description": "As a player, I want Normie Investors to have unique personality-driven dialogue so that interactions feel authentic",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/pools/normieInvestor.ts",
+        "Contains 50+ unique dialogue lines across all 5 contexts",
+        "Lines reflect normie_investor archetype: confused by crypto, trusts exchanges, bought at ATH",
+        "Each line has appropriate marketConditions and relationshipLevel tags",
+        "Export as NORMIE_INVESTOR_POOL: DialoguePool",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Create nft_flipper dialogue pool",
+      "description": "As a player, I want NFT Flippers to have unique personality-driven dialogue so that interactions feel authentic",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/pools/nftFlipper.ts",
+        "Contains 50+ unique dialogue lines across all 5 contexts",
+        "Lines reflect nft_flipper archetype: floor price obsessed, mint alerts, 'gm' culture",
+        "Each line has appropriate marketConditions and relationshipLevel tags",
+        "Export as NFT_FLIPPER_POOL: DialoguePool",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Create staking_grandma dialogue pool",
+      "description": "As a player, I want Staking Grandmas to have unique personality-driven dialogue so that interactions feel authentic",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/pools/stakingGrandma.ts",
+        "Contains 50+ unique dialogue lines across all 5 contexts",
+        "Lines reflect staking_grandma archetype: patient, yield-focused, wise advice, calm in volatility",
+        "Each line has appropriate marketConditions and relationshipLevel tags",
+        "Export as STAKING_GRANDMA_POOL: DialoguePool",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Create protocol_politician dialogue pool",
+      "description": "As a player, I want Protocol Politicians to have unique personality-driven dialogue so that interactions feel authentic",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/pools/protocolPolitician.ts",
+        "Contains 50+ unique dialogue lines across all 5 contexts",
+        "Lines reflect protocol_politician archetype: governance talk, delegate pitches, tokenomics opinions",
+        "Each line has appropriate marketConditions and relationshipLevel tags",
+        "Export as PROTOCOL_POLITICIAN_POOL: DialoguePool",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Create dialogue pools barrel export",
+      "description": "As a developer, I want a single import point for all dialogue pools so that the DialogueManager can easily access them",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/pools/index.ts",
+        "Re-exports all 8 archetype pools",
+        "Export ALL_DIALOGUE_POOLS: Record<PersonalityArchetype, DialoguePool>",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Implement DialogueManager with cooldown system",
+      "description": "As a developer, I want a DialogueManager that selects appropriate dialogue with cooldowns so that NPCs don't repeat themselves",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/DialogueManager.ts",
+        "selectDialogue(archetype, context, marketCondition, relationshipLevel) returns DialogueLine",
+        "Implements cooldown tracking per line (default 5 minutes)",
+        "Filters by market condition when provided",
+        "Filters by relationship level when provided",
+        "Returns null if no valid lines available (all on cooldown)",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Add market-condition awareness to DialogueManager",
+      "description": "As a player, I want NPC dialogue to reflect current market conditions so that conversations feel contextually relevant",
+      "acceptanceCriteria": [
+        "DialogueManager accepts currentMarketCondition in constructor or as parameter",
+        "selectDialogue prioritizes lines matching current market condition",
+        "Falls back to neutral lines if no market-specific lines available",
+        "Add getMarketAwareGreeting() helper method",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Create dialogue system barrel export",
+      "description": "As a developer, I want a clean public API for the dialogue system so that other modules can easily use it",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/index.ts",
+        "Exports DialogueManager class",
+        "Exports all types from types.ts",
+        "Exports ALL_DIALOGUE_POOLS from pools/index.ts",
+        "Typecheck passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Add dialogue variety tests",
+      "description": "As a developer, I want tests verifying dialogue variety so that I can ensure NPCs don't repeat themselves frequently",
+      "acceptanceCriteria": [
+        "Create tests for DialogueManager",
+        "Test: selectDialogue returns different lines on consecutive calls",
+        "Test: cooldown prevents same line within cooldown period",
+        "Test: repetition rate < 5% over 100 selections",
+        "Test: market condition filtering works correctly",
+        "Tests pass"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Create memory dialogue template types",
+      "description": "As a developer, I want type definitions for memory-aware dialogue so that NPCs can reference past interactions",
+      "acceptanceCriteria": [
+        "Add MemoryDialogueTemplate interface to dialogue/types.ts",
+        "Template includes: pattern, variables (extracted from memory), minRelationshipLevel",
+        "Add MilestoneType: 'first_meeting' | 'tenth_conversation' | 'one_week_anniversary' | 'one_month_anniversary'",
+        "Add MemoryReference interface for extracting memory data into dialogue",
+        "Typecheck passes"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Create memory dialogue templates",
+      "description": "As a player, I want NPCs to reference our shared history so that conversations feel personalized",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/dialogue/memoryTemplates.ts",
+        "Templates for gift references: 'Remember when you gave me that {token}?'",
+        "Templates for interaction milestones: first meeting, 10th conversation, anniversaries",
+        "Templates for inside jokes that develop based on shared experiences",
+        "Each template has variable placeholders that can be filled from memory",
+        "Typecheck passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Implement memory-to-dialogue integration",
+      "description": "As a developer, I want DialogueManager to integrate with MemoryManager so that NPCs can generate memory-aware dialogue",
+      "acceptanceCriteria": [
+        "Add generateMemoryDialogue(npcId, playerId, memoryManager) method to DialogueManager",
+        "Method queries relevant memories from MemoryManager",
+        "Selects appropriate template based on memory type and relationship level",
+        "Fills template variables from memory data",
+        "Returns formatted dialogue string or null if no relevant memories",
+        "Typecheck passes"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Add milestone dialogue triggers",
+      "description": "As a player, I want NPCs to acknowledge relationship milestones so that progress feels meaningful",
+      "acceptanceCriteria": [
+        "Add checkMilestones(npcId, playerId) method to DialogueManager",
+        "Detects first meeting, 10th conversation, weekly/monthly anniversaries",
+        "Returns milestone dialogue if milestone reached, null otherwise",
+        "Milestones tracked in memory to prevent repeat triggers",
+        "Typecheck passes"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "Add memory dialogue tests",
+      "description": "As a developer, I want tests for memory-aware dialogue so that I can verify personalization works correctly",
+      "acceptanceCriteria": [
+        "Test: memory templates correctly fill variables",
+        "Test: milestone detection triggers at correct interaction counts",
+        "Test: gift memories generate appropriate references",
+        "Test: inside jokes develop after repeated similar interactions",
+        "Tests pass"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-020",
+      "title": "Create gift preference types",
+      "description": "As a developer, I want type definitions for the gift system so that I can implement Stardew Valley-style gift preferences",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/gifts/types.ts",
+        "GiftPreference: 'loved' | 'liked' | 'neutral' | 'disliked' | 'hated'",
+        "TokenGift interface: tokenSymbol, amount, timestamp",
+        "GiftReaction interface: preference, dialogueLine, relationshipPointChange",
+        "GiftHistory interface: gifts received, weekly count, last gift date",
+        "Typecheck passes"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-021",
+      "title": "Create gift preferences per archetype",
+      "description": "As a player, I want each NPC archetype to have distinct gift preferences so that gift-giving is strategic",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/gifts/preferences.ts",
+        "Define preferences for all 8 archetypes",
+        "bitcoin_maxi: loves BTC, hates SHIB/DOGE",
+        "eth_builder: loves ETH, likes governance tokens",
+        "degen_trader: loves memecoins, dislikes stablecoins",
+        "Each archetype has at least 3 loved, 3 liked, 3 disliked, 3 hated tokens",
+        "Typecheck passes"
+      ],
+      "priority": 21,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-022",
+      "title": "Create gift reaction dialogues",
+      "description": "As a player, I want NPCs to react uniquely to gifts so that giving feels rewarding",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/gifts/reactions.ts",
+        "5+ unique reactions per preference level (loved/liked/neutral/disliked/hated)",
+        "Reactions vary by archetype personality",
+        "Include dramatic reactions for hated gifts ('You dare give ME a shitcoin?!')",
+        "Include heartfelt reactions for loved gifts",
+        "Typecheck passes"
+      ],
+      "priority": 22,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-023",
+      "title": "Implement GiftManager core",
+      "description": "As a developer, I want a GiftManager class that handles gift-giving mechanics so that the system is encapsulated",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/gifts/GiftManager.ts",
+        "giveGift(npcId, token, amount): GiftReaction",
+        "Looks up archetype preferences to determine reaction",
+        "Calculates base relationship point change: loved=+80, liked=+45, neutral=+20, disliked=-20, hated=-40",
+        "Stores gift in NPC gift history",
+        "Typecheck passes"
+      ],
+      "priority": 23,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-024",
+      "title": "Add weekly gift limit to GiftManager",
+      "description": "As a player, I want a weekly gift limit so that I can't spam gifts to max relationships",
+      "acceptanceCriteria": [
+        "GiftManager tracks gifts per NPC per week",
+        "Limit of 2 gifts per NPC per week",
+        "giveGift returns error/rejection if limit exceeded",
+        "Add canGiveGift(npcId): boolean helper method",
+        "Add getGiftsRemainingThisWeek(npcId): number helper",
+        "Typecheck passes"
+      ],
+      "priority": 24,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-025",
+      "title": "Add birthday bonus to GiftManager",
+      "description": "As a player, I want birthday gifts to be extra special so that remembering birthdays feels rewarding",
+      "acceptanceCriteria": [
+        "NPCs have birthday property (day of year)",
+        "Gifts given on birthday get 3x relationship point multiplier",
+        "Add isBirthday(npcId): boolean helper",
+        "Birthday gifts don't count toward weekly limit",
+        "Add special birthday reaction dialogues",
+        "Typecheck passes"
+      ],
+      "priority": 25,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-026",
+      "title": "Create gifts barrel export",
+      "description": "As a developer, I want a clean public API for the gift system so that other modules can easily use it",
+      "acceptanceCriteria": [
+        "Create src/lib/npc/gifts/index.ts",
+        "Exports GiftManager class",
+        "Exports all types from types.ts",
+        "Exports GIFT_PREFERENCES from preferences.ts",
+        "Exports gift reaction helpers",
+        "Typecheck passes"
+      ],
+      "priority": 26,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-027",
+      "title": "Add gift system tests",
+      "description": "As a developer, I want comprehensive tests for the gift system so that I can verify all mechanics work correctly",
+      "acceptanceCriteria": [
+        "Test: relationship points calculated correctly for each preference level",
+        "Test: weekly limit enforced (3rd gift rejected)",
+        "Test: birthday 3x multiplier applied correctly",
+        "Test: birthday gifts don't count toward weekly limit",
+        "Test: gift history tracked accurately",
+        "Tests pass"
+      ],
+      "priority": 27,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-028",
+      "title": "Integrate gift system with dialogue",
+      "description": "As a player, I want gift reactions to use the dialogue system so that reactions feel consistent with NPC personality",
+      "acceptanceCriteria": [
+        "GiftManager uses DialogueManager for reaction text",
+        "Gift memories stored for memory-aware dialogue ('Remember when you gave me...')",
+        "Loved gifts create positive episodic memories",
+        "Hated gifts create negative episodic memories",
+        "Typecheck passes"
+      ],
+      "priority": 28,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-029",
+      "title": "Update NPC main index exports",
+      "description": "As a developer, I want the dialogue and gift systems exported from the main NPC module so that the API is cohesive",
+      "acceptanceCriteria": [
+        "Update src/lib/npc/index.ts",
+        "Export DialogueManager and dialogue types",
+        "Export GiftManager and gift types",
+        "Export ALL_DIALOGUE_POOLS",
+        "Export GIFT_PREFERENCES",
+        "Typecheck passes"
+      ],
+      "priority": 29,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

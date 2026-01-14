@@ -509,7 +509,9 @@ export type OverlayMode =
   | "crypto_yield"
   | "crypto_risk"
   | "crypto_protection"
-  | "crypto_density";
+  | "crypto_density"
+  // Zone overlay for building category visualization (Issue #208)
+  | "zone";
 
 // ============================================================================
 // Train Types

@@ -32,6 +32,7 @@ import { SimulationProvider } from "./SimulationContext";
 import { EconomyProvider } from "./EconomyContext";
 import { GridProvider } from "./GridContext";
 import { GameProvider } from "./GameContext";
+import { GodHandProvider } from "@/components/titan/GodHandCursor";
 
 export interface GameProvidersProps {
   children: React.ReactNode;
@@ -46,7 +47,8 @@ export interface GameProvidersProps {
  * 2. SimulationProvider
  * 3. EconomyProvider
  * 4. GridProvider
- * 5. GameProvider (innermost - orchestrator that combines all)
+ * 5. GodHandProvider (divine interaction for Titan)
+ * 6. GameProvider (innermost - orchestrator that combines all)
  */
 export function GameProviders({ children, startFresh = false }: GameProvidersProps) {
   return (
@@ -54,9 +56,11 @@ export function GameProviders({ children, startFresh = false }: GameProvidersPro
       <SimulationProvider>
         <EconomyProvider>
           <GridProvider>
-            <GameProvider startFresh={startFresh}>
-              {children}
-            </GameProvider>
+            <GodHandProvider>
+              <GameProvider startFresh={startFresh}>
+                {children}
+              </GameProvider>
+            </GodHandProvider>
           </GridProvider>
         </EconomyProvider>
       </SimulationProvider>

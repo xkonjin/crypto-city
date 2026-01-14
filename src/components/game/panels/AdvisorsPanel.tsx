@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { msg, useMessages } from "gt-next";
 import { useGame } from "@/context/GameContext";
 import {
@@ -253,7 +253,7 @@ function DebatePanel({
                   <span className="font-medium text-sm">{advisor.name}</span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  "{position.stance}"
+                  &ldquo;{position.stance}&rdquo;
                 </p>
                 <Button
                   size="sm"
@@ -398,29 +398,25 @@ export function AdvisorsPanel({ economyState }: AdvisorsPanelProps) {
   const [selectedAdvisor, setSelectedAdvisor] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("crypto");
 
-  // Update advisor state when game state or economy changes
-  useEffect(() => {
-    if (economyState) {
-      const updated = updateAdvisorState(advisorState, state, economyState);
-      setAdvisorState(updated);
-      saveAdvisorState(updated);
-    }
-  }, [state.tick, economyState?.tvl]);
+  const resolvedAdvisorState = useMemo(() => {
+    if (!economyState) return advisorState;
+    return updateAdvisorState(advisorState, state, economyState);
+  }, [advisorState, state, economyState]);
 
   // Save state on changes
   useEffect(() => {
-    saveAdvisorState(advisorState);
-  }, [advisorState]);
+    saveAdvisorState(resolvedAdvisorState);
+  }, [resolvedAdvisorState]);
 
   const handleDebateChoice = useCallback((advisorId: string) => {
-    if (!advisorState.activeDebate) return;
+    if (!resolvedAdvisorState.activeDebate) return;
     const updated = recordDebateChoice(
-      advisorState,
-      advisorState.activeDebate.id,
+      resolvedAdvisorState,
+      resolvedAdvisorState.activeDebate.id,
       advisorId
     );
     setAdvisorState(updated);
-  }, [advisorState]);
+  }, [resolvedAdvisorState]);
 
   const avgRating =
     (stats.happiness +
@@ -472,10 +468,10 @@ export function AdvisorsPanel({ economyState }: AdvisorsPanelProps) {
             <ScrollArea className="max-h-[450px]">
               <div className="space-y-3 pr-4">
                 {ADVISORS.map((advisor) => {
-                  const advice = advisorState.currentAdvice.find(
+                  const advice = resolvedAdvisorState.currentAdvice.find(
                     (a) => a.advisorId === advisor.id
                   );
-                  const reputation = getAdvisorReputation(advisorState, advisor.id);
+                  const reputation = getAdvisorReputation(resolvedAdvisorState, advisor.id);
                   
                   return (
                     <AdvisorCard
@@ -496,30 +492,28 @@ export function AdvisorsPanel({ economyState }: AdvisorsPanelProps) {
 
           <TabsContent value="debates" className="mt-4">
             <DebatePanel
-              debate={advisorState.activeDebate}
+              debate={resolvedAdvisorState.activeDebate}
               onChoose={handleDebateChoice}
             />
-            {advisorState.pastDebates.length > 0 && (
+            {resolvedAdvisorState.pastDebates.length > 0 && (
               <div className="mt-4">
                 <h4 className="text-sm font-medium mb-2">Past Debates</h4>
                 <ScrollArea className="max-h-[200px]">
-                  <div className="space-y-2">
-                    {advisorState.pastDebates.slice(-5).reverse().map((debate) => {
-                      const chosenAdvisor = ADVISORS.find(
-                        (a) => a.id === debate.playerChoice
-                      );
-                      return (
-                        <Card key={debate.id} className="p-3 bg-muted/30">
-                          <p className="text-xs font-medium">{debate.topic}</p>
-                          {chosenAdvisor && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              You sided with {chosenAdvisor.name}
-                            </p>
-                          )}
-                        </Card>
-                      );
-                    })}
-                  </div>
+                  {resolvedAdvisorState.pastDebates.slice(-5).reverse().map((debate) => {
+                    const chosenAdvisor = ADVISORS.find(
+                      (a) => a.id === debate.playerChoice
+                    );
+                    return (
+                      <Card key={debate.id} className="p-3 bg-muted/30">
+                        <p className="text-xs font-medium">{debate.topic}</p>
+                        {chosenAdvisor && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            You sided with {chosenAdvisor.name}
+                          </p>
+                        )}
+                      </Card>
+                    );
+                  })}
                 </ScrollArea>
               </div>
             )}

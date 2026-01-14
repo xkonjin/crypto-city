@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Camera, Download, Share2, Copy, Check } from 'lucide-react';
 import {
@@ -193,9 +194,11 @@ export function ScreenshotShare({ stats, cryptoStats }: ScreenshotShareProps) {
             {/* Screenshot Preview */}
             {screenshotUrl ? (
               <div className="relative rounded-lg overflow-hidden border border-border">
-                <img 
-                  src={screenshotUrl} 
-                  alt="City Screenshot" 
+                <Image
+                  src={screenshotUrl}
+                  alt="City Screenshot"
+                  width={1280}
+                  height={720}
                   className="w-full h-auto"
                 />
               </div>
@@ -220,7 +223,7 @@ export function ScreenshotShare({ stats, cryptoStats }: ScreenshotShareProps) {
               </div>
               <div className="relative">
                 <p className="p-3 bg-muted rounded-lg text-sm italic">
-                  "{caption}"
+                  &ldquo;{caption}&rdquo;
                 </p>
                 <Button
                   variant="ghost"

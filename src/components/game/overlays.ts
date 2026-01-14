@@ -151,6 +151,13 @@ export const OVERLAY_CONFIG: Record<OverlayMode, OverlayConfig> = {
     activeColor: "bg-purple-500",
     hoverColor: "hover:bg-purple-600",
   },
+  // Zone overlay for building category visualization (Issue #208)
+  zone: {
+    label: "Zone",
+    title: "Crypto Building Categories (Z)",
+    activeColor: "bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500",
+    hoverColor: "hover:from-blue-600 hover:via-purple-600 hover:to-pink-600",
+  },
 };
 
 /** Map of building tools to their corresponding overlay mode */
@@ -359,6 +366,11 @@ export function getOverlayFillStyle(
     case "crypto_density":
       return NO_OVERLAY;
 
+    // Zone overlay (Issue #208)
+    // Handled by CanvasIsometricGrid using calculateZoneInfluence()
+    case "zone":
+      return NO_OVERLAY;
+
     case "none":
     default:
       return NO_OVERLAY;
@@ -395,6 +407,8 @@ export const OVERLAY_MODES: OverlayMode[] = [
   "crypto_risk",
   "crypto_protection",
   "crypto_density",
+  // Zone overlay (Issue #208)
+  "zone",
 ];
 
 // ============================================================================
@@ -423,6 +437,8 @@ export const OVERLAY_TO_BUILDING_TYPES: Record<OverlayMode, string[]> = {
   crypto_risk: [],
   crypto_protection: [],
   crypto_density: [],
+  // Zone overlay (Issue #208)
+  zone: [],
 };
 
 /** Overlay circle stroke colors (light/visible colors) */
@@ -447,6 +463,8 @@ export const OVERLAY_CIRCLE_COLORS: Record<OverlayMode, string> = {
   crypto_risk: "rgba(239, 68, 68, 0.8)", // Red for risk
   crypto_protection: "rgba(59, 130, 246, 0.8)", // Blue for protection
   crypto_density: "rgba(168, 85, 247, 0.8)", // Purple for density
+  // Zone overlay (Issue #208)
+  zone: "rgba(168, 85, 247, 0.8)", // Purple for zone
 };
 
 /** Building highlight glow colors */
@@ -471,6 +489,8 @@ export const OVERLAY_HIGHLIGHT_COLORS: Record<OverlayMode, string> = {
   crypto_risk: "rgba(239, 68, 68, 1)", // Red for risk
   crypto_protection: "rgba(59, 130, 246, 1)", // Blue for protection
   crypto_density: "rgba(168, 85, 247, 1)", // Purple for density
+  // Zone overlay (Issue #208)
+  zone: "rgba(168, 85, 247, 1)", // Purple for zone
 };
 
 /** Overlay circle fill colors (subtle, for area visibility) */
@@ -495,6 +515,8 @@ export const OVERLAY_CIRCLE_FILL_COLORS: Record<OverlayMode, string> = {
   crypto_risk: "rgba(239, 68, 68, 0.12)", // Red for risk
   crypto_protection: "rgba(59, 130, 246, 0.12)", // Blue for protection
   crypto_density: "rgba(168, 85, 247, 0.12)", // Purple for density
+  // Zone overlay (Issue #208)
+  zone: "rgba(168, 85, 247, 0.12)", // Purple for zone
 };
 
 // ============================================================================

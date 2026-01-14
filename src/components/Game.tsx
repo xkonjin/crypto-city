@@ -19,8 +19,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useCheatCodes } from "@/hooks/useCheatCodes";
 import { VinnieDialog } from "@/components/VinnieDialog";
 import { CommandMenu } from "@/components/ui/CommandMenu";
-import { CobieNarrator } from "@/components/game/CobieNarrator";
-import { useCobieNarrator } from "@/hooks/useCobieNarrator";
+
+import { FloatingCobieHead } from "@/components/game/FloatingCobieHead";
+import { useFloatingCobie } from "@/hooks/useFloatingCobie";
 import { Tutorial } from "@/components/game/Tutorial";
 import { TerminologyOnboarding } from "@/components/game/TerminologyOnboarding";
 import { DailyRewards } from "@/components/game/DailyRewards";
@@ -53,6 +54,9 @@ import {
   MilestonePanel,
   FinancialReportPanel,
   OrdinancePanel,
+  NPCInspectorPanel,
+  DisasterPanel,
+  CityAIPanel,
 } from "@/components/game/panels";
 import { MiniMap } from "@/components/game/MiniMap";
 import { TopBar, StatsPanel } from "@/components/game/TopBar";
@@ -165,6 +169,7 @@ import {
   createWarningNotification,
 } from "@/lib/notifications";
 import { disasterManager, type ActiveDisaster } from "@/lib/disasters";
+import { playerDisasterManager } from "@/lib/disasters/index";
 
 // Import crypto building animations (Issue #27)
 import { CryptoParticleSystem } from "@/components/game/CryptoParticleSystem";
@@ -174,11 +179,22 @@ import { SkipLinks } from "@/components/game/SkipLinks";
 import { ScreenReaderAnnouncer } from "@/components/game/ScreenReaderAnnouncer";
 import { useAccessibility } from "@/hooks/useAccessibility";
 
+// Import disaster visual overlay and hooks
+import { DisasterOverlay } from "@/components/game/DisasterOverlay";
+import { useDisasterVisuals } from "@/hooks/useDisasterVisuals";
+import { useDisasterSounds } from "@/hooks/useDisasterSounds";
+
 // Import asset preloader (Issues #71, #74, #76, #79)
 import { LoadingScreen } from "@/components/game/LoadingScreen";
 
 // Import Building Codex (Issue #83)
 import { BuildingCodex } from "@/components/game/BuildingCodex";
+
+// Import NPC Inspector hook
+import { useNPCInspector } from "@/hooks/useNPCInspector";
+
+// Import Ingestion Modal
+import { IngestionModal } from "@/components/game/IngestionModal";
 
 // Cargo type names for notifications
 const CARGO_TYPE_NAMES = [msg("containers"), msg("bulk materials"), msg("oil")];
@@ -266,6 +282,29 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   // ==== BUILDING CODEX STATE (Issue #83) ====
   const [showCodex, setShowCodex] = useState(false);
   // ==== END BUILDING CODEX STATE ====
+
+  // ==== NPC INSPECTOR STATE ====
+  const npcInspector = useNPCInspector();
+  const [showNPCInspector, setShowNPCInspector] = useState(false);
+  // ==== END NPC INSPECTOR STATE ====
+
+  // ==== DISASTER PANEL STATE ====
+  const [showDisasterPanel, setShowDisasterPanel] = useState(false);
+  // ==== END DISASTER PANEL STATE ====
+
+  // ==== DISASTER VISUAL EFFECTS ====
+  // Hooks for disaster visual overlay rendering and sound effects
+  const disasterVisuals = useDisasterVisuals();
+  const disasterSounds = useDisasterSounds({ enabled: true });
+  // ==== END DISASTER VISUAL EFFECTS ====
+
+  // ==== CITY AI PANEL STATE ====
+  const [showCityAIPanel, setShowCityAIPanel] = useState(false);
+  // ==== END CITY AI PANEL STATE ====
+
+  // ==== INGESTION MODAL STATE ====
+  const [showIngestionModal, setShowIngestionModal] = useState(false);
+  // ==== END INGESTION MODAL STATE ====
 
   // ==== WEEKLY CHALLENGES STATE (Issue #40) ====
   const [challengeState, setChallengeState] = useState<ChallengeState>(() => 
@@ -934,29 +973,19 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     clearTriggeredCheat,
   } = useCheatCodes();
 
-  // Cobie narrator system - sardonic tips and commentary (Issue #53: Enhanced)
-  const {
-    currentMessage: cobieMessage,
-    isVisible: isCobieVisible,
-    onDismiss: onCobieDismiss,
-    onDisableCobie,
-    triggerReaction: triggerCobieReaction,
-    triggerMilestone: triggerCobieMilestone,
-    // New event-driven triggers (Issue #53)
-    triggerRugPull: triggerCobieRugPull,
-    triggerEventReaction: triggerCobieEventReaction,
-    onEconomyUpdate: onCobieEconomyUpdate,
-    onBuildingPlaced: onCobieBuildingPlaced,
-  } = useCobieNarrator(state);
+  // Floating Cobie Head system - visual assistant with settings (Issue #181)
+  // This unified hook wraps all Cobie functionality including the narrator
+  const floatingCobie = useFloatingCobie(state);
 
   // ==== COBIE NARRATOR EVENT INTEGRATION (Issue #53) ====
   // Subscribe Cobie narrator to economy updates for reactive commentary
   useEffect(() => {
     const unsubscribeEconomy = cryptoEconomy.subscribe((newState) => {
-      onCobieEconomyUpdate(newState);
+      floatingCobie.onEconomyUpdate(newState);
     });
     return () => unsubscribeEconomy();
-  }, [onCobieEconomyUpdate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stable callback from hook
+  }, [floatingCobie.onEconomyUpdate]);
 
   // Subscribe Cobie narrator to crypto events for event reactions
   useEffect(() => {
@@ -964,18 +993,19 @@ export default function Game({ onExit }: { onExit?: () => void }) {
       // React to the most recent new event
       const latestEvent = events[0];
       if (latestEvent && latestEvent.active) {
-        triggerCobieEventReaction(latestEvent);
+        floatingCobie.triggerEventReaction(latestEvent);
       }
     });
     return () => unsubscribeEvents();
-  }, [triggerCobieEventReaction]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stable callback from hook
+  }, [floatingCobie.triggerEventReaction]);
 
   // Listen for rug pull events to trigger Cobie reactions
   useEffect(() => {
     const handleCobieRugPull = (e: CustomEvent) => {
       const { buildingName, treasuryLossPercent } = e.detail || {};
       if (buildingName) {
-        triggerCobieRugPull(buildingName, treasuryLossPercent || 0.10);
+        floatingCobie.triggerRugPull(buildingName, treasuryLossPercent || 0.10);
       }
     };
     
@@ -983,7 +1013,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     return () => {
       window.removeEventListener('cobie-rug-pull', handleCobieRugPull as EventListener);
     };
-  }, [triggerCobieRugPull]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stable callback from hook
+  }, [floatingCobie.triggerRugPull]);
   // ==== END COBIE NARRATOR EVENT INTEGRATION ====
 
   // Multiplayer sync
@@ -1301,6 +1332,69 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   }, [prestigeState, addNotification]);
   // ==== END PRESTIGE HANDLERS ====
 
+  // ==== NPC SELECTION HANDLERS ====
+  // Handle NPC selection from canvas click
+  const handleNPCSelect = useCallback((npcId: string) => {
+    npcInspector.selectNPC(npcId);
+    setShowNPCInspector(true);
+  }, [npcInspector]);
+
+  // Handle NPC inspector close
+  const handleNPCInspectorClose = useCallback(() => {
+    setShowNPCInspector(false);
+    npcInspector.clearSelection();
+  }, [npcInspector]);
+  // ==== END NPC SELECTION HANDLERS ====
+
+  // ==== DISASTER REPAIR HANDLERS ====
+  // Handle clicking on a damaged building marker to initiate repair
+  const handleDamagedBuildingClick = useCallback((buildingId: string, gridX: number, gridY: number) => {
+    // Get the repair cost from the disaster visuals state
+    const marker = disasterVisuals.getDamagedBuildingMarker(buildingId);
+    if (!marker) return;
+
+    // Check if treasury has enough to cover repair cost
+    if (economyState.treasury < marker.repairCost) {
+      addNotification(
+        'Insufficient Funds',
+        `Need ${marker.repairCost.toLocaleString()} USDT₮ to repair, but treasury only has ${economyState.treasury.toLocaleString()} USDT₮`,
+        'alert-triangle'
+      );
+      return;
+    }
+
+    // Use a placeholder treasury address for internal repairs
+    // In a full wallet-integrated version, this would use the connected wallet
+    const treasuryAddress = '0x0000000000000000000000000000000000000001' as `0x${string}`;
+
+    // Attempt repair through the player disaster manager
+    const result = playerDisasterManager.repairBuilding({
+      buildingId,
+      payerAddress: treasuryAddress,
+    });
+
+    if (result.success) {
+      // Deduct repair cost from crypto treasury
+      cryptoEconomy.spend(marker.repairCost);
+      // Play repair sound
+      disasterSounds.playRepairSound();
+      // Show notification
+      addNotification(
+        'Building Repaired!',
+        `Spent ${marker.repairCost.toLocaleString()} USDT₮ to repair building at (${gridX}, ${gridY})`,
+        'wrench'
+      );
+    } else {
+      // Show error notification
+      addNotification(
+        'Repair Failed',
+        result.error || 'Unable to repair building',
+        'alert-triangle'
+      );
+    }
+  }, [disasterVisuals, disasterSounds, addNotification, economyState.treasury]);
+  // ==== END DISASTER REPAIR HANDLERS ====
+
   // ==== ASSET LOADING SCREEN (Issues #71, #74, #76, #79) ====
   // Show loading screen until critical assets are ready
   if (!assetsLoaded) {
@@ -1373,7 +1467,15 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             className="flex-1 relative overflow-hidden"
             style={{ paddingTop: "72px", paddingBottom: "76px" }}
           >
-            <div id="game-canvas">
+            <div 
+              id="game-canvas"
+              style={{
+                transform: disasterVisuals.state.isShaking 
+                  ? `translate(${disasterVisuals.state.shakeOffset.x}px, ${disasterVisuals.state.shakeOffset.y}px)` 
+                  : undefined,
+                transition: disasterVisuals.state.isShaking ? 'none' : 'transform 0.1s ease-out',
+              }}
+            >
               <ErrorBoundary>
                 <CanvasIsometricGrid
                 overlayMode={overlayMode}
@@ -1382,7 +1484,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                 isMobile={true}
                 onViewportChange={setViewport}
                 onBargeDelivery={handleBargeDelivery}
-                  selectedCryptoBuilding={selectedCryptoBuilding}
+                selectedCryptoBuilding={selectedCryptoBuilding}
+                onNPCClick={handleNPCSelect}
+                selectedNPCId={npcInspector.selectedNPC?.id ?? null}
                 />
               </ErrorBoundary>
             </div>
@@ -1393,6 +1497,16 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                 offset={viewport.offset}
                 zoom={viewport.zoom}
                 containerSize={viewport.canvasSize}
+              />
+            )}
+
+            {/* Disaster Visual Overlay - Mobile */}
+            {viewport && (
+              <DisasterOverlay
+                offset={viewport.offset}
+                zoom={viewport.zoom}
+                containerSize={viewport.canvasSize}
+                onDamagedBuildingClick={handleDamagedBuildingClick}
               />
             )}
 
@@ -1516,13 +1630,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           {/* Daily rewards system */}
           <DailyRewards onClaimReward={(amount) => cryptoEconomy.deposit(amount)} />
 
-          {/* Cobie Narrator for sardonic tips and commentary */}
-          <CobieNarrator
-            message={cobieMessage}
-            isVisible={isCobieVisible}
-            onDismiss={onCobieDismiss}
-            onDisableCobie={onDisableCobie}
-          />
+          {/* Floating Cobie Head - visual assistant (Issue #181)
+              This replaces the old CobieNarrator component (Issue #183) */}
+          <FloatingCobieHead {...floatingCobie.headProps} />
 
           {/* Milestone Unlock Notification (Issue #56) */}
           <UnlockNotification
@@ -1586,6 +1696,33 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             onDismiss={handleNotificationToastDismiss}
             onOpenCenter={handleOpenNotificationCenter}
           />
+
+          {/* NPC Inspector Panel - Mobile */}
+          {npcInspector.selectedNPC && (
+            <NPCInspectorPanel
+              npc={npcInspector.selectedNPC}
+              isOpen={showNPCInspector}
+              onClose={handleNPCInspectorClose}
+              recentThoughts={npcInspector.recentThoughts}
+              isFavorited={npcInspector.selectedNPC ? npcInspector.isFavorited(npcInspector.selectedNPC.id) : false}
+              onToggleFavorite={npcInspector.selectedNPC ? () => npcInspector.toggleFavorite(npcInspector.selectedNPC!.id) : undefined}
+            />
+          )}
+
+          {/* Disaster Panel - Mobile */}
+          {showDisasterPanel && <DisasterPanel onClose={() => setShowDisasterPanel(false)} />}
+
+          {/* City AI Panel - Mobile */}
+          <CityAIPanel
+            isOpen={showCityAIPanel}
+            onClose={() => setShowCityAIPanel(false)}
+          />
+
+          {/* Ingestion Modal - Mobile */}
+          <IngestionModal
+            isOpen={showIngestionModal}
+            onClose={() => setShowIngestionModal(false)}
+          />
         </div>
       </TooltipProvider>
     );
@@ -1608,6 +1745,60 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           <div className="absolute right-64 top-1/2 -translate-y-1/2">
             <NotificationBadge onClick={() => setShowNotificationCenter(true)} />
           </div>
+          {/* Disaster Button */}
+          <button
+            onClick={() => setShowDisasterPanel(!showDisasterPanel)}
+            className={`
+              absolute right-[340px] top-1/2 -translate-y-1/2
+              px-2 py-1.5 rounded text-sm font-medium
+              transition-all duration-200
+              ${
+                showDisasterPanel
+                  ? "bg-destructive text-destructive-foreground"
+                  : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border"
+              }
+            `}
+            title="Disaster Control"
+            aria-label="Open Disaster Control Panel"
+          >
+            ⚡
+          </button>
+          {/* City AI Button */}
+          <button
+            onClick={() => setShowCityAIPanel(!showCityAIPanel)}
+            className={`
+              absolute right-[300px] top-1/2 -translate-y-1/2
+              px-2 py-1.5 rounded text-sm font-medium
+              transition-all duration-200
+              ${
+                showCityAIPanel
+                  ? "bg-cyan-500 text-black"
+                  : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border"
+              }
+            `}
+            title="City AI Controller"
+            aria-label="Open City AI Panel"
+          >
+            🤖
+          </button>
+          {/* Ingest X Profile Button */}
+          <button
+            onClick={() => setShowIngestionModal(true)}
+            className={`
+              absolute right-[260px] top-1/2 -translate-y-1/2
+              px-2 py-1.5 rounded text-sm font-medium
+              transition-all duration-200
+              ${
+                showIngestionModal
+                  ? "bg-cyan-500 text-black"
+                  : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border"
+              }
+            `}
+            title="Ingest X/Twitter Profile"
+            aria-label="Open X Profile Ingestion"
+          >
+            𝕏
+          </button>
           {/* Screenshot Share Button */}
           <div className="absolute right-48 top-1/2 -translate-y-1/2">
             <ScreenshotShare
@@ -1623,23 +1814,23 @@ export default function Game({ onExit }: { onExit?: () => void }) {
               }}
             />
           </div>
-          {/* Crypto Buildings Toggle Button */}
+          {/* Crypto Buildings Toggle Button - subtle, integrated style */}
           <button
             onClick={() => setShowCryptoBuildingPanel(!showCryptoBuildingPanel)}
             className={`
               absolute right-4 top-1/2 -translate-y-1/2
-              px-3 py-1.5 rounded-lg text-sm font-semibold
-              transition-all duration-200 shadow-lg
+              px-3 py-1.5 rounded text-sm font-medium
+              transition-all duration-200
               ${
-                showCryptoBuildingPanel
-                  ? "bg-amber-500 text-black hover:bg-amber-400"
-                  : "bg-gray-800 text-amber-400 hover:bg-gray-700 border border-amber-500/50"
+                showCryptoBuildingPanel || state.activePanel === 'crypto'
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border"
               }
             `}
-            title="Toggle Crypto Buildings Panel"
+            title="Toggle Crypto Buildings Panel (B)"
             aria-label="Toggle Crypto Buildings Panel"
           >
-            🏗️ Crypto Buildings
+            ₿ Buildings
           </button>
         </header>
 
@@ -1654,7 +1845,16 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             <TopBar />
             <StatsPanel />
             {/* Game canvas container (Issue #60) */}
-            <div id="game-canvas" className="flex-1 relative overflow-visible">
+            <div 
+              id="game-canvas" 
+              className="flex-1 relative overflow-visible"
+              style={{
+                transform: disasterVisuals.state.isShaking 
+                  ? `translate(${disasterVisuals.state.shakeOffset.x}px, ${disasterVisuals.state.shakeOffset.y}px)` 
+                  : undefined,
+                transition: disasterVisuals.state.isShaking ? 'none' : 'transform 0.1s ease-out',
+              }}
+            >
               <ErrorBoundary>
                 <CanvasIsometricGrid
                   overlayMode={overlayMode}
@@ -1665,6 +1865,8 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                   onViewportChange={setViewport}
                   onBargeDelivery={handleBargeDelivery}
                   selectedCryptoBuilding={selectedCryptoBuilding}
+                  onNPCClick={handleNPCSelect}
+                  selectedNPCId={npcInspector.selectedNPC?.id ?? null}
                 />
               </ErrorBoundary>
               {/* Crypto Building Particle System (Issue #27) */}
@@ -1674,6 +1876,15 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                   offset={viewport.offset}
                   zoom={viewport.zoom}
                   containerSize={viewport.canvasSize}
+                />
+              )}
+              {/* Disaster Visual Overlay - Desktop */}
+              {viewport && (
+                <DisasterOverlay
+                  offset={viewport.offset}
+                  zoom={viewport.zoom}
+                  containerSize={viewport.canvasSize}
+                  onDamagedBuildingClick={handleDamagedBuildingClick}
                 />
               )}
               <OverlayModeToggle
@@ -1792,35 +2003,58 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         )}
         {state.activePanel === "ordinances" && <OrdinancePanel />}
 
-        {/* Crypto Building Panel - shown via sidebar or toggle button */}
-        {(showCryptoBuildingPanel || state.activePanel === "crypto") && (
-          <aside role="complementary" aria-label="Crypto Buildings" className="fixed right-4 top-20 z-40 w-80">
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setShowCryptoBuildingPanel(false);
-                  if (state.activePanel === "crypto") {
-                    setActivePanel("none");
-                  }
-                }}
-                className="absolute -top-2 -right-2 z-50 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full text-white text-xs flex items-center justify-center shadow-lg"
-                aria-label="Close crypto buildings panel"
-              >
-                ✕
-              </button>
-              <ErrorBoundary>
-                <CryptoBuildingPanel
-                  selectedBuilding={selectedCryptoBuilding}
-                  onSelectBuilding={(buildingId) => {
-                    setSelectedCryptoBuilding(buildingId);
-                    setTool("select");
+        {/* Crypto Building Panel - Integrated Right Sidebar */}
+        <aside 
+          role="complementary" 
+          aria-label="Crypto Buildings" 
+          className={`
+            fixed right-0 top-0 h-screen z-40
+            bg-sidebar border-l border-sidebar-border
+            transition-all duration-300 ease-out
+            ${(showCryptoBuildingPanel || state.activePanel === "crypto") 
+              ? 'w-80 opacity-100 translate-x-0' 
+              : 'w-0 opacity-0 translate-x-full pointer-events-none'
+            }
+          `}
+        >
+          {(showCryptoBuildingPanel || state.activePanel === "crypto") && (
+            <div className="h-full flex flex-col">
+              {/* Header - matches main sidebar style */}
+              <div className="px-4 py-4 border-b border-sidebar-border flex items-center justify-between">
+                <span className="text-sidebar-foreground font-bold tracking-tight">₿ CRYPTO BUILDINGS</span>
+                <button
+                  onClick={() => {
+                    setShowCryptoBuildingPanel(false);
+                    if (state.activePanel === "crypto") {
+                      setActivePanel("none");
+                    }
                   }}
-                  treasury={economyState.treasury}
-                />
-              </ErrorBoundary>
+                  className="p-1.5 text-muted-foreground hover:text-sidebar-foreground hover:bg-muted/60 rounded transition-colors"
+                  aria-label="Close crypto buildings panel"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              {/* Panel Content */}
+              <div className="flex-1 overflow-hidden">
+                <ErrorBoundary>
+                  <CryptoBuildingPanel
+                    selectedBuilding={selectedCryptoBuilding}
+                    onSelectBuilding={(buildingId) => {
+                      setSelectedCryptoBuilding(buildingId);
+                      setTool("select");
+                    }}
+                    treasury={economyState.treasury}
+                    className="h-full border-none rounded-none bg-transparent"
+                  />
+                </ErrorBoundary>
+              </div>
             </div>
-          </aside>
-        )}
+          )}
+        </aside>
 
         <VinnieDialog
           open={showVinnieDialog}
@@ -1837,13 +2071,9 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         {/* Daily rewards system */}
         <DailyRewards onClaimReward={(amount) => cryptoEconomy.deposit(amount)} />
 
-        {/* Cobie Narrator for sardonic tips and commentary */}
-        <CobieNarrator
-          message={cobieMessage}
-          isVisible={isCobieVisible}
-          onDismiss={onCobieDismiss}
-          onDisableCobie={onDisableCobie}
-        />
+        {/* Floating Cobie Head - visual assistant (Issue #181)
+            This replaces the old CobieNarrator component (Issue #183) */}
+        <FloatingCobieHead {...floatingCobie.headProps} />
 
         {/* Milestone Unlock Notification (Issue #56) */}
         <UnlockNotification
@@ -1912,6 +2142,33 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         <BuildingCodex
           isOpen={showCodex}
           onClose={() => setShowCodex(false)}
+        />
+
+        {/* NPC Inspector Panel */}
+        {npcInspector.selectedNPC && (
+          <NPCInspectorPanel
+            npc={npcInspector.selectedNPC}
+            isOpen={showNPCInspector}
+            onClose={handleNPCInspectorClose}
+            recentThoughts={npcInspector.recentThoughts}
+            isFavorited={npcInspector.selectedNPC ? npcInspector.isFavorited(npcInspector.selectedNPC.id) : false}
+            onToggleFavorite={npcInspector.selectedNPC ? () => npcInspector.toggleFavorite(npcInspector.selectedNPC!.id) : undefined}
+          />
+        )}
+
+        {/* Disaster Panel */}
+        {showDisasterPanel && <DisasterPanel onClose={() => setShowDisasterPanel(false)} />}
+
+        {/* City AI Panel */}
+        <CityAIPanel
+          isOpen={showCityAIPanel}
+          onClose={() => setShowCityAIPanel(false)}
+        />
+
+        {/* Ingestion Modal */}
+        <IngestionModal
+          isOpen={showIngestionModal}
+          onClose={() => setShowIngestionModal(false)}
         />
 
         {/* Crypto News Ticker - Bottom */}

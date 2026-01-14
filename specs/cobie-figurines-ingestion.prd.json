@@ -1,0 +1,286 @@
+{
+  "project": "Cobie Figurines + User Ingestion",
+  "version": "1.0.0",
+  "description": "Create cute Cobie figurine animations and a user-ingestion pipeline that turns real people into personalized NPC figurines with social-sourced traits.",
+  "spec_file": null,
+  "phases": [
+    {
+      "id": "phase-1",
+      "name": "Figurine Asset Pipeline",
+      "description": "Define Cobie visual system, asset export formats, and loader integration.",
+      "tasks": [
+        {
+          "id": "task-1-1",
+          "title": "Cobie Visual Style System",
+          "description": "Define the Cobie figurine style constraints and asset scale rules for in-game use.",
+          "files_to_create": ["src/lib/figurines/cobieStyle.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Style tokens: palette, material, proportions, silhouette rules",
+            "Sprite scale targets for 64/96/128px",
+            "Naming convention for animations and variants",
+            "No non-ASCII characters in identifiers"
+          ],
+          "estimated_hours": 3,
+          "dependencies": []
+        },
+        {
+          "id": "task-1-2",
+          "title": "Figurine Asset Manifest",
+          "description": "Add a manifest defining Cobie animation loops and variants for runtime loading.",
+          "files_to_create": ["src/lib/figurines/cobieManifest.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "List of animation loops with id, fps, frames, duration",
+            "Variants for props (cap, phone, laptop, coffee, TV screen)",
+            "Supports transparent PNG spritesheets",
+            "Validated via TypeScript types"
+          ],
+          "estimated_hours": 3,
+          "dependencies": ["task-1-1"]
+        },
+        {
+          "id": "task-1-3",
+          "title": "Runtime Loader Integration",
+          "description": "Integrate figurine asset loading into the existing rendering flow.",
+          "files_to_create": ["src/lib/figurines/figurineLoader.ts"],
+          "files_to_modify": ["src/components/game/CanvasIsometricGrid.tsx"],
+          "acceptance_criteria": [
+            "Lazy load figurine sprites",
+            "Cache by variant + loop id",
+            "No grid mutations from renderer",
+            "Graceful fallback when assets missing"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-1-2"]
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "name": "Cobie Animations + Event Triggers",
+      "description": "Create Cobie loop catalog and trigger them from game events.",
+      "tasks": [
+        {
+          "id": "task-2-1",
+          "title": "Cobie Loop Catalog",
+          "description": "Define the initial set of Cobie animation loops and their semantic meanings.",
+          "files_to_create": ["src/lib/figurines/cobieLoops.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "At least 10 loops (idle, wave, hype, think, type, sleep, snack, react, cheer, shrug)",
+            "Each loop mapped to a gameplay trigger type",
+            "Documented fallback loop"
+          ],
+          "estimated_hours": 4,
+          "dependencies": ["task-1-2"]
+        },
+        {
+          "id": "task-2-2",
+          "title": "Cobie Event Hook",
+          "description": "Hook Cobie animations to existing game events and UI notifications.",
+          "files_to_create": ["src/hooks/useCobieEvents.ts"],
+          "files_to_modify": ["src/hooks/useGameEvents.ts"],
+          "acceptance_criteria": [
+            "Event to loop mapping",
+            "Cooldown to prevent loop spam",
+            "Works with game pause/resume"
+          ],
+          "estimated_hours": 4,
+          "dependencies": ["task-2-1"]
+        },
+        {
+          "id": "task-2-3",
+          "title": "Cobie TV Screen Prop",
+          "description": "Add a small diegetic TV screen object that plays Cobie loops in-world.",
+          "files_to_create": ["src/components/game/CobieScreen.tsx"],
+          "files_to_modify": ["src/components/Game.tsx"],
+          "acceptance_criteria": [
+            "Positionable screen element",
+            "Receives loop updates",
+            "Toggle via settings flag"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-2-2"]
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "name": "User Ingestion Backend",
+      "description": "Identity, consent, and data ingestion for user-to-NPC conversion.",
+      "tasks": [
+        {
+          "id": "task-3-1",
+          "title": "Consent + Identity Flow",
+          "description": "Add explicit consent gating and identity binding for user ingestion.",
+          "files_to_create": ["src/lib/ingestion/consent.ts"],
+          "files_to_modify": ["src/context/GameContext.tsx"],
+          "acceptance_criteria": [
+            "Consent state stored and revocable",
+            "No ingestion without consent",
+            "Audit log entry for consent action"
+          ],
+          "estimated_hours": 5,
+          "dependencies": []
+        },
+        {
+          "id": "task-3-2",
+          "title": "Social Data Intake Adapter",
+          "description": "Create a pluggable adapter interface for social metadata ingestion.",
+          "files_to_create": ["src/lib/ingestion/socialAdapters.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Adapter interface with fetchProfile method",
+            "Only derived metadata stored",
+            "Rate limiting and backoff hooks"
+          ],
+          "estimated_hours": 6,
+          "dependencies": ["task-3-1"]
+        },
+        {
+          "id": "task-3-3",
+          "title": "Avatar Render Queue",
+          "description": "Queue avatar generation requests for user figurines.",
+          "files_to_create": ["src/lib/ingestion/avatarQueue.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Queue with status transitions",
+            "Retry policy and failure state",
+            "Output stored as transparent spritesheet"
+          ],
+          "estimated_hours": 6,
+          "dependencies": ["task-3-1"]
+        }
+      ]
+    },
+    {
+      "id": "phase-4",
+      "name": "Personality Synthesis",
+      "description": "Map social metadata to NPC trait vectors and dialogue seeds.",
+      "tasks": [
+        {
+          "id": "task-4-1",
+          "title": "Trait Mapping Engine",
+          "description": "Convert social metadata to Big Five + crypto traits.",
+          "files_to_create": ["src/lib/ingestion/traitMapping.ts"],
+          "files_to_modify": ["src/games/isocity/types/npc.ts"],
+          "acceptance_criteria": [
+            "Deterministic trait vector from inputs",
+            "Safe defaults when sparse data",
+            "No raw post storage"
+          ],
+          "estimated_hours": 6,
+          "dependencies": ["task-3-2"]
+        },
+        {
+          "id": "task-4-2",
+          "title": "Dialogue Seed Generator",
+          "description": "Generate dialogue seed tokens from traits and interests.",
+          "files_to_create": ["src/lib/ingestion/dialogueSeeds.ts"],
+          "files_to_modify": ["src/lib/npc/llmDialogue.ts"],
+          "acceptance_criteria": [
+            "Seed tokens stored on NPC profile",
+            "Filtered for safe content",
+            "No PII in generated text"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-4-1"]
+        }
+      ]
+    },
+    {
+      "id": "phase-5",
+      "name": "NPC Integration + Housing",
+      "description": "Spawn ingested users as NPCs and enable housing selection.",
+      "tasks": [
+        {
+          "id": "task-5-1",
+          "title": "Spawn Ingested NPC",
+          "description": "Create NPC instances from ingested profiles.",
+          "files_to_create": ["src/lib/ingestion/spawnIngestedNPC.ts"],
+          "files_to_modify": ["src/lib/npc/NPCSimulation.ts"],
+          "acceptance_criteria": [
+            "NPCs spawn with avatar + trait vector",
+            "NPCs integrate into simulation tick",
+            "Stable across save/load"
+          ],
+          "estimated_hours": 6,
+          "dependencies": ["task-4-1", "task-3-3"]
+        },
+        {
+          "id": "task-5-2",
+          "title": "Housing Selection Behavior",
+          "description": "Add behavior for ingested NPCs to find and select housing.",
+          "files_to_create": ["src/lib/npc/ingestedHousing.ts"],
+          "files_to_modify": ["src/lib/npc/NPCSimulation.ts"],
+          "acceptance_criteria": [
+            "Selects housing based on affordability and vibe",
+            "Updates NPC residence state",
+            "Does not mutate grid state from renderer"
+          ],
+          "estimated_hours": 6,
+          "dependencies": ["task-5-1"]
+        }
+      ]
+    },
+    {
+      "id": "phase-6",
+      "name": "Safety + Testing",
+      "description": "Safety filters, moderation, and tests.",
+      "tasks": [
+        {
+          "id": "task-6-1",
+          "title": "Safety Filters",
+          "description": "Apply content filtering for generated dialogue and traits.",
+          "files_to_create": ["src/lib/ingestion/safetyFilters.ts"],
+          "files_to_modify": ["src/lib/ingestion/dialogueSeeds.ts"],
+          "acceptance_criteria": [
+            "Profanity and PII filters",
+            "Fallback to neutral dialogue",
+            "Audit log for filtered content"
+          ],
+          "estimated_hours": 5,
+          "dependencies": ["task-4-2"]
+        },
+        {
+          "id": "task-6-2",
+          "title": "Ingestion Test Suite",
+          "description": "Add tests for trait mapping, spawn logic, and housing selection.",
+          "files_to_create": ["tests/ingestionTraits.spec.ts", "tests/ingestionSpawn.spec.ts"],
+          "files_to_modify": [],
+          "acceptance_criteria": [
+            "Trait mapping unit tests",
+            "Spawn integration tests",
+            "Housing selection behavior tests"
+          ],
+          "estimated_hours": 6,
+          "dependencies": ["task-5-2"]
+        }
+      ]
+    }
+  ],
+  "total_estimated_hours": 75,
+  "priority_order": [
+    "phase-1",
+    "phase-2",
+    "phase-3",
+    "phase-4",
+    "phase-5",
+    "phase-6"
+  ],
+  "tech_stack": {
+    "language": "TypeScript 5",
+    "framework": "Next.js 16 + React 19",
+    "game_engine": "Canvas-based isometric (existing)",
+    "testing": "Playwright",
+    "styling": "Tailwind CSS 4"
+  },
+  "integration_points": [
+    "src/lib/npc/NPCSimulation.ts - NPC tick integration",
+    "src/lib/npc/llmDialogue.ts - dialogue seed integration",
+    "src/components/game/CanvasIsometricGrid.tsx - rendering integration",
+    "src/hooks/useGameEvents.ts - event triggers",
+    "src/context/GameContext.tsx - consent state"
+  ]
+}

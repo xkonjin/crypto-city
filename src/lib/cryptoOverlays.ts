@@ -26,6 +26,7 @@ export type CryptoOverlayType =
   | "risk"
   | "protection"
   | "crypto_density"
+  | "zone" // Issue #208
   | "none";
 
 /** Color scale point for gradient generation */
@@ -103,6 +104,21 @@ export const CRYPTO_OVERLAY_CONFIGS: Record<CryptoOverlayType, CryptoOverlayConf
     ],
     icon: "💰",
     activeColor: "bg-green-500",
+  },
+  // Zone overlay (Issue #208)
+  zone: {
+    type: "zone",
+    label: "Zone",
+    description: "Building category zones (DeFi, Exchange, Meme, etc.)",
+    minValue: 0,
+    maxValue: 1,
+    colorScale: [
+      { value: 0, color: "rgba(0, 0, 0, 0)" },
+      { value: 0.5, color: "rgba(168, 85, 247, 0.3)" },
+      { value: 1.0, color: "rgba(168, 85, 247, 0.5)" },
+    ],
+    icon: "🗺️",
+    activeColor: "bg-purple-500",
   },
   risk: {
     type: "risk",
@@ -561,6 +577,10 @@ export function calculateOverlay(
       return calculateProtectionOverlay(buildings, gridSize);
     case "crypto_density":
       return calculateDensityOverlay(buildings, gridSize);
+    case "zone":
+      // Zone overlay is handled separately via calculateZoneInfluence
+      // from @/lib/zoneCalculation for more detailed category coloring
+      return [];
     case "none":
     default:
       return [];
@@ -632,6 +652,7 @@ export function getCryptoOverlayOptions(): CryptoOverlayConfig[] {
     CRYPTO_OVERLAY_CONFIGS.risk,
     CRYPTO_OVERLAY_CONFIGS.protection,
     CRYPTO_OVERLAY_CONFIGS.crypto_density,
+    CRYPTO_OVERLAY_CONFIGS.zone, // Issue #208
   ];
 }
 
@@ -666,6 +687,10 @@ export function getOverlayLegend(type: CryptoOverlayType): {
     case "crypto_density":
       minLabel = "Sparse";
       maxLabel = "Dense";
+      break;
+    case "zone":
+      minLabel = "Weak";
+      maxLabel = "Strong";
       break;
   }
 

@@ -177,14 +177,18 @@ test.describe("NPCManager", () => {
       const win = window as unknown as Record<string, unknown>;
       if (!win.NPCManager) return { error: 'manager_not_loaded' };
       
-      const manager = win.NPCManager as Record<string, unknown>;
+      const manager = win.NPCManager as {
+        spawnNPC?: (opts: { gridX: number; gridY: number }) => { id: string } | null;
+        despawnNPC?: (id: string) => boolean;
+        getNPC?: (id: string) => unknown | null;
+      };
       if (typeof manager.despawnNPC !== 'function') return { error: 'despawnNPC_not_implemented' };
       
-      const npc = manager.spawnNPC({ gridX: 15, gridY: 15 });
+      const npc = manager.spawnNPC?.({ gridX: 15, gridY: 15 });
       if (!npc) return { error: 'spawn_failed' };
       
       const despawnResult = manager.despawnNPC(npc.id);
-      const afterDespawn = manager.getNPC(npc.id);
+      const afterDespawn = manager.getNPC?.(npc.id);
       
       return {
         despawned: despawnResult === true,
@@ -320,7 +324,7 @@ test.describe("NPCSpawner", () => {
       const win = window as unknown as Record<string, unknown>;
       if (!win.NPCManager) return { error: 'manager_not_loaded' };
       
-      const manager = win.NPCManager as Record<string, unknown>;
+      const manager = win.NPCManager as { getAllNPCs?: () => Array<{ occupation: string }> };
       const npcs = manager.getAllNPCs?.() || [];
       
       if (npcs.length === 0) return { error: 'no_npcs_spawned' };
@@ -422,7 +426,10 @@ test.describe("NPC Persistence", () => {
       const win = window as unknown as Record<string, unknown>;
       if (!win.NPCManager) return { error: 'manager_not_loaded' };
       
-      const manager = win.NPCManager as Record<string, unknown>;
+      const manager = win.NPCManager as {
+        loadFromStorage?: () => void;
+        getNPC?: (id: string) => { name: string } | null;
+      };
       
       if (typeof manager.loadFromStorage !== 'function') {
         return { error: 'loadFromStorage_not_implemented' };
@@ -456,7 +463,7 @@ test.describe("NPC Character Integration", () => {
       const win = window as unknown as Record<string, unknown>;
       if (!win.NPCManager) return { error: 'manager_not_loaded' };
       
-      const manager = win.NPCManager as Record<string, unknown>;
+      const manager = win.NPCManager as { getAllNPCs?: () => Array<{ spriteType: string }> };
       const npcs = manager.getAllNPCs?.() || [];
       
       if (npcs.length === 0) return { error: 'no_npcs' };
@@ -489,7 +496,7 @@ test.describe("NPC Character Integration", () => {
       const win = window as unknown as Record<string, unknown>;
       if (!win.NPCManager) return { error: 'manager_not_loaded' };
       
-      const manager = win.NPCManager as Record<string, unknown>;
+      const manager = win.NPCManager as { getAllNPCs?: () => Array<{ direction: string }> };
       const npcs = manager.getAllNPCs?.() || [];
       
       if (npcs.length === 0) return { error: 'no_npcs' };

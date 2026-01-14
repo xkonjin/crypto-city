@@ -1,288 +1,366 @@
-# PROJECT KNOWLEDGE BASE
+# AGENTS.md - AI Assistant Guidelines
 
-**Project:** Pogicity/crypto-city - Isometric city builder with real-time crypto data integration  
-**Stack:** Next.js 16 + React 19 + TypeScript 5 + Canvas/Phaser 3.90 + Tailwind CSS 4
+> CryptoCity: An isometric city builder with real-time crypto data integration
+> 
+> **Status:** Active development | **Last Updated:** 2026-01-14 | **Tests:** 3791 passing
 
-## COMMANDS
+## Specialized Droids & Skills
+
+This project has specialized droids and skills in `.factory/` for targeted tasks.
+
+### Project Droids (`.factory/droids/`)
+
+| Droid | Purpose | When to Use |
+|-------|---------|-------------|
+| `simulation-expert` | City simulation, RCI, services | Debugging sim logic |
+| `canvas-renderer` | Isometric rendering, depth sorting | Canvas/visual issues |
+| `npc-architect` | NPC behavior, memory, LOD, X402 | NPC system changes |
+| `titan-trainer` | Hero pet BDI AI, learning, skills | Titan features |
+| `crypto-economist` | Crypto buildings, synergies, risk | Economy system |
+| `ui-builder` | React panels, shadcn/ui, Cobie | UI components |
+| `test-runner` | Run/debug Playwright tests | Test failures |
+| `sprite-generator` | Generate/fix building sprites | Sprite issues |
+| `performance-auditor` | Profile and optimize | Performance |
+| `bug-hunter` | Trace data flow, find root causes | Bug investigation |
+
+### Project Skills (`.factory/skills/`)
+
+| Skill | Purpose |
+|-------|---------|
+| `add-crypto-building` | Add new crypto building end-to-end |
+| `add-game-panel` | Create new dialog panel with state |
+| `implement-npc-behavior` | Add new NPC need/activity/interaction |
+| `add-titan-skill` | Add new Titan skill with XP progression |
+| `write-playwright-test` | Generate tests matching project patterns |
+| `trace-data-flow` | Debug state synchronization issues |
+
+---
+
+## Quick Reference
 
 ```bash
 # Development
-npm run dev           # Dev server (localhost:3000)
-npm run build         # Production build (runs type check)
-npm run lint          # ESLint (eslint-config-next)
-
-# Testing (Playwright)
-npm run test          # Run all tests headless
+npm run dev           # Dev server (localhost:3000) - uses --webpack flag
+npm run build         # Production build (compiles successfully)
+npm run lint          # ESLint (passes clean)
+npm run test          # Playwright E2E tests (2838 tests)
 npm run test:ui       # Interactive test UI
-npm run test:headed   # Run with visible browser
 
-# Single test file
-npx playwright test tests/game.spec.ts
-
-# Single test by name
-npx playwright test -g "should load the game canvas"
-
-# Type check only
+# Type check
 npx tsc --noEmit
 ```
 
-## CODE STYLE
+## Architecture Overview
 
-### TypeScript
-
-- **Strict mode enabled** - `strict: true` in tsconfig
-- **Path alias:** `@/*` maps to `./src/*`
-- **Target:** ES2017
-- **No type suppressions:** Never use `as any`, `@ts-ignore`, `@ts-expect-error`
-
-### Naming Conventions
-
-| Type             | Convention                     | Example                            |
-| ---------------- | ------------------------------ | ---------------------------------- |
-| Components       | PascalCase                     | `CanvasIsometricGrid.tsx`          |
-| Functions        | camelCase                      | `gridToScreen()`                   |
-| Constants        | SCREAMING_SNAKE                | `TILE_WIDTH`, `DEFAULT_GRID_SIZE`  |
-| Types/Interfaces | PascalCase                     | `GridPosition`, `GameState`        |
-| Enums            | PascalCase values              | `ZoneType.Residential`             |
-| Building IDs     | kebab-case                     | `"factory-small"`, `"house-large"` |
-| Files            | camelCase.ts or PascalCase.tsx | `utils.ts`, `GameBoard.tsx`        |
-
-### Imports
-
-```typescript
-// Order: React → External → Internal (@/) → Relative → Types
-import React, { useState, useCallback } from "react";
-import useSWR from "swr";
-import { cn } from "@/lib/utils";
-import { simulateTick } from "@/lib/simulation";
-import { TILE_WIDTH } from "./constants";
-import type { GameState, Building } from "@/types/game";
+```
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 1: SIMULATION (React) - Source of Truth              │
+│  Grid state, budget, population, time, zone growth          │
+│  Files: GameContext.tsx, simulation.ts, EconomyContext.tsx  │
+└─────────────────────┬───────────────────────────────────────┘
+                      │ props/context (one-way)
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 2: RENDERING (Canvas) - Visualization                │
+│  Multi-layer canvas, depth sorting, overlays                │
+│  Files: CanvasIsometricGrid.tsx (3.5k lines)                │
+└─────────────────────────────────────────────────────────────┘
+                      │ reads grid
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 3: COSMETIC AGENTS - Eye Candy                       │
+│  NPCs, vehicles, aircraft - read grid, never write          │
+│  Files: NPCSimulation.ts, vehicleSystems hooks              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Components (React 19)
+**Golden Rule:** Simulation computes NUMBERS. Canvas shows PICTURES. Pictures never change numbers.
 
-```typescript
-// Client components require 'use client' directive
-'use client';
-
-// Use forwardRef for components that expose refs
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, ...props }, ref) => {
-    return <button ref={ref} className={cn(buttonVariants({ variant }), className)} {...props} />;
-  }
-);
-Button.displayName = "Button";
-
-// Export component and its variants
-export { Button, buttonVariants };
-```
-
-### Hooks
-
-```typescript
-// Prefix with 'use', return typed object
-export function useRealCryptoData(
-  options: UseRealCryptoDataOptions,
-): UseRealCryptoDataReturn {
-  const [data, setData] = useState<RealWorldCryptoData | null>(null);
-  // ...
-  return { data, isLoading, error, refetch };
-}
-```
-
-### Error Handling
-
-```typescript
-// API clients: return typed errors, never throw unhandled
-async function fetchData(): Promise<DataResult> {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      return { data: null, error: new Error(`HTTP ${res.status}`) };
-    }
-    return { data: await res.json(), error: null };
-  } catch (e) {
-    return { data: null, error: e instanceof Error ? e : new Error(String(e)) };
-  }
-}
-
-// Components: use error boundaries or null checks
-{error && <ErrorDisplay message={error.message} />}
-{data && <DataView data={data} />}
-```
-
-### Types
-
-```typescript
-// Prefer interfaces for objects, types for unions/primitives
-interface GridPosition {
-  x: number;
-  y: number;
-}
-
-type CardinalDirection = "north" | "east" | "south" | "west";
-type ZoneType = "R" | "C" | "I";
-
-// Export types alongside implementations
-export type { UseRealCryptoDataReturn };
-export { useRealCryptoData };
-```
-
-## STRUCTURE
+## Project Structure
 
 ```
 src/
-├── app/                   # Next.js App Router pages
+├── app/                     # Next.js 16 App Router
+│   ├── page.tsx            # Landing + Game container
+│   └── layout.tsx          # Root layout with providers
 ├── components/
-│   ├── game/             # Canvas renderer, systems (SEE: game/AGENTS.md)
-│   ├── ui/               # shadcn/ui + Radix components
-│   ├── crypto/           # Crypto data display components
-│   └── mobile/           # Mobile-specific UI
-├── lib/                  # Utilities, APIs (SEE: lib/AGENTS.md)
-├── games/isocity/        # Engine types (SEE: isocity/AGENTS.md)
-├── core/                 # Core types (grid, rendering)
-├── hooks/                # React hooks
-├── context/              # GameContext, MultiplayerContext
-└── types/                # Shared TypeScript types
-tests/
-└── *.spec.ts            # Playwright E2E tests
+│   ├── game/               # Core game components
+│   │   ├── CanvasIsometricGrid.tsx  # Main renderer (3,474 lines)
+│   │   ├── Sidebar.tsx              # Building tools (28,837 bytes)
+│   │   ├── TopBar.tsx               # Desktop stats bar
+│   │   ├── types.ts                 # Car, Airplane, Pedestrian types
+│   │   ├── panels/                  # 16 dialog panels (Budget, Stats, etc.)
+│   │   └── buildingHelpers.ts       # Building definitions
+│   ├── ui/                 # shadcn/ui components (20 files)
+│   ├── crypto/             # Crypto-specific UI
+│   │   ├── CryptoBuildingPanel.tsx  # 127 crypto buildings
+│   │   └── NewsTicker.tsx           # Scrolling headlines
+│   ├── mobile/             # Mobile UI variants
+│   └── titan/              # Hero Pet system (WIP)
+│       ├── GodHandCursor.tsx
+│       ├── TitanStatusPanel.tsx
+│       └── TitanDetailView.tsx
+├── lib/
+│   ├── simulation.ts       # Core city sim (5,991 lines)
+│   ├── npc/                # NPC simulation (32 files)
+│   │   ├── NPCSimulation.ts    # Master controller
+│   │   ├── needs.ts            # Sims-style motives
+│   │   ├── memory.ts           # Episodic/semantic memory
+│   │   └── personality.ts      # Big Five + crypto traits
+│   ├── titan/              # Hero Pet logic
+│   │   ├── TitanManager.ts     # Singleton manager
+│   │   ├── TitanAI.ts          # BDI architecture
+│   │   └── TitanLearning.ts    # Reinforcement learning
+│   └── crypto/api/         # Crypto data fetching
+├── games/isocity/
+│   ├── crypto/             # Crypto economy
+│   │   ├── CryptoEconomyManager.ts
+│   │   ├── buildings.ts    # 127 crypto building definitions
+│   │   └── types.ts        # CryptoBuilding, Tier types
+│   └── types/              # Game type definitions
+│       ├── game.ts
+│       ├── npc.ts
+│       └── titan.ts
+├── context/                # React contexts
+│   ├── GameContext.tsx     # Main state hub (2,055 lines)
+│   ├── EconomyContext.tsx
+│   ├── GridContext.tsx
+│   └── SimulationContext.tsx
+└── hooks/                  # Custom hooks
+    ├── useNPCSimulation.ts
+    ├── useTitan.ts
+    └── useRealCryptoData.ts
 ```
 
-## KEY FILES
+## Key Files by Task
 
-| Task           | Location                                      |
-| -------------- | --------------------------------------------- |
-| Add buildings  | `src/components/game/buildingHelpers.ts`      |
-| Game rendering | `src/components/game/CanvasIsometricGrid.tsx` |
-| Road logic     | `src/components/game/roadDrawing.ts`          |
-| Game state     | `src/context/GameContext.tsx`                 |
-| Simulation     | `src/lib/simulation.ts`                       |
-| Crypto APIs    | `src/lib/crypto/api/`                         |
-| Grid types     | `src/core/types/grid.ts`                      |
+| Task | Primary File | Notes |
+|------|-------------|-------|
+| Add standard buildings | src/components/game/buildingHelpers.ts | |
+| Add crypto buildings | src/games/isocity/crypto/buildings.ts | 127 existing |
+| Game state management | src/context/GameContext.tsx | 2k lines |
+| Canvas rendering | src/components/game/CanvasIsometricGrid.tsx | 3.5k lines |
+| City simulation logic | src/lib/simulation.ts | 6k lines |
+| NPC behavior | src/lib/npc/NPCSimulation.ts | |
+| Crypto economy | src/games/isocity/crypto/CryptoEconomyManager.ts | |
+| Hero Pet system | src/lib/titan/TitanManager.ts | WIP |
+| UI panels | src/components/game/panels/*.tsx | 16 panels |
+| Design tokens | src/app/globals.css | CSS variables |
 
-## ARCHITECTURE
+## Code Conventions
 
-```
-React (source of truth) ────► Canvas/Phaser (renders)
-         │                           │
-         │ grid, simData             │ click events
-         ▼                           ▼
-  GameContext.tsx            callbacks to React
-```
+### TypeScript
+- **Strict mode enabled**
+- **Path alias:** `@/*` → `./src/*`
+- **No suppressions:** Never use `as any`, `@ts-ignore`, `@ts-expect-error`
 
-- **React manages:** grid state (48x48), UI, tool selection, simulation
-- **Canvas manages:** rendering, characters, cars, animations
-- **React → Canvas:** via props/context
-- **Canvas → React:** via callbacks (`onTileClick`, `onTilesDrag`)
+### Naming
+| Type | Convention | Example |
+|------|------------|---------|
+| Components | PascalCase | `CanvasIsometricGrid.tsx` |
+| Functions | camelCase | `gridToScreen()` |
+| Constants | SCREAMING_SNAKE | `TILE_WIDTH`, `GRID_SIZE` |
+| Types/Interfaces | PascalCase | `GridPosition`, `GameState` |
+| Building IDs | kebab-case | `"aave-lending-tower"` |
+| Files | camelCase.ts or PascalCase.tsx | |
 
-## ISOMETRIC SYSTEM
-
+### Isometric Math
 ```typescript
 // Constants
 const TILE_WIDTH = 64;
 const HEIGHT_RATIO = 0.6;
 const TILE_HEIGHT = TILE_WIDTH * HEIGHT_RATIO; // 38.4
 
-// Grid → Screen conversion
+// Grid → Screen
 screenX = (gridX - gridY) * (TILE_WIDTH / 2);
 screenY = (gridX + gridY) * (TILE_HEIGHT / 2);
 
-// Screen → Grid conversion
+// Screen → Grid
 gridX = floor(screenX / TILE_WIDTH + screenY / TILE_HEIGHT);
 gridY = floor(screenY / TILE_HEIGHT - screenX / TILE_WIDTH);
 
 // Depth layers (lower = further back)
 // 0.00 - Ground tiles
-// 0.03 - Back fences
 // 0.05 - Buildings
-// 0.06 - Props/trees
 // 0.10 - Cars
 // 0.20 - Characters
 ```
 
-## TESTING
+## Game Systems
 
-```typescript
-// Playwright tests in tests/*.spec.ts
-import { test, expect } from "@playwright/test";
+### Simulation (src/lib/simulation.ts)
+- Zone growth based on RCI demand
+- Land value computation
+- Service coverage (police, fire, health, education)
+- Budget system (taxes, expenses)
+- Fire simulation with spread mechanics
 
-test.describe("Feature", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/");
-    await page.waitForTimeout(2000);
-    // Start game if needed
-  });
+### NPC System (src/lib/npc/)
+- **Tiered simulation:** 50-100 "real" NPCs with full AI, 500+ cosmetic sprites
+- **Needs:** hunger, energy, social, fun, wealth, purpose, security
+- **Memory:** Episodic, semantic, procedural, working
+- **Personality:** Big Five + crypto traits (riskTolerance, degenLevel)
 
-  test("should do something", async ({ page }) => {
-    const element = page.locator("text=/Expected/i").first();
-    await expect(element).toBeVisible({ timeout: 10000 });
-  });
-});
-```
+### Crypto Economy (src/games/isocity/crypto/)
+- **127 buildings** across 10 categories with custom AI-generated sprites:
+  - DeFi (23): Aave, Uniswap, Lido, Pendle, Curve, MakerDAO, Compound, EigenLayer, etc.
+  - Exchange (7): Binance, Coinbase, Kraken, OKX, Bybit, KuCoin, Gemini
+  - Chain (13): Ethereum, Solana, Bitcoin, Arbitrum, Optimism, Polygon, Base, etc.
+  - CT (10): CT Studio, VC Office, Alpha Call Center, Podcast Tower, NFT Gallery, etc.
+  - Meme (20): Pepe, Doge, Shiba, WIF, BONK, POPCAT, BRETT, Floki, MOG, etc.
+  - Plasma (18): HQ, Node, Bridge, Vault, Lab, Arena, Tower, Garden, etc.
+  - Stablecoin (5): Tether, Circle, DAI, Ethena, Reserve
+  - Infrastructure (7): Chainlink, The Graph, Pyth, LayerZero, Wormhole, Auditor, Insurance
+  - Legends (19): FTX Ruins, Luna Crater, 3AC Yacht, Vitalik's Beacon, Satoshi Monument, etc.
+  - Titan (5): Den tiers 1-5 for Hero Pet system
+- Building tiers: retail → degen → whale → institution
+- Chain synergies (Ethereum, Solana, Arbitrum, Base, Polygon, etc.)
+- Risk system: rug probability, audits, insurance
+- Real-world data integration (CoinGecko, DeFi Llama, Fear & Greed)
+- All sprites in `/public/Building/crypto/{category}/` (127 PNG files, ~136MB total)
 
-## ANTI-PATTERNS
+### Titan/Hero Pet (src/lib/titan/)
+- BDI (Belief-Desire-Intention) AI architecture
+- Reinforcement learning via God Hand praise/punish
+- 12 skill categories with XP progression
+- 8 miracle types with alignment requirements
+- Visual morphing based on moral alignment
 
-| Never Do                     | Why                                        |
-| ---------------------------- | ------------------------------------------ |
-| SSR Phaser                   | Dynamic import only, check `typeof window` |
-| Mutate grid in Phaser        | React owns state, Phaser renders           |
-| Hardcode tile sizes          | Use constants from `constants.ts`          |
-| Call APIs from components    | Use hooks + cache (rate limits)            |
-| Skip cache for crypto APIs   | Rate limits will block you                 |
-| Block main thread            | Heavy saves go to Web Worker               |
-| Use `as any` or `@ts-ignore` | Fix the type properly                      |
-| Empty catch blocks           | Log or handle errors explicitly            |
+## Data Persistence
 
-## NOTIFICATIONS
+| Data | Saved? | Storage |
+|------|--------|---------|
+| Grid (buildings, zones, roads) | Yes | localStorage (compressed) |
+| Budget, treasury | Yes | localStorage |
+| Time (year, month, day) | Yes | localStorage |
+| Population, demand | Yes | localStorage |
+| NPCs | No | Respawned |
+| Cars/Aircraft | No | Respawned |
+| Titan state | Yes | Separate key |
 
-Play system sound when:
+## Testing
 
 ```bash
-# Finishing long task, needing input, or hitting error
+# All tests
+npm run test
+
+# Single file
+npx playwright test tests/game.spec.ts
+
+# By name
+npx playwright test -g "should load the game canvas"
+
+# Interactive
+npm run test:ui
+```
+
+Test files in `tests/` (90+ spec files):
+- `game.spec.ts` - Core game functionality
+- `npcSimulation.spec.ts` - NPC system (1600+ NPC tests)
+- `titan*.spec.ts` - Hero Pet tests (21 files)
+- `floatingCobieHead.spec.ts` - Cobie companion (176 tests)
+- `cryptoBuildingPanel.spec.ts` - Building UI panel
+- `zoneOverlay.spec.ts` - Zone visualization system
+- `synergyPreview.spec.ts` - Synergy mechanics
+
+## Anti-Patterns
+
+| Don't | Why |
+|-------|-----|
+| SSR Canvas/Phaser | Dynamic import only, check `typeof window` |
+| Mutate grid in Canvas | React owns state, Canvas renders |
+| Hardcode tile sizes | Use constants from config |
+| Call APIs from components | Use hooks with caching |
+| Skip crypto API cache | Rate limits will block you |
+| Block main thread | Heavy saves → Web Worker |
+| Use `as any` | Fix the type properly |
+
+## Sound Notification
+
+Play system sound when finishing long tasks or needing input:
+```bash
 afplay /System/Library/Sounds/Ping.aiff
 ```
 
-## DEPENDENCIES
+## Known Issues
 
-**Core:** Next.js 16, React 19, TypeScript 5, Tailwind CSS 4  
-**UI:** Radix UI, class-variance-authority, lucide-react  
-**State:** Zustand, SWR  
-**Data:** Supabase, idb (IndexedDB)  
-**Game:** Phaser 3.90 (dynamic import), gifuct-js  
-**Testing:** Playwright
-
-## KNOWN ISSUES
-
-**Turbopack + iCloud Drive incompatibility (Next.js 16)**:  
-Turbopack cannot handle paths with spaces. If project is in iCloud (`~/Library/Mobile Documents/`), Turbopack will fail with:
-
-```
-TurbopackInternalError: reading dir /Users/.../Mobile Documents
-Operation not permitted (os error 1)
-```
-
-**Resolution (IMPLEMENTED):**  
-The `package.json` scripts now use `--webpack` flag to bypass Turbopack:
-
+### Turbopack + iCloud
+Turbopack fails on paths with spaces. Project uses `--webpack` flag:
 ```json
 "scripts": {
   "dev": "next dev --webpack",
-  "build": "next build --webpack",
-  ...
+  "build": "next build --webpack"
 }
 ```
 
-This allows development on iCloud paths. All `npm run dev`, `npm run build`, and `npm run test` commands work correctly.
+### Canvas Performance
+CanvasIsometricGrid is 147KB. For large cities, consider:
+- Dirty region tracking
+- LOD for zoomed-out view
+- Chunked rendering
 
-**Alternative workarounds (if needed):**
+## Documentation
 
-1. Move project to a path without spaces (e.g., `~/Projects/crypto-city`)
-2. Use symlink: `ln -s "path/with spaces" ~/crypto-city`
+| Document | Purpose |
+|----------|---------|
+| ROADMAP.md | Technical roadmap with implementation details |
+| USER_STORIES.md | 7 epics, 30+ user stories |
+| specs/HERO_PET_SYSTEM.md | Titan companion design |
+| specs/AI_NPC_LIVING_CITY.md | NPC AI architecture |
+| specs/CRYPTO_CITY_BRAND_NARRATIVE.md | Tone, humor, naming |
+| docs/GAME_MECHANICS.md | Basic game rules |
 
-## NOTES
+## Dependencies
 
-- **Crypto data** caches in IndexedDB via `idb` package
-- **Multiplayer** uses Supabase realtime (optional)
-- **Character sprites** in `/public/Characters/` are PROPRIETARY - don't redistribute
-- **See ROADMAP.md** for simulation/zoning vision
-- **See subdirectory AGENTS.md** files for detailed module docs
+**Core:** Next.js 16, React 19, TypeScript 5, Tailwind CSS 4
+**UI:** Radix UI, class-variance-authority, lucide-react
+**State:** Zustand, SWR
+**Data:** Supabase, idb (IndexedDB)
+**Game:** Phaser 3.90 (optional), gifuct-js
+**Testing:** Playwright
+**AI:** @google/genai (for sprite generation scripts)
+
+## Sprite Generation
+
+AI-generated sprites use Google's Gemini 2.5 Flash Image API:
+
+```bash
+# Scripts in /scripts/
+generateSpritesNanoBanana.ts   # Main generator (Gemini 2.5 Flash Image)
+generateSpecificSprites.ts     # For specific buildings
+updateBuildingSpritePaths.ts   # Updates buildings.ts with paths
+```
+
+**Sprite Naming Convention:** `{width}x{height}{building_id}_south.png`
+- Example: `3x3aave_lending_tower_south.png`
+- All sprites have transparent backgrounds
+- Isometric pixel art style (64x64 base tile size)
+
+## X402 NPC Economy (Testnet)
+
+NPCs can transact using the x402 payment protocol on Plasma testnet:
+
+```
+src/lib/npc/x402/
+├── constants.ts           # Plasma testnet config, service prices
+├── types.ts               # NPCOnChainWallet, NPCService, etc.
+├── NPCWalletManager.ts    # HD wallet derivation, transfers
+├── NPCServiceRegistry.ts  # NPC services by occupation
+└── index.ts               # Module exports
+```
+
+**Key Concepts:**
+- Each NPC gets a deterministic HD wallet (derived from master seed)
+- NPCs offer services (drinks, alpha calls, security, etc.) for USDT₮
+- Uses HTTP 402 "Payment Required" flow for micropayments
+- Plasma testnet: Chain ID 9746, RPC: `https://testnet-rpc.plasma.to`
+
+**Service Prices (USDT₮):**
+| Service | Price |
+|---------|-------|
+| Drink | $0.05 |
+| Food | $0.10 |
+| Alpha Call | $0.25 |
+| Security Escort | $0.50 |
+
+See `specs/X402_NPC_ECONOMY.md` for full implementation spec.

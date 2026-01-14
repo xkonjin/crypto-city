@@ -283,6 +283,7 @@ class NPCManagerClass {
       personality: npc.personality,
       personalityArchetype: npc.personalityArchetype,
       relationships: npc.relationships,
+      ingestedProfile: npc.ingestedProfile,
     };
   }
 
@@ -325,6 +326,7 @@ class NPCManagerClass {
       personalityArchetype,
       // Use stored relationships or create empty if loading old save
       relationships: data.relationships || {},
+      ingestedProfile: data.ingestedProfile,
     };
   }
 

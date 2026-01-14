@@ -6,6 +6,7 @@ import { msg, useGT } from 'gt-next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { GameState, Tool } from '@/types/game';
+import { hasSeenOnboarding } from '@/lib/terminology';
 
 // Tutorial steps with clear objectives
 export interface TutorialStep {
@@ -143,31 +144,71 @@ interface TutorialProps {
 
 export function Tutorial({ state, onHighlightTool }: TutorialProps) {
   const gt = useGT();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isDismissed, setIsDismissed] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
-
-  // Load progress from localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
+  // Track terminology onboarding completion state
+  const [onboardingComplete, setOnboardingComplete] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return hasSeenOnboarding();
+  });
+  const [currentStep, setCurrentStep] = useState(() => {
+    if (typeof window === 'undefined') return 0;
     try {
       const dismissed = localStorage.getItem(TUTORIAL_DISMISSED_KEY);
-      if (dismissed === 'true') {
-        setIsDismissed(true);
-        return;
-      }
-      
+      if (dismissed === 'true') return 0;
       const progress = localStorage.getItem(STORAGE_KEY);
       if (progress) {
         const step = parseInt(progress, 10);
         if (!isNaN(step) && step >= 0 && step < TUTORIAL_STEPS.length) {
-          setCurrentStep(step);
+          return step;
         }
       }
     } catch (e) {
       console.error('Failed to load tutorial progress:', e);
     }
+    return 0;
+  });
+  const [isDismissed, setIsDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return localStorage.getItem(TUTORIAL_DISMISSED_KEY) === 'true';
+    } catch (e) {
+      console.error('Failed to load tutorial dismissal:', e);
+      return false;
+    }
+  });
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  // Listen for terminology onboarding completion
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Check on mount and set up listener for storage changes
+    const checkOnboarding = () => {
+      setOnboardingComplete(hasSeenOnboarding());
+    };
+    
+    // Listen for storage events (in case onboarding completed in same tab)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'cryptocity-terminology-onboarding-shown') {
+        checkOnboarding();
+      }
+    };
+    
+    // Also listen for custom event dispatched when mode changes
+    const handleModeChange = () => {
+      checkOnboarding();
+    };
+    
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('terminology-mode-change', handleModeChange);
+    
+    // Poll briefly to catch updates (onboarding sets localStorage synchronously)
+    const interval = setInterval(checkOnboarding, 500);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('terminology-mode-change', handleModeChange);
+      clearInterval(interval);
+    };
   }, []);
 
   // Save progress
@@ -180,21 +221,6 @@ export function Tutorial({ state, onHighlightTool }: TutorialProps) {
       console.error('Failed to save tutorial progress:', e);
     }
   }, [currentStep, isDismissed]);
-
-  // Check step completion
-  useEffect(() => {
-    const step = TUTORIAL_STEPS[currentStep];
-    if (step && step.isComplete(state) && currentStep < TUTORIAL_STEPS.length - 1) {
-      // Auto-advance if objective is met and not on last step
-      if (step.id !== 'welcome' && step.id !== 'complete') {
-        // Small delay before auto-advancing
-        const timer = setTimeout(() => {
-          setCurrentStep(prev => Math.min(prev + 1, TUTORIAL_STEPS.length - 1));
-        }, 1500);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [state, currentStep]);
 
   // Highlight tool when step changes
   useEffect(() => {
@@ -241,12 +267,17 @@ export function Tutorial({ state, onHighlightTool }: TutorialProps) {
     }
   }, []);
 
+  // Don't show tutorial until terminology onboarding is complete (Issue #184)
+  if (!onboardingComplete) {
+    return null;
+  }
+
   if (isDismissed) {
-    // Show a small "?" button to restart tutorial
+    // Show a small "?" button to restart tutorial (Issue #185: moved to bottom-16 to avoid overlap with DailyRewards)
     return (
       <button
         onClick={handleRestart}
-        className="fixed bottom-4 right-4 z-50 w-10 h-10 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center text-white shadow-lg transition-colors"
+        className="fixed bottom-16 right-4 z-50 w-10 h-10 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center text-white shadow-lg transition-colors"
         title={gt("Restart Tutorial")}
       >
         <Lightbulb className="w-5 h-5" />

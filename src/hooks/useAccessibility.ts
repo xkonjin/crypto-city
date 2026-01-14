@@ -39,7 +39,7 @@ export interface UseAccessibilityReturn {
   updateSettings: (settings: Partial<AccessibilitySettings>) => void;
   
   // Focus management
-  lastFocusedElement: HTMLElement | null;
+  getLastFocusedElement: () => HTMLElement | null;
   saveFocus: () => void;
   restoreFocus: () => void;
 }
@@ -206,6 +206,8 @@ export function useAccessibility(
       lastFocusedElementRef.current.focus();
     }
   }, []);
+
+  const getLastFocusedElement = useCallback(() => lastFocusedElementRef.current, []);
   
   return {
     cursorPosition,
@@ -219,7 +221,7 @@ export function useAccessibility(
     announce,
     settings,
     updateSettings,
-    lastFocusedElement: lastFocusedElementRef.current,
+    getLastFocusedElement,
     saveFocus,
     restoreFocus,
   };

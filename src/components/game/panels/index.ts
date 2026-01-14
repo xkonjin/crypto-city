@@ -13,3 +13,7 @@ export { PrestigePanel } from "./PrestigePanel";
 export { MilestonePanel } from "./MilestonePanel";
 export { FinancialReportPanel } from "./FinancialReportPanel";
 export { OrdinancePanel } from "./OrdinancePanel";
+export { NPCInspectorPanel } from "./NPCInspectorPanel";
+export { DisasterPanel } from "./DisasterPanel";
+export { CityAIPanel } from "./CityAIPanel";
+export { EconomyStatsPanel } from "./EconomyStatsPanel";

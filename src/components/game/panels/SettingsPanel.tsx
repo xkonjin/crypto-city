@@ -15,9 +15,18 @@ import { SpriteTestPanel } from './SpriteTestPanel';
 import { SavedCityMeta } from '@/types/game';
 import { LocaleSelector } from 'gt-next';
 import { useSoundOptional } from '@/context/SoundContext';
-import { Volume2, VolumeX, Music, Zap, BookOpen } from 'lucide-react';
+import { Volume2, VolumeX, Music, Zap, BookOpen, MessageCircle } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { useTerminology } from '@/hooks/useTerminology';
+import {
+  loadCobieSettings,
+  saveCobieSettings,
+  DEFAULT_COBIE_SETTINGS,
+  type CobieSettings,
+  type CobiePosition,
+  type CobieScale,
+  type CobieTalkativeness,
+} from '@/lib/cobie/CobieSettings';
 
 // Translatable UI labels
 const UI_LABELS = {
@@ -25,6 +34,8 @@ const UI_LABELS = {
   gameSettings: msg('Game Settings'),
   disasters: msg('Disasters'),
   disastersDesc: msg('Enable random fires and disasters'),
+  cobieScreen: msg('Cobie Screen'),
+  cobieScreenDesc: msg('Show Cobie animation screen on the map'),
   terminologyMode: msg('Terminology Mode'),
   terminologyModeDesc: msg('Choose between crypto jargon or classic terms'),
   cryptoMode: msg('Crypto'),
@@ -91,6 +102,25 @@ const UI_LABELS = {
   musicJazz: msg('Jazz'),
   playMusic: msg('Play Music'),
   stopMusic: msg('Stop Music'),
+  // Cobie Assistant settings (Issue #181)
+  cobieAssistant: msg('Cobie Assistant'),
+  cobieAssistantDesc: msg('Configure the floating Cobie head assistant'),
+  showFloatingHead: msg('Show Floating Head'),
+  showFloatingHeadDesc: msg('Display the animated Cobie head in corner'),
+  cobiePosition: msg('Position'),
+  bottomLeft: msg('Bottom Left'),
+  bottomRight: msg('Bottom Right'),
+  cobieSize: msg('Size'),
+  small: msg('Small'),
+  medium: msg('Medium'),
+  large: msg('Large'),
+  talkativenessLabel: msg('Talkativeness'),
+  talkativenessDesc: msg('How often Cobie speaks'),
+  quiet: msg('Quiet'),
+  normal: msg('Normal'),
+  chatty: msg('Chatty'),
+  idleBehaviors: msg('Idle Animations'),
+  idleBehaviorsDesc: msg('Show Cobie looking around and sleeping when idle'),
 };
 
 // Format a date for display
@@ -184,8 +214,133 @@ function TerminologyModeToggle() {
   );
 }
 
+// Cobie Assistant Settings Component (Issue #181)
+function CobieAssistantSettings() {
+  const m = useMessages();
+  const [settings, setSettings] = React.useState<CobieSettings>(() => {
+    if (typeof window === 'undefined') return DEFAULT_COBIE_SETTINGS;
+    return loadCobieSettings();
+  });
+
+  const updateSetting = <K extends keyof CobieSettings>(key: K, value: CobieSettings[K]) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    saveCobieSettings(newSettings);
+  };
+
+  return (
+    <div className="py-2">
+      <div className="flex items-center gap-2 mb-1">
+        <MessageCircle className="w-4 h-4 text-muted-foreground" />
+        <Label>{m(UI_LABELS.cobieAssistant)}</Label>
+      </div>
+      <p className="text-muted-foreground text-xs mb-3">{m(UI_LABELS.cobieAssistantDesc)}</p>
+      
+      {/* Enable/Disable Toggle */}
+      <div className="flex items-center justify-between py-2 gap-4">
+        <div className="flex-1 min-w-0">
+          <Label className="text-sm">{m(UI_LABELS.showFloatingHead)}</Label>
+          <p className="text-muted-foreground text-xs">{m(UI_LABELS.showFloatingHeadDesc)}</p>
+        </div>
+        <Switch
+          checked={settings.enabled}
+          onCheckedChange={(checked) => updateSetting('enabled', checked)}
+        />
+      </div>
+
+      {settings.enabled && (
+        <>
+          {/* Position Selection */}
+          <div className="py-2">
+            <Label className="text-sm">{m(UI_LABELS.cobiePosition)}</Label>
+            <div className="flex rounded-md border border-border overflow-hidden mt-1">
+              <button
+                onClick={() => updateSetting('position', 'bottom-left')}
+                className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+                  settings.position === 'bottom-left'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                ↙️ {m(UI_LABELS.bottomLeft)}
+              </button>
+              <button
+                onClick={() => updateSetting('position', 'bottom-right')}
+                className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+                  settings.position === 'bottom-right'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                ↘️ {m(UI_LABELS.bottomRight)}
+              </button>
+            </div>
+          </div>
+
+          {/* Size Selection */}
+          <div className="py-2">
+            <Label className="text-sm">{m(UI_LABELS.cobieSize)}</Label>
+            <div className="flex rounded-md border border-border overflow-hidden mt-1">
+              {(['small', 'medium', 'large'] as const).map((size) => (
+                <button
+                  key={size}
+                  onClick={() => updateSetting('scale', size)}
+                  className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
+                    settings.scale === size
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {size === 'small' && m(UI_LABELS.small)}
+                  {size === 'medium' && m(UI_LABELS.medium)}
+                  {size === 'large' && m(UI_LABELS.large)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Talkativeness Selection */}
+          <div className="py-2">
+            <Label className="text-sm">{m(UI_LABELS.talkativenessLabel)}</Label>
+            <p className="text-muted-foreground text-xs mb-1">{m(UI_LABELS.talkativenessDesc)}</p>
+            <div className="flex rounded-md border border-border overflow-hidden mt-1">
+              {(['quiet', 'normal', 'chatty'] as const).map((level) => (
+                <button
+                  key={level}
+                  onClick={() => updateSetting('talkativeness', level)}
+                  className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
+                    settings.talkativeness === level
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {level === 'quiet' && `🤫 ${m(UI_LABELS.quiet)}`}
+                  {level === 'normal' && `💬 ${m(UI_LABELS.normal)}`}
+                  {level === 'chatty' && `📢 ${m(UI_LABELS.chatty)}`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Idle Behaviors Toggle */}
+          <div className="flex items-center justify-between py-2 gap-4">
+            <div className="flex-1 min-w-0">
+              <Label className="text-sm">{m(UI_LABELS.idleBehaviors)}</Label>
+              <p className="text-muted-foreground text-xs">{m(UI_LABELS.idleBehaviorsDesc)}</p>
+            </div>
+            <Switch
+              checked={settings.showIdleBehaviors}
+              onCheckedChange={(checked) => updateSetting('showIdleBehaviors', checked)}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function SettingsPanel() {
-  const { state, setActivePanel, setDisastersEnabled, newGame, loadState, exportState, expandCity, shrinkCity, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
+  const { state, setActivePanel, setDisastersEnabled, newGame, loadState, exportState, expandCity, shrinkCity, currentSpritePack, availableSpritePacks, setSpritePack, dayNightMode, setDayNightMode, showCobieScreen, setShowCobieScreen, getSavedCityInfo, restoreSavedCity, clearSavedCity, savedCities, saveCity, loadSavedCity, deleteSavedCity, renameSavedCity } = useGame();
   const { disastersEnabled, cityName, gridSize, id: currentCityId } = state;
   const m = useMessages();
   const sound = useSoundOptional();
@@ -290,8 +445,21 @@ export function SettingsPanel() {
                 onCheckedChange={setDisastersEnabled}
               />
             </div>
+
+            <div className="flex items-center justify-between py-2 gap-4">
+              <div className="flex-1 min-w-0">
+                <Label>{m(UI_LABELS.cobieScreen)}</Label>
+                <p className="text-muted-foreground text-xs">{m(UI_LABELS.cobieScreenDesc)}</p>
+              </div>
+              <Switch
+                checked={showCobieScreen}
+                onCheckedChange={setShowCobieScreen}
+              />
+            </div>
             
             <TerminologyModeToggle />
+            
+            <CobieAssistantSettings />
             
             <div className="py-2">
               <Label>{m(UI_LABELS.spritePack)}</Label>

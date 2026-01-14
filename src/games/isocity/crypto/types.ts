@@ -45,7 +45,8 @@ export type CryptoCategory =
   | 'plasma'         // Custom themed buildings
   | 'stablecoin'     // Stablecoin issuers (Tether, Circle, Ethena)
   | 'infrastructure' // Oracles & bridges (Chainlink, LayerZero, Wormhole)
-  | 'legends';       // Satirical crypto figure monuments (SBF Ruins, Vitalik Tower)
+  | 'legends'        // Satirical crypto figure monuments (SBF Ruins, Vitalik Tower)
+  | 'titan';         // Titan Pet special buildings (Den, etc.)
 
 // =============================================================================
 // TVL TIERS

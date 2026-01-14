@@ -1,0 +1,14 @@
+{
+  "lastUpdated": "2025-01-14T16:35:00Z",
+  "devServer": {
+    "project": "crypto-city",
+    "port": 3000,
+    "status": "running",
+    "pid": null
+  },
+  "browser": {
+    "inUse": false,
+    "lastUsedBy": null
+  },
+  "notes": "Kill other dev servers before starting crypto-city. Browser lock at ~/.cache/ms-playwright/mcp-chrome/SingletonLock"
+}
