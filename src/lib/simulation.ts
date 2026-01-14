@@ -3574,9 +3574,9 @@ export function simulateTick(state: GameState): GameState {
   const advisorMessages = generateAdvisorMessages(newStats, services, newGrid);
 
   let activePetition = state.activePetition;
-  let petitionHistory = state.petitionHistory;
+  let petitionHistory = state.petitionHistory ?? [];
   let activeEvent = state.activeEvent;
-  let eventHistory = state.eventHistory;
+  let eventHistory = state.eventHistory ?? [];
 
   const isDayChange = newTick === 0 && newDay !== state.day;
   if (isDayChange) {
