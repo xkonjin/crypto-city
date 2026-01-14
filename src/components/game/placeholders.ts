@@ -379,7 +379,7 @@ export const CRYPTO_CATEGORY_COLORS: Record<CryptoCategory, PlaceholderColor> = 
   chain: { top: '#a855f7', left: '#9333ea', right: '#c084fc', height: 1.3 },
   ct: { top: '#06b6d4', left: '#0891b2', right: '#22d3ee', height: 0.9 },
   meme: { top: '#f59e0b', left: '#d97706', right: '#fbbf24', height: 0.8 },
-  plasma: { top: '#ec4899', left: '#db2777', right: '#f472b6', height: 1.5 },
+  plasma: { top: '#569F8C', left: '#162F29', right: '#DCEFEA', height: 1.5 }, // Plasma.to brand: British Racing Green + Teal
   stablecoin: { top: '#10b981', left: '#059669', right: '#34d399', height: 1.1 },
   infrastructure: { top: '#6366f1', left: '#4f46e5', right: '#818cf8', height: 1.2 },
   legends: { top: '#f97316', left: '#ea580c', right: '#fb923c', height: 1.4 },
