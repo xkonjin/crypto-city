@@ -8,6 +8,8 @@ export type IngestedProfile = {
   profileId: string;
   displayName: string;
   avatarSpritesheet?: string;
+  /** Loaded HTMLImageElement for rendering custom sprites */
+  avatarSpritesheetImage?: HTMLImageElement;
   traits: NPCPersonality;
   dialogueSeeds: string[];
 };
@@ -36,8 +38,15 @@ export function spawnIngestedNPC(profile: IngestedProfile, options: IngestedSpaw
   npc.ingestedProfile = {
     profileId: profile.profileId,
     avatarSpritesheet: profile.avatarSpritesheet,
+    avatarSpritesheetImage: profile.avatarSpritesheetImage,
+    avatarAnimFrame: 0,
     dialogueSeeds: profile.dialogueSeeds,
   };
+
+  // Set custom sprite type if avatar was generated
+  if (profile.avatarSpritesheet || profile.avatarSpritesheetImage) {
+    npc.spriteType = 'custom';
+  }
 
   return npc;
 }

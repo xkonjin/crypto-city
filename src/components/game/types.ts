@@ -300,6 +300,11 @@ export type Pedestrian = {
   beachTileX: number; // Beach water tile X (for swimming position)
   beachTileY: number; // Beach water tile Y (for swimming position)
   beachEdge: "north" | "east" | "south" | "west" | null; // Which edge of water tile is beach
+  // Custom sprite for ingested users
+  isIngestedUser?: boolean; // Is this an ingested X user?
+  xUsername?: string; // X handle for display
+  customSpritesheet?: HTMLImageElement; // Loaded spritesheet image
+  customAnimFrame?: number; // Current animation frame (0-3)
 };
 
 // Boat types for water navigation

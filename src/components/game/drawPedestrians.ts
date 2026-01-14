@@ -4,10 +4,15 @@
  * OPTIMIZED for performance with LOD (Level of Detail)
  */
 
-import { Pedestrian, PedestrianActivity, TILE_WIDTH, TILE_HEIGHT } from './types';
+import { Pedestrian, PedestrianActivity, TILE_WIDTH, TILE_HEIGHT, CarDirection } from './types';
 import { DIRECTION_META } from './constants';
 import { gridToScreen } from './utils';
 import { getPedestrianOpacity, getVisiblePedestrians } from './pedestrianSystem';
+import {
+  SPRITE_FRAME_WIDTH,
+  SPRITE_FRAME_HEIGHT,
+  getSpriteFrame,
+} from '@/lib/ingestion/AvatarGenerator';
 
 // LOD thresholds - draw simpler at lower zoom
 const LOD_SIMPLE_ZOOM = 0.55;  // Below this, draw very simple pedestrians (just above min zoom)
@@ -206,6 +211,13 @@ export function drawPedestrians(
       continue;
     }
 
+    // Check for custom sprite (ingested user) first
+    if (ped.isIngestedUser && ped.customSpritesheet) {
+      drawCustomSpritePedestrian(ctx, ped, zoom);
+      ctx.restore();
+      continue;
+    }
+
     // Full detail drawing
     switch (ped.activity) {
       case 'playing_basketball':
@@ -262,6 +274,62 @@ export function drawPedestrians(
     }
 
     ctx.restore();
+  }
+}
+
+/**
+ * Draw a custom sprite pedestrian (ingested X user with AI-generated pixel art)
+ * Uses the spritesheet format: 4 columns (animation frames) x 4 rows (directions)
+ */
+function drawCustomSpritePedestrian(
+  ctx: CanvasRenderingContext2D,
+  ped: Pedestrian,
+  zoom: number
+): void {
+  if (!ped.customSpritesheet) return;
+
+  // Map direction to spritesheet row
+  const directionMap: Record<CarDirection, 'south' | 'east' | 'west' | 'north'> = {
+    south: 'south',
+    east: 'east',
+    west: 'west',
+    north: 'north',
+  };
+  const direction = directionMap[ped.direction];
+
+  // Calculate animation frame based on walk offset (0-3)
+  const animFrame = ped.state === 'walking' 
+    ? Math.floor((ped.walkOffset / Math.PI) * 2) % 4
+    : 0; // Idle uses frame 0
+
+  // Get sprite frame coordinates
+  const { sx, sy, sw, sh } = getSpriteFrame(direction, animFrame);
+
+  // Scale for zoom level
+  const scale = Math.max(0.5, zoom * 0.8);
+  const drawWidth = sw * scale;
+  const drawHeight = sh * scale;
+
+  // Draw the sprite (centered horizontally, bottom-aligned)
+  ctx.drawImage(
+    ped.customSpritesheet,
+    sx, sy, sw, sh,
+    -drawWidth / 2,
+    -drawHeight,
+    drawWidth,
+    drawHeight
+  );
+
+  // Draw username label for findability (only at higher zoom)
+  if (zoom > 0.8 && ped.xUsername) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.font = `${8 * scale}px sans-serif`;
+    const label = `@${ped.xUsername}`;
+    const textWidth = ctx.measureText(label).width;
+    ctx.fillRect(-textWidth / 2 - 2, -drawHeight - 12, textWidth + 4, 10);
+    ctx.fillStyle = '#00ff88';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, 0, -drawHeight - 4);
   }
 }
 

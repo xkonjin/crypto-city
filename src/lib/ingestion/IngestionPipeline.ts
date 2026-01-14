@@ -326,15 +326,50 @@ export async function ingestXProfile(
     // STAGE 3: GENERATE AVATAR (Optional)
     // ==========
     let avatarSpritesheet: string | undefined;
+    let avatarSpritesheetImage: HTMLImageElement | undefined;
 
-    if (options.generateAvatar) {
-      updateProgress('generating_avatar', 55, 'Queuing avatar generation...', onProgress);
+    if (options.generateAvatar && profile.profileImageUrl) {
+      updateProgress('generating_avatar', 55, 'Generating pixel art avatar...', onProgress);
 
-      // Queue avatar generation (async, don't wait)
-      const avatarJob = avatarQueue.enqueue(profile.id);
-      avatarSpritesheet = avatarJob.outputPath;
+      // Queue avatar generation and wait for completion
+      const avatarJob = avatarQueue.enqueue(
+        profile.id,
+        profile.username,
+        profile.profileImageUrl
+      );
 
-      updateProgress('generating_avatar', 60, 'Avatar queued for generation', onProgress);
+      // Wait for avatar generation to complete (with timeout)
+      const startWait = Date.now();
+      const maxWaitMs = 30000; // 30 second timeout
+      while (avatarJob.status === 'queued' || avatarJob.status === 'processing') {
+        if (Date.now() - startWait > maxWaitMs) {
+          console.warn('[Ingestion] Avatar generation timeout, using procedural');
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        const updatedJob = avatarQueue.getJob(avatarJob.id);
+        if (updatedJob) {
+          if (updatedJob.progress) {
+            updateProgress(
+              'generating_avatar',
+              55 + updatedJob.progress.progress * 0.1,
+              updatedJob.progress.message,
+              onProgress
+            );
+          }
+          if (updatedJob.status === 'completed' || updatedJob.status === 'failed') {
+            break;
+          }
+        }
+      }
+
+      const completedJob = avatarQueue.getJob(avatarJob.id);
+      if (completedJob?.status === 'completed') {
+        avatarSpritesheet = completedJob.outputPath;
+        avatarSpritesheetImage = completedJob.spritesheetImage;
+      }
+
+      updateProgress('generating_avatar', 65, 'Avatar generated', onProgress);
     }
 
     // ==========
@@ -370,6 +405,7 @@ export async function ingestXProfile(
       profileId: profile.id,
       displayName: profile.displayName,
       avatarSpritesheet,
+      avatarSpritesheetImage,
       traits: traits.personality,
       dialogueSeeds: traits.dialogueSeeds,
     };

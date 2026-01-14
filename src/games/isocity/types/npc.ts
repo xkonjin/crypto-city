@@ -71,12 +71,18 @@ export type NPCDirection = 'north' | 'south' | 'east' | 'west';
 
 /**
  * Available sprite types based on /public/Characters/
+ * 'custom' is used for ingested users with AI-generated pixel art avatars
  */
-export type NPCSpriteType = 'apple' | 'banana';
+export type NPCSpriteType = 'apple' | 'banana' | 'custom';
 
 export interface IngestedNPCProfile {
   profileId: string;
+  /** Base64 or blob URL for the custom AI-generated spritesheet */
   avatarSpritesheet?: string;
+  /** Loaded HTMLImageElement for rendering (not serialized) */
+  avatarSpritesheetImage?: HTMLImageElement;
+  /** Animation frame for walking (0-3) */
+  avatarAnimFrame?: number;
   dialogueSeeds: string[];
 }
 
@@ -353,7 +359,7 @@ export const ALL_ACTIVITIES: NPCActivity[] = [
 /**
  * All valid sprite types
  */
-export const ALL_SPRITE_TYPES: NPCSpriteType[] = ['apple', 'banana'];
+export const ALL_SPRITE_TYPES: NPCSpriteType[] = ['apple', 'banana', 'custom'];
 
 /**
  * All valid directions
