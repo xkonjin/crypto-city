@@ -430,6 +430,11 @@ export const PLACEHOLDER_COLORS: Record<string, PlaceholderColor> = {
   default: { top: '#9ca3af', left: '#6b7280', right: '#d1d5db', height: 0.6 },
 };
 
+// CRYPTO_SPRITES_ENABLED: Set to false to use colored placeholders instead of AI sprites
+// The AI-generated sprites have issues (wrong size, black backgrounds, text)
+// Enable once proper sprites are available
+const CRYPTO_SPRITES_ENABLED = false;
+
 export function drawPlaceholderBuilding(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -445,7 +450,7 @@ export function drawPlaceholderBuilding(
   const cryptoBuilding = getCryptoBuilding(buildingType);
   if (cryptoBuilding) {
     // Try to load and draw the sprite if available
-    if (!cryptoBuilding.isProcedural && cryptoBuilding.sprites?.south) {
+    if (CRYPTO_SPRITES_ENABLED && !cryptoBuilding.isProcedural && cryptoBuilding.sprites?.south) {
       loadCryptoBuildingSprite(cryptoBuilding);
       
       // Issue #187: Check sprite load status

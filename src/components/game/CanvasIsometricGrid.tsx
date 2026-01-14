@@ -160,6 +160,8 @@ import { useLightingSystem } from '@/components/game/lightingSystem';
 import { useSentimentVisuals } from '@/hooks/useSentimentVisuals';
 import { WeatherOverlay } from '@/components/game/WeatherOverlay';
 import { cryptoEconomy } from '@/games/isocity/crypto';
+import { onCobieAssetLoaded } from '@/lib/figurines/figurineLoader';
+import { NPCManager } from '@/lib/npc/NPCManager';
 
 export interface CanvasIsometricGridProps {
   overlayMode: OverlayMode;
@@ -171,9 +173,13 @@ export interface CanvasIsometricGridProps {
   onViewportChange?: (viewport: { offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } }) => void;
   onBargeDelivery?: (cargoValue: number, cargoType: number) => void;
   selectedCryptoBuilding?: string | null;
+  /** Callback when an NPC is clicked */
+  onNPCClick?: (npcId: string) => void;
+  /** Currently selected NPC ID for visual highlighting */
+  selectedNPCId?: string | null;
 }
 
-export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery, selectedCryptoBuilding }: CanvasIsometricGridProps) {
+export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery, selectedCryptoBuilding, onNPCClick, selectedNPCId }: CanvasIsometricGridProps) {
   const { state, latestStateRef, placeAtTile, finishTrackDrag, connectToCity, checkAndDiscoverCities, currentSpritePack, visualHour, placeCryptoBuilding, setSelectedCryptoBuilding } = useGame();
   const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion } = state;
   
@@ -200,6 +206,12 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const wheelZoomTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Timeout to detect end of wheel zoom
   const zoomRef = useRef(isMobile ? 0.6 : 1); // Ref for animation loop to check zoom level
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    return onCobieAssetLoaded(() => {
+      requestFullRedraw(dirtyRegionRef.current);
+    });
+  }, []);
   const panCandidateRef = useRef<{ startX: number; startY: number; gridX: number; gridY: number } | null>(null);
   const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
   const [hoveredIncident, setHoveredIncident] = useState<{
@@ -210,6 +222,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     screenX: number;
     screenY: number;
   } | null>(null);
+  // NPC hover state for tooltips
+  const [hoveredNPCId, setHoveredNPCId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(isMobile ? 0.6 : 1);
   const carsRef = useRef<Car[]>([]);
   const carIdRef = useRef(0);
@@ -728,6 +742,43 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
   const generateTourWaypointsCallback = useCallback((startTileX: number, startTileY: number): TourWaypoint[] => {
     const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
     return generateTourWaypoints(currentGrid, currentGridSize, startTileX, startTileY);
+  }, []);
+
+  // NPC hit detection - check if a screen position is over an NPC
+  // Returns the NPC ID if clicked, or null if no NPC at that position
+  // Hit box is ~32x48 pixels around NPC center (typical sprite size)
+  const getNPCAtScreenPosition = useCallback((screenX: number, screenY: number): string | null => {
+    const { offset: currentOffset, zoom: currentZoom } = worldStateRef.current;
+    const allNPCs = NPCManager.getAllNPCs();
+    
+    // Convert screen position to world position
+    const worldX = (screenX - currentOffset.x) / currentZoom;
+    const worldY = (screenY - currentOffset.y) / currentZoom;
+    
+    // NPC hit box dimensions (half-widths and half-heights)
+    const hitBoxHalfWidth = 16;  // 32px wide
+    const hitBoxHalfHeight = 24; // 48px tall
+    
+    // Check each NPC
+    for (const npc of allNPCs) {
+      // Skip NPCs inside buildings (not visible)
+      if (npc.isInsideBuilding) continue;
+      
+      // Convert NPC grid position to screen position
+      const { screenX: npcScreenX, screenY: npcScreenY } = gridToScreen(npc.gridX, npc.gridY, 0, 0);
+      
+      // NPC center is roughly at tile center, slightly higher for sprite
+      const npcCenterX = npcScreenX + TILE_WIDTH / 2;
+      const npcCenterY = npcScreenY + TILE_HEIGHT / 2 - 8; // Offset up for sprite
+      
+      // Check if click is within hit box
+      if (Math.abs(worldX - npcCenterX) <= hitBoxHalfWidth &&
+          Math.abs(worldY - npcCenterY) <= hitBoxHalfHeight) {
+        return npc.id;
+      }
+    }
+    
+    return null;
   }, []);
 
   // Draw airplanes with contrails (uses extracted utility)
@@ -1796,9 +1847,15 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         else {
           const isBuilding = tile.building.type !== 'grass' && tile.building.type !== 'empty';
           if (isBuilding) {
-            const size = getBuildingSize(tile.building.type);
-            const depth = x + y + size.width + size.height - 2;
-            buildingQueue.push({ screenX, screenY, tile, depth });
+            // For multi-tile crypto buildings, only draw from the origin tile
+            // Non-origin tiles have isOrigin === false and originX/originY set
+            if (tile.building.type === 'crypto_building' && tile.isOrigin === false) {
+              // Skip non-origin tiles - the building is drawn from the origin tile only
+            } else {
+              const size = getBuildingSize(tile.building.type);
+              const depth = x + y + size.width + size.height - 2;
+              buildingQueue.push({ screenX, screenY, tile, depth });
+            }
           }
         }
         
@@ -2207,6 +2264,32 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           }
         }
         
+        // Draw zone overlay (Issue #208)
+        // Shows building category distribution across the city
+        if (overlayMode === 'zone') {
+          const placedBuildings = cryptoEconomy.getPlacedBuildings();
+          if (placedBuildings.length > 0) {
+            // Import zone calculation dynamically to avoid circular dependencies
+            const { calculateZoneInfluence } = require('@/lib/zoneCalculation');
+            const zoneMap = calculateZoneInfluence(placedBuildings, gridSize);
+            
+            // Render zone tiles
+            for (const [, zoneTile] of zoneMap.tiles) {
+              const { screenX: zsx, screenY: zsy } = gridToScreen(zoneTile.x, zoneTile.y, 0, 0);
+              
+              // Draw colored isometric tile with the zone color
+              buildingsCtx.fillStyle = zoneTile.color;
+              buildingsCtx.beginPath();
+              buildingsCtx.moveTo(zsx + halfTileWidth, zsy);
+              buildingsCtx.lineTo(zsx + tileWidth, zsy + halfTileHeight);
+              buildingsCtx.lineTo(zsx + halfTileWidth, zsy + tileHeight);
+              buildingsCtx.lineTo(zsx, zsy + halfTileHeight);
+              buildingsCtx.closePath();
+              buildingsCtx.fill();
+            }
+          }
+        }
+        
         // Draw crypto-specific overlays (Issue #58)
         // These overlays show yield, risk, protection, and density for crypto buildings
         const cryptoOverlayModes = ['crypto_yield', 'crypto_risk', 'crypto_protection', 'crypto_density'];
@@ -2380,7 +2463,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         // Draw placement highlight (fuchsia for crypto buildings)
         drawHighlight(screenX, screenY, 'rgba(217, 70, 239, 0.3)', '#d946ef');
         
-        // Draw synergy preview lines to compatible buildings
+        // Draw synergy preview lines to compatible buildings (Issue #209)
         const placedBuildings = cryptoEconomy.getPlacedBuildings();
         if (placedBuildings.length > 0) {
           const synergyGridToScreen = (gx: number, gy: number) => {
@@ -2397,6 +2480,69 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           // Draw preview connections
           if (previewConnections.length > 0) {
             drawSynergyConnections(ctx, previewConnections, { x: 0, y: 0 }, 1);
+            
+            // Draw synergy glows around buildings that would synergize
+            for (const conn of previewConnections) {
+              const glowColor = conn.type === 'chain' 
+                ? 'rgba(34, 197, 94, 0.4)' // Green for chain
+                : 'rgba(59, 130, 246, 0.4)'; // Blue for category
+              const radius = 15 * (1 + conn.strength * 0.5);
+              
+              ctx.fillStyle = glowColor;
+              ctx.beginPath();
+              const gradient = ctx.createRadialGradient(
+                conn.to.x + TILE_WIDTH / 2, 
+                conn.to.y + TILE_HEIGHT / 2, 
+                0,
+                conn.to.x + TILE_WIDTH / 2, 
+                conn.to.y + TILE_HEIGHT / 2, 
+                radius
+              );
+              gradient.addColorStop(0, glowColor);
+              gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+              ctx.fillStyle = gradient;
+              ctx.arc(conn.to.x + TILE_WIDTH / 2, conn.to.y + TILE_HEIGHT / 2, radius, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            
+            // Calculate and display total synergy bonus
+            const { calculateSynergyBonus, formatSynergyBonus } = require('@/lib/synergyCalculation');
+            const synergyResult = calculateSynergyBonus(
+              selectedCryptoBuilding,
+              placedBuildings,
+              hoveredTile.x,
+              hoveredTile.y
+            );
+            
+            if (synergyResult && synergyResult.totalBonus > 0) {
+              // Draw bonus indicator near placement position
+              const bonusText = formatSynergyBonus(synergyResult.totalBonus) + ' yield';
+              const textX = screenX + TILE_WIDTH / 2;
+              const textY = screenY - 25;
+              
+              // Background pill
+              ctx.fillStyle = 'rgba(17, 24, 39, 0.9)';
+              const textMetrics = ctx.measureText(bonusText);
+              const padding = 6;
+              const pillWidth = textMetrics.width + padding * 2;
+              const pillHeight = 18;
+              
+              ctx.beginPath();
+              ctx.roundRect(textX - pillWidth / 2, textY - pillHeight / 2, pillWidth, pillHeight, 4);
+              ctx.fill();
+              
+              // Border
+              ctx.strokeStyle = 'rgba(168, 85, 247, 0.6)';
+              ctx.lineWidth = 1;
+              ctx.stroke();
+              
+              // Text
+              ctx.fillStyle = '#22c55e'; // Green text for bonus
+              ctx.font = 'bold 11px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(bonusText, textX, textY);
+            }
           }
         }
       } else {
@@ -2540,8 +2686,57 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       }
     }
     
+    // Draw NPC selection glow for selected NPC
+    if (selectedNPCId) {
+      const selectedNPC = NPCManager.getNPC(selectedNPCId);
+      if (selectedNPC && !selectedNPC.isInsideBuilding) {
+        const { screenX: npcScreenX, screenY: npcScreenY } = gridToScreen(selectedNPC.gridX, selectedNPC.gridY, 0, 0);
+        const centerX = npcScreenX + TILE_WIDTH / 2;
+        const centerY = npcScreenY + TILE_HEIGHT / 2 - 8;
+        
+        // Draw pulsing glow effect for selected NPC
+        const pulsePhase = (Date.now() % 2000) / 2000;
+        const pulseScale = 1 + Math.sin(pulsePhase * Math.PI * 2) * 0.15;
+        const glowRadius = 20 * pulseScale;
+        
+        // Outer glow
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, glowRadius);
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.6)');
+        gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.3)');
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner ring
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 12 * pulseScale, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+    
+    // Draw NPC hover highlight
+    if (hoveredNPCId && hoveredNPCId !== selectedNPCId) {
+      const hoveredNPC = NPCManager.getNPC(hoveredNPCId);
+      if (hoveredNPC && !hoveredNPC.isInsideBuilding) {
+        const { screenX: npcScreenX, screenY: npcScreenY } = gridToScreen(hoveredNPC.gridX, hoveredNPC.gridY, 0, 0);
+        const centerX = npcScreenX + TILE_WIDTH / 2;
+        const centerY = npcScreenY + TILE_HEIGHT / 2 - 8;
+        
+        // Subtle highlight ring
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 14, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+    
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-  }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid, isDragging, dragStartTile, dragEndTile, selectedCryptoBuilding]);
+  }, [hoveredTile, selectedTile, selectedTool, offset, zoom, gridSize, grid, isDragging, dragStartTile, dragEndTile, selectedCryptoBuilding, selectedNPCId, hoveredNPCId]);
   
   // Animate decorative car traffic AND emergency vehicles on top of the base canvas
   useEffect(() => {
@@ -2864,6 +3059,16 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         // Only update hovered tile if it actually changed to avoid unnecessary re-renders
         setHoveredTile(prev => (prev?.x === gridX && prev?.y === gridY) ? prev : { x: gridX, y: gridY });
         
+        // Check for NPC hover (for tooltip and cursor change)
+        if (selectedTool === 'select') {
+          const screenX = e.clientX - rect.left;
+          const screenY = e.clientY - rect.top;
+          const hoveredNPC = getNPCAtScreenPosition(screenX, screenY);
+          setHoveredNPCId(hoveredNPC);
+        } else {
+          setHoveredNPCId(null);
+        }
+        
         // Check for fire or crime incidents at this tile for tooltip display
         const tile = grid[gridY]?.[gridX];
         const crimeKey = `${gridX},${gridY}`;
@@ -2951,12 +3156,26 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         }
       }
     }
-  }, [isPanning, dragStart, offset, zoom, gridSize, isDragging, showsDragGrid, dragStartTile, selectedTool, roadDrawDirection, supportsDragPlace, placeAtTile, clampOffset, grid]);
+  }, [isPanning, dragStart, offset, zoom, gridSize, isDragging, showsDragGrid, dragStartTile, selectedTool, roadDrawDirection, supportsDragPlace, placeAtTile, clampOffset, grid, getNPCAtScreenPosition]);
   
   const handleMouseUp = useCallback(() => {
     if (panCandidateRef.current && !isPanning && selectedTool === 'select') {
-      const { gridX, gridY } = panCandidateRef.current;
+      const { gridX, gridY, startX, startY } = panCandidateRef.current;
       panCandidateRef.current = null;
+      
+      // Check for NPC click first - NPCs take priority over tile selection
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect && onNPCClick) {
+        const screenX = startX - rect.left;
+        const screenY = startY - rect.top;
+        const clickedNPCId = getNPCAtScreenPosition(screenX, screenY);
+        if (clickedNPCId) {
+          onNPCClick(clickedNPCId);
+          return; // NPC was clicked, don't select tile
+        }
+      }
+      
+      // No NPC clicked, fall back to tile selection
       const origin = findBuildingOrigin(gridX, gridY);
       if (origin) {
         setSelectedTile({ x: origin.originX, y: origin.originY });
@@ -3019,7 +3238,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     if (!containerRef.current) {
       setHoveredTile(null);
     }
-  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, finishTrackDrag, selectedTool, dragEndTile, checkAndDiscoverCities, findBuildingOrigin, setSelectedTile, isPanning]);
+  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, finishTrackDrag, selectedTool, dragEndTile, checkAndDiscoverCities, findBuildingOrigin, setSelectedTile, isPanning, onNPCClick, getNPCAtScreenPosition]);
   
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -3090,7 +3309,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       setIsPanning(false);
       isPinchZoomingRef.current = true;
     }
-  }, [offset, zoom, getTouchDistance, getTouchCenter]);
+  }, [offset, zoom]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     // Note: preventDefault is called via native event listener to avoid passive listener warning
@@ -3139,7 +3358,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         lastTouchCenterRef.current = currentCenter;
       }
     }
-  }, [isPanning, dragStart, zoom, offset, clampOffset, getTouchDistance, getTouchCenter]);
+  }, [isPanning, dragStart, zoom, offset, clampOffset]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     const touchStart = touchStartRef.current;
@@ -3156,8 +3375,27 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         if (deltaTime < 300 && deltaX < 10 && deltaY < 10) {
           const rect = containerRef.current?.getBoundingClientRect();
           if (rect) {
-            const mouseX = (touch.clientX - rect.left) / zoom;
-            const mouseY = (touch.clientY - rect.top) / zoom;
+            const screenX = touch.clientX - rect.left;
+            const screenY = touch.clientY - rect.top;
+            
+            // Check for NPC tap first
+            if (selectedTool === 'select' && onNPCClick) {
+              const clickedNPCId = getNPCAtScreenPosition(screenX, screenY);
+              if (clickedNPCId) {
+                onNPCClick(clickedNPCId);
+                // Reset touch state and return - NPC was tapped
+                setIsPanning(false);
+                setIsDragging(false);
+                isPinchZoomingRef.current = false;
+                touchStartRef.current = null;
+                initialPinchDistanceRef.current = null;
+                lastTouchCenterRef.current = null;
+                return;
+              }
+            }
+            
+            const mouseX = screenX / zoom;
+            const mouseY = screenY / zoom;
             const { gridX, gridY } = screenToGrid(mouseX, mouseY, offset.x / zoom, offset.y / zoom);
 
             if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
@@ -3192,7 +3430,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       initialPinchDistanceRef.current = null;
       lastTouchCenterRef.current = null;
     }
-  }, [zoom, offset, gridSize, selectedTool, placeAtTile, setSelectedTile, findBuildingOrigin]);
+  }, [zoom, offset, gridSize, selectedTool, placeAtTile, setSelectedTile, findBuildingOrigin, onNPCClick, getNPCAtScreenPosition]);
 
   // Attach native touchmove listener with passive: false to allow preventDefault
   // This prevents page scrolling during canvas pan/zoom (Issue #75)
@@ -3219,7 +3457,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       className="relative w-full h-full overflow-hidden touch-none"
       data-sentiment={sentimentVisuals.classification}
       style={{ 
-        cursor: isPanning ? 'grabbing' : isDragging ? 'crosshair' : 'default',
+        cursor: isPanning ? 'grabbing' : isDragging ? 'crosshair' : hoveredNPCId ? 'pointer' : 'default',
         filter: sentimentVisuals.filter,
         transition: 'filter 2s ease-in-out',
       }}
@@ -3464,6 +3702,33 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
               <div className="mt-1.5 pt-1.5 border-t border-sidebar-border/50 text-[10px] text-muted-foreground/60 font-mono">
                 ({hoveredIncident.x}, {hoveredIncident.y})
               </div>
+            </div>
+          </div>
+        );
+      })()}
+      
+      {/* NPC Hover Tooltip - shows when hovering over an NPC */}
+      {hoveredNPCId && (() => {
+        const npc = NPCManager.getNPC(hoveredNPCId);
+        if (!npc) return null;
+        
+        // Get NPC screen position for tooltip placement
+        const { screenX: npcScreenX, screenY: npcScreenY } = gridToScreen(npc.gridX, npc.gridY, 0, 0);
+        const tooltipX = npcScreenX * zoom + offset.x + TILE_WIDTH * zoom / 2;
+        const tooltipY = npcScreenY * zoom + offset.y - 30; // Position above NPC
+        
+        return (
+          <div 
+            className="fixed pointer-events-none z-[100]"
+            style={{ 
+              left: tooltipX,
+              top: tooltipY,
+              transform: 'translateX(-50%)', // Center horizontally
+            }}
+          >
+            <div className="bg-sidebar border border-sidebar-border rounded-md shadow-lg px-2 py-1 text-center whitespace-nowrap">
+              <div className="text-xs font-medium text-sidebar-foreground">{npc.name}</div>
+              <div className="text-[10px] text-muted-foreground">{npc.occupation}</div>
             </div>
           </div>
         );
