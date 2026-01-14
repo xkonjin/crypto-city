@@ -296,37 +296,30 @@ export const MockXProfileAdapter: XProfileAdapter = {
 };
 
 // =============================================================================
-// APIFY ADAPTER (STUB)
+// X API v2 ADAPTER
 // =============================================================================
 
 /**
- * Apify adapter for production X/Twitter profile fetching.
- *
- * Uses Apify's Twitter scraper actors to fetch real profile data.
- * Requires APIFY_API_TOKEN environment variable.
- *
- * NOTE: This is a stub implementation. Full implementation would use:
- * - https://apify.com/apidojo/twitter-user-scraper
- * - https://apify.com/apidojo/tweet-scraper
+ * X/Twitter API v2 adapter for production profile fetching.
+ * Uses the official X API with Bearer Token authentication.
+ * Requires X_BEARER_TOKEN environment variable.
  */
-export const ApifyXProfileAdapter: XProfileAdapter = {
-  id: 'apify',
-  displayName: 'Apify Twitter Scraper',
+export const XApiAdapter: XProfileAdapter = {
+  id: 'xapi',
+  displayName: 'X API v2',
 
   async fetchProfile(
     username: string,
-    _options?: XProfileFetchOptions
+    options?: XProfileFetchOptions
   ): Promise<XProfileFetchResult> {
-    // Check if Apify is configured
     if (!this.isAvailable()) {
       return {
         success: false,
-        error: 'Apify API token not configured',
+        error: 'X API Bearer Token not configured',
         code: 'API_ERROR',
       };
     }
 
-    // Validate username
     if (!/^[a-zA-Z0-9_]{1,15}$/.test(username)) {
       return {
         success: false,
@@ -335,23 +328,279 @@ export const ApifyXProfileAdapter: XProfileAdapter = {
       };
     }
 
-    // TODO: Implement actual Apify API call
-    // const client = new ApifyClient({ token: process.env.APIFY_API_TOKEN });
-    // const run = await client.actor('apidojo/twitter-user-scraper').call({
-    //   usernames: [username],
-    //   tweetsDesired: options?.maxTweets ?? 20,
-    // });
-    // const { items } = await client.dataset(run.defaultDatasetId).listItems();
+    const bearerToken = process.env.X_BEARER_TOKEN;
+    const timeout = options?.timeout ?? 30000;
+    const maxTweets = options?.maxTweets ?? 20;
 
-    return {
-      success: false,
-      error: 'Apify adapter not yet implemented - use mock adapter for testing',
-      code: 'API_ERROR',
-    };
+    try {
+      // Fetch user by username
+      const userFields = 'id,name,username,description,profile_image_url,public_metrics,verified,location,created_at';
+      const userUrl = `https://api.twitter.com/2/users/by/username/${username}?user.fields=${userFields}`;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const userResponse = await fetch(userUrl, {
+        headers: {
+          Authorization: `Bearer ${bearerToken}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!userResponse.ok) {
+        if (userResponse.status === 404) {
+          return { success: false, error: 'Profile not found', code: 'NOT_FOUND' };
+        }
+        if (userResponse.status === 429) {
+          return { success: false, error: 'Rate limited', code: 'RATE_LIMITED' };
+        }
+        if (userResponse.status === 401 || userResponse.status === 403) {
+          const errorData = await userResponse.json().catch(() => ({}));
+          if (errorData?.errors?.[0]?.detail?.includes('suspended')) {
+            return { success: false, error: 'Account suspended', code: 'SUSPENDED' };
+          }
+          return { success: false, error: 'API authorization failed', code: 'API_ERROR' };
+        }
+        return { success: false, error: `API error: ${userResponse.status}`, code: 'API_ERROR' };
+      }
+
+      const userData = await userResponse.json();
+      
+      if (!userData.data) {
+        return { success: false, error: 'Profile not found', code: 'NOT_FOUND' };
+      }
+
+      const user = userData.data;
+
+      // Fetch user's tweets
+      const tweetFields = 'id,text,created_at,public_metrics';
+      const tweetsUrl = `https://api.twitter.com/2/users/${user.id}/tweets?max_results=${Math.min(maxTweets, 100)}&tweet.fields=${tweetFields}${options?.includeReplies ? '' : '&exclude=replies'}`;
+
+      const tweetsController = new AbortController();
+      const tweetsTimeoutId = setTimeout(() => tweetsController.abort(), timeout);
+
+      const tweetsResponse = await fetch(tweetsUrl, {
+        headers: {
+          Authorization: `Bearer ${bearerToken}`,
+          'Content-Type': 'application/json',
+        },
+        signal: tweetsController.signal,
+      });
+
+      clearTimeout(tweetsTimeoutId);
+
+      let recentTweets: XTweet[] = [];
+
+      if (tweetsResponse.ok) {
+        const tweetsData = await tweetsResponse.json();
+        if (tweetsData.data && Array.isArray(tweetsData.data)) {
+          recentTweets = tweetsData.data.map((tweet: {
+            id: string;
+            text: string;
+            created_at: string;
+            public_metrics?: {
+              like_count?: number;
+              retweet_count?: number;
+              reply_count?: number;
+            };
+          }) => ({
+            id: tweet.id,
+            text: tweet.text,
+            createdAt: tweet.created_at,
+            likeCount: tweet.public_metrics?.like_count ?? 0,
+            retweetCount: tweet.public_metrics?.retweet_count ?? 0,
+            replyCount: tweet.public_metrics?.reply_count ?? 0,
+          }));
+        }
+      }
+
+      const profile: XProfile = {
+        id: user.id,
+        username: user.username,
+        displayName: user.name,
+        bio: user.description || '',
+        profileImageUrl: user.profile_image_url?.replace('_normal', '_400x400') || '',
+        recentTweets,
+        followerCount: user.public_metrics?.followers_count ?? 0,
+        followingCount: user.public_metrics?.following_count ?? 0,
+        joinedAt: user.created_at,
+        location: user.location,
+        isVerified: user.verified ?? false,
+      };
+
+      return { success: true, profile };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { success: false, error: 'Request timed out', code: 'TIMEOUT' };
+      }
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error', 
+        code: 'API_ERROR' 
+      };
+    }
   },
 
   isAvailable(): boolean {
-    return typeof process !== 'undefined' && !!process.env?.APIFY_API_TOKEN;
+    return typeof process !== 'undefined' && !!process.env?.X_BEARER_TOKEN;
+  },
+};
+
+// =============================================================================
+// FIRECRAWL ADAPTER
+// =============================================================================
+
+/**
+ * Firecrawl adapter for scraping X/Twitter profiles.
+ * Uses Firecrawl's web scraping API as a fallback when X API is unavailable.
+ * Requires FIRECRAWL_API_KEY environment variable.
+ */
+export const FirecrawlXProfileAdapter: XProfileAdapter = {
+  id: 'firecrawl',
+  displayName: 'Firecrawl Scraper',
+
+  async fetchProfile(
+    username: string,
+    options?: XProfileFetchOptions
+  ): Promise<XProfileFetchResult> {
+    if (!this.isAvailable()) {
+      return {
+        success: false,
+        error: 'Firecrawl API key not configured',
+        code: 'API_ERROR',
+      };
+    }
+
+    if (!/^[a-zA-Z0-9_]{1,15}$/.test(username)) {
+      return {
+        success: false,
+        error: 'Invalid username format',
+        code: 'INVALID_USERNAME',
+      };
+    }
+
+    const apiKey = process.env.FIRECRAWL_API_KEY;
+    const timeout = options?.timeout ?? 30000;
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      // Use Firecrawl to scrape the X profile page
+      const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: `https://x.com/${username}`,
+          formats: ['markdown', 'extract'],
+          extract: {
+            schema: {
+              type: 'object',
+              properties: {
+                displayName: { type: 'string', description: 'Display name of the user' },
+                username: { type: 'string', description: 'Username/handle' },
+                bio: { type: 'string', description: 'User bio/description' },
+                followerCount: { type: 'string', description: 'Number of followers' },
+                followingCount: { type: 'string', description: 'Number of accounts following' },
+                location: { type: 'string', description: 'User location' },
+                joinedDate: { type: 'string', description: 'When the user joined' },
+                isVerified: { type: 'boolean', description: 'Whether user is verified' },
+                recentTweets: { 
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      text: { type: 'string' },
+                      likes: { type: 'string' },
+                      retweets: { type: 'string' },
+                      replies: { type: 'string' },
+                    }
+                  },
+                  description: 'Recent tweets from the user'
+                },
+                profileImageUrl: { type: 'string', description: 'URL of profile picture' },
+              },
+              required: ['displayName', 'username', 'bio'],
+            },
+          },
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          return { success: false, error: 'Rate limited', code: 'RATE_LIMITED' };
+        }
+        return { success: false, error: `Firecrawl error: ${response.status}`, code: 'API_ERROR' };
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.data?.extract) {
+        return { success: false, error: 'Failed to extract profile data', code: 'API_ERROR' };
+      }
+
+      const extracted = data.data.extract;
+
+      // Parse numeric values from strings
+      const parseCount = (value: string | number | undefined): number => {
+        if (typeof value === 'number') return value;
+        if (!value) return 0;
+        const cleaned = String(value).replace(/[,\s]/g, '').toLowerCase();
+        if (cleaned.includes('k')) return Math.floor(parseFloat(cleaned) * 1000);
+        if (cleaned.includes('m')) return Math.floor(parseFloat(cleaned) * 1000000);
+        return parseInt(cleaned, 10) || 0;
+      };
+
+      // Map extracted tweets
+      const recentTweets: XTweet[] = (extracted.recentTweets || []).slice(0, options?.maxTweets ?? 20).map(
+        (tweet: { text?: string; likes?: string | number; retweets?: string | number; replies?: string | number }, i: number) => ({
+          id: `firecrawl-${username}-${i}`,
+          text: tweet.text || '',
+          createdAt: new Date().toISOString(),
+          likeCount: parseCount(tweet.likes),
+          retweetCount: parseCount(tweet.retweets),
+          replyCount: parseCount(tweet.replies),
+        })
+      );
+
+      const profile: XProfile = {
+        id: `firecrawl-${username}`,
+        username: extracted.username || username,
+        displayName: extracted.displayName || username,
+        bio: extracted.bio || '',
+        profileImageUrl: extracted.profileImageUrl || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${username}`,
+        recentTweets,
+        followerCount: parseCount(extracted.followerCount),
+        followingCount: parseCount(extracted.followingCount),
+        joinedAt: extracted.joinedDate,
+        location: extracted.location,
+        isVerified: extracted.isVerified ?? false,
+      };
+
+      return { success: true, profile };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { success: false, error: 'Request timed out', code: 'TIMEOUT' };
+      }
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error', 
+        code: 'API_ERROR' 
+      };
+    }
+  },
+
+  isAvailable(): boolean {
+    return typeof process !== 'undefined' && !!process.env?.FIRECRAWL_API_KEY;
   },
 };
 
@@ -364,17 +613,23 @@ export const ApifyXProfileAdapter: XProfileAdapter = {
  */
 export const X_PROFILE_ADAPTERS: Record<string, XProfileAdapter> = {
   mock: MockXProfileAdapter,
-  apify: ApifyXProfileAdapter,
+  xapi: XApiAdapter,
+  firecrawl: FirecrawlXProfileAdapter,
 };
 
 /**
  * Get the best available adapter for the current environment.
- * Prefers real adapters in production, falls back to mock.
+ * Priority: X API v2 > Firecrawl > Mock
  */
 export function getDefaultXProfileAdapter(): XProfileAdapter {
-  // In production, prefer Apify if configured
-  if (ApifyXProfileAdapter.isAvailable()) {
-    return ApifyXProfileAdapter;
+  // Prefer official X API v2 if configured
+  if (XApiAdapter.isAvailable()) {
+    return XApiAdapter;
+  }
+
+  // Fall back to Firecrawl if configured
+  if (FirecrawlXProfileAdapter.isAvailable()) {
+    return FirecrawlXProfileAdapter;
   }
 
   // Fall back to mock for development/testing
