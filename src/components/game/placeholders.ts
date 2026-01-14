@@ -4,13 +4,25 @@
 // Colors for rendering buildings before sprites are loaded
 // Based on zone/category for visual consistency
 // Also handles loading and rendering crypto building sprites
+// 
+// Issue #186: Preload crypto building sprites
+// Issue #187: Sprite load error handling with retry logic
 
-import { getCryptoBuilding } from '@/games/isocity/crypto/buildings';
+import { getCryptoBuilding, getCryptoBuildingsByCategory } from '@/games/isocity/crypto/buildings';
 import type { CryptoCategory, CryptoBuildingDefinition } from '@/games/isocity/crypto/types';
 
 // Cache for loaded and processed crypto building sprites (with transparent backgrounds)
 const cryptoSpriteCache = new Map<string, HTMLCanvasElement>();
 const loadingSprites = new Set<string>();
+
+// Issue #187: Track sprite load status for error handling
+export type SpriteLoadStatus = 'loading' | 'loaded' | 'failed';
+const spriteLoadStatus = new Map<string, SpriteLoadStatus>();
+
+// Track retry attempts per sprite
+const spriteRetryCount = new Map<string, number>();
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 1000;
 
 // Callbacks to notify when crypto sprites are loaded (for triggering re-renders)
 type SpriteLoadCallback = () => void;
@@ -40,14 +52,26 @@ const BACKGROUND_COLORS = [
   { r: 250, g: 250, b: 250 }, // Light gray
   { r: 245, g: 245, b: 245 }, // Lighter gray
   { r: 240, g: 240, b: 240 }, // Gray
-  // Black/dark backgrounds
+  // Black/dark backgrounds - extended range for AI-generated glow effects
   { r: 0, g: 0, b: 0 },       // Pure black
   { r: 1, g: 1, b: 1 },       // Near-black
+  { r: 2, g: 2, b: 2 },       // Near-black
+  { r: 3, g: 3, b: 3 },       // Near-black
   { r: 5, g: 5, b: 5 },       // Very dark
+  { r: 8, g: 8, b: 8 },       // Very dark
   { r: 10, g: 10, b: 10 },    // Dark
+  { r: 12, g: 12, b: 12 },    // Dark
   { r: 15, g: 15, b: 15 },    // Dark gray
+  { r: 18, g: 18, b: 18 },    // Dark gray
   { r: 20, g: 20, b: 20 },    // Dark gray
+  { r: 22, g: 22, b: 22 },    // Dark gray
   { r: 25, g: 25, b: 25 },    // Dark gray
+  { r: 28, g: 28, b: 28 },    // Dark gray
+  { r: 30, g: 30, b: 30 },    // Dark gray
+  { r: 32, g: 32, b: 32 },    // Dark gray
+  { r: 35, g: 35, b: 35 },    // Dark gray
+  { r: 38, g: 38, b: 38 },    // Dark gray
+  { r: 40, g: 40, b: 40 },    // Dark gray
   // Checkered pattern colors (common in AI transparency simulation)
   { r: 204, g: 204, b: 204 }, // Light checker
   { r: 153, g: 153, b: 153 }, // Dark checker
@@ -57,7 +81,7 @@ const BACKGROUND_COLORS = [
   { r: 192, g: 192, b: 192 }, // Light gray
   { r: 169, g: 169, b: 169 }, // Dark gray
 ];
-const COLOR_THRESHOLD = 35; // Distance threshold for background detection
+const COLOR_THRESHOLD = 45; // Increased distance threshold for better background detection
 
 /**
  * Remove background from sprite image using flood fill from corners
@@ -190,30 +214,22 @@ function removeBackground(img: HTMLImageElement): HTMLCanvasElement {
 
 /**
  * Load a crypto building sprite image and remove its background
+ * Issue #187: Now uses retry logic for failed loads
  */
 export function loadCryptoBuildingSprite(building: CryptoBuildingDefinition): void {
   if (building.isProcedural || !building.sprites?.south) return;
   
   const spritePath = building.sprites.south;
-  if (cryptoSpriteCache.has(spritePath) || loadingSprites.has(spritePath)) return;
   
-  loadingSprites.add(spritePath);
+  // Check current status - don't reload if already loaded, loading, or failed
+  const status = spriteLoadStatus.get(spritePath);
+  if (status === 'loaded' || status === 'loading' || status === 'failed') return;
+  if (cryptoSpriteCache.has(spritePath)) return;
   
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    // Process the image to remove background
-    const processedCanvas = removeBackground(img);
-    cryptoSpriteCache.set(spritePath, processedCanvas);
-    loadingSprites.delete(spritePath);
-    // Notify listeners that a sprite is ready for rendering
-    notifyCryptoSpriteLoaded();
-  };
-  img.onerror = () => {
-    console.warn(`Failed to load crypto sprite: ${spritePath}`);
-    loadingSprites.delete(spritePath);
-  };
-  img.src = spritePath;
+  // Use the retry-enabled loading function
+  loadCryptoBuildingSpriteWithRetry(building, spritePath, () => {
+    // No-op callback - notifications handled internally
+  });
 }
 
 /**
@@ -222,6 +238,132 @@ export function loadCryptoBuildingSprite(building: CryptoBuildingDefinition): vo
 export function getCryptoBuildingSprite(building: CryptoBuildingDefinition): HTMLCanvasElement | null {
   if (building.isProcedural || !building.sprites?.south) return null;
   return cryptoSpriteCache.get(building.sprites.south) || null;
+}
+
+/**
+ * Issue #187: Get the load status of a crypto building sprite
+ * @param buildingId The ID of the crypto building
+ * @returns The load status: 'loading' | 'loaded' | 'failed' | undefined
+ */
+export function getCryptoSpriteStatus(buildingId: string): SpriteLoadStatus | undefined {
+  const building = getCryptoBuilding(buildingId);
+  if (!building || building.isProcedural || !building.sprites?.south) {
+    return undefined;
+  }
+  return spriteLoadStatus.get(building.sprites.south);
+}
+
+/**
+ * Issue #186: Preload crypto building sprites in parallel
+ * Loads sprites for the given building IDs using Promise.all
+ * @param buildingIds Array of crypto building IDs to preload
+ * @returns Promise that resolves when all sprites are loaded (or failed)
+ */
+export function preloadCryptoBuildingSprites(buildingIds: string[]): Promise<void[]> {
+  const loadPromises = buildingIds.map(buildingId => {
+    return new Promise<void>((resolve) => {
+      const building = getCryptoBuilding(buildingId);
+      if (!building || building.isProcedural || !building.sprites?.south) {
+        resolve();
+        return;
+      }
+      
+      const spritePath = building.sprites.south;
+      
+      // Already loaded or failed
+      const status = spriteLoadStatus.get(spritePath);
+      if (status === 'loaded' || status === 'failed') {
+        resolve();
+        return;
+      }
+      
+      // Already loading - wait for it to complete
+      if (status === 'loading') {
+        const checkComplete = () => {
+          const currentStatus = spriteLoadStatus.get(spritePath);
+          if (currentStatus === 'loaded' || currentStatus === 'failed') {
+            resolve();
+          } else {
+            setTimeout(checkComplete, 100);
+          }
+        };
+        checkComplete();
+        return;
+      }
+      
+      // Start loading with the internal function that handles retries
+      loadCryptoBuildingSpriteWithRetry(building, spritePath, resolve);
+    });
+  });
+  
+  return Promise.all(loadPromises);
+}
+
+/**
+ * Issue #186: Preload sprites for all buildings in a category
+ * @param category The crypto category to preload
+ * @returns Promise that resolves when all sprites in the category are loaded
+ */
+export function preloadCryptoBuildingSpritesByCategory(category: CryptoCategory): Promise<void[]> {
+  const buildings = getCryptoBuildingsByCategory(category);
+  const buildingIds = buildings
+    .filter(b => !b.isProcedural && b.sprites?.south)
+    .map(b => b.id);
+  return preloadCryptoBuildingSprites(buildingIds);
+}
+
+/**
+ * Internal function to load a sprite with retry logic
+ * Issue #187: Handles retries (3 attempts with 1s delay)
+ */
+function loadCryptoBuildingSpriteWithRetry(
+  building: CryptoBuildingDefinition,
+  spritePath: string,
+  onComplete: () => void
+): void {
+  const currentRetries = spriteRetryCount.get(spritePath) || 0;
+  
+  // Mark as loading
+  spriteLoadStatus.set(spritePath, 'loading');
+  loadingSprites.add(spritePath);
+  
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  
+  img.onload = () => {
+    // Process the image to remove background
+    const processedCanvas = removeBackground(img);
+    cryptoSpriteCache.set(spritePath, processedCanvas);
+    loadingSprites.delete(spritePath);
+    spriteLoadStatus.set(spritePath, 'loaded');
+    spriteRetryCount.delete(spritePath);
+    // Notify listeners that a sprite is ready for rendering
+    notifyCryptoSpriteLoaded();
+    onComplete();
+  };
+  
+  img.onerror = () => {
+    loadingSprites.delete(spritePath);
+    
+    // Retry logic
+    if (currentRetries < MAX_RETRY_ATTEMPTS - 1) {
+      spriteRetryCount.set(spritePath, currentRetries + 1);
+      console.warn(`Failed to load crypto sprite: ${spritePath}, retrying (${currentRetries + 1}/${MAX_RETRY_ATTEMPTS})...`);
+      
+      // Retry after delay
+      setTimeout(() => {
+        loadCryptoBuildingSpriteWithRetry(building, spritePath, onComplete);
+      }, RETRY_DELAY_MS);
+    } else {
+      // Final failure
+      console.warn(`Failed to load crypto sprite after ${MAX_RETRY_ATTEMPTS} attempts: ${spritePath}`);
+      spriteLoadStatus.set(spritePath, 'failed');
+      spriteRetryCount.delete(spritePath);
+      onComplete();
+    }
+  };
+  
+  img.src = spritePath;
 }
 
 export interface PlaceholderColor {
@@ -241,6 +383,7 @@ export const CRYPTO_CATEGORY_COLORS: Record<CryptoCategory, PlaceholderColor> = 
   stablecoin: { top: '#10b981', left: '#059669', right: '#34d399', height: 1.1 },
   infrastructure: { top: '#6366f1', left: '#4f46e5', right: '#818cf8', height: 1.2 },
   legends: { top: '#f97316', left: '#ea580c', right: '#fb923c', height: 1.4 },
+  titan: { top: '#8b5cf6', left: '#7c3aed', right: '#a78bfa', height: 1.3 },  // Purple theme for Titan buildings
 };
 
 export const PLACEHOLDER_COLORS: Record<string, PlaceholderColor> = {
@@ -296,6 +439,7 @@ export function drawPlaceholderBuilding(
   tileHeight: number
 ): void {
   let colors = PLACEHOLDER_COLORS[buildingType];
+  let isFailedSprite = false;
   
   // Check if this is a crypto building with a sprite
   const cryptoBuilding = getCryptoBuilding(buildingType);
@@ -303,6 +447,10 @@ export function drawPlaceholderBuilding(
     // Try to load and draw the sprite if available
     if (!cryptoBuilding.isProcedural && cryptoBuilding.sprites?.south) {
       loadCryptoBuildingSprite(cryptoBuilding);
+      
+      // Issue #187: Check sprite load status
+      const status = spriteLoadStatus.get(cryptoBuilding.sprites.south);
+      
       const sprite = getCryptoBuildingSprite(cryptoBuilding);
       if (sprite) {
         // Calculate dimensions based on footprint
@@ -321,6 +469,11 @@ export function drawPlaceholderBuilding(
         ctx.drawImage(sprite, drawX, drawY, targetWidth, targetHeight);
         return;
       }
+      
+      // Issue #187: Mark as failed if sprite loading has failed
+      if (status === 'failed') {
+        isFailedSprite = true;
+      }
     }
     // Fall back to category colors for procedural or unloaded sprites
     colors = CRYPTO_CATEGORY_COLORS[cryptoBuilding.category];
@@ -334,8 +487,20 @@ export function drawPlaceholderBuilding(
   const cx = x + w / 2;
   const topY = y - boxHeight;
   
+  // Issue #187: Apply red tint to colors if sprite failed to load
+  let leftColor = colors.left;
+  let rightColor = colors.right;
+  let topColor = colors.top;
+  
+  if (isFailedSprite) {
+    // Blend with red to indicate failed sprite
+    leftColor = blendWithRed(colors.left, 0.4);
+    rightColor = blendWithRed(colors.right, 0.4);
+    topColor = blendWithRed(colors.top, 0.4);
+  }
+  
   // Draw left face (darker)
-  ctx.fillStyle = colors.left;
+  ctx.fillStyle = leftColor;
   ctx.beginPath();
   ctx.moveTo(x, y + h / 2);
   ctx.lineTo(cx, y + h);
@@ -345,7 +510,7 @@ export function drawPlaceholderBuilding(
   ctx.fill();
   
   // Draw right face (lighter)
-  ctx.fillStyle = colors.right;
+  ctx.fillStyle = rightColor;
   ctx.beginPath();
   ctx.moveTo(x + w, y + h / 2);
   ctx.lineTo(cx, y + h);
@@ -355,7 +520,7 @@ export function drawPlaceholderBuilding(
   ctx.fill();
   
   // Draw top face
-  ctx.fillStyle = colors.top;
+  ctx.fillStyle = topColor;
   ctx.beginPath();
   ctx.moveTo(cx, topY);
   ctx.lineTo(x + w, topY + h / 2);
@@ -374,4 +539,45 @@ export function drawPlaceholderBuilding(
   ctx.lineTo(x, topY + h / 2);
   ctx.closePath();
   ctx.stroke();
+  
+  // Issue #187: Draw error indicator for failed sprites
+  if (isFailedSprite) {
+    // Draw red X on top face to indicate error
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    // Draw diagonal lines on top face
+    const xSize = w * 0.2;
+    ctx.moveTo(cx - xSize, topY + h / 2 - xSize / 2);
+    ctx.lineTo(cx + xSize, topY + h / 2 + xSize / 2);
+    ctx.moveTo(cx + xSize, topY + h / 2 - xSize / 2);
+    ctx.lineTo(cx - xSize, topY + h / 2 + xSize / 2);
+    ctx.stroke();
+  }
+}
+
+/**
+ * Issue #187: Helper function to blend a hex color with red
+ * @param hexColor Original hex color
+ * @param redAmount Amount of red to blend (0-1)
+ * @returns Blended hex color
+ */
+function blendWithRed(hexColor: string, redAmount: number): string {
+  // Parse hex color
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  
+  // Blend with red (255, 60, 60)
+  const targetR = 255;
+  const targetG = 60;
+  const targetB = 60;
+  
+  const newR = Math.round(r + (targetR - r) * redAmount);
+  const newG = Math.round(g + (targetG - g) * redAmount);
+  const newB = Math.round(b + (targetB - b) * redAmount);
+  
+  // Convert back to hex
+  return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
 }

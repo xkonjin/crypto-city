@@ -426,6 +426,12 @@ export interface Tile {
   traffic: number;
   hasSubway: boolean;
   hasRailOverlay?: boolean;
+  /** For multi-tile buildings: true if this is the origin (top-left) tile */
+  isOrigin?: boolean;
+  /** For non-origin tiles of multi-tile buildings: X coordinate of origin tile */
+  originX?: number;
+  /** For non-origin tiles of multi-tile buildings: Y coordinate of origin tile */
+  originY?: number;
 }
 
 export interface City {

@@ -42,15 +42,27 @@ import {
   setActiveSpritePack,
   SpritePack,
 } from "@/lib/renderConfig";
+import { getIngestionConsent, setIngestionConsent as persistIngestionConsent } from "@/lib/ingestion/consent";
+import {
+  getCityAIManager,
+  CityAIState,
+  AIAggressiveness,
+  CityAction,
+} from "@/lib/cityAI";
+import { getCryptoBuilding } from "@/games/isocity/crypto/buildings";
 
 const STORAGE_KEY = "isocity-game-state";
+const CITY_AI_STORAGE_KEY = "isocity-city-ai";
 const SAVED_CITY_STORAGE_KEY = "isocity-saved-city"; // For restoring after viewing shared city
 const SAVED_CITIES_INDEX_KEY = "isocity-saved-cities-index"; // Index of all saved cities
 const SAVED_CITY_PREFIX = "isocity-city-"; // Prefix for individual saved city states
 const SPRITE_PACK_STORAGE_KEY = "isocity-sprite-pack";
 const DAY_NIGHT_MODE_STORAGE_KEY = "isocity-day-night-mode";
+const COBIE_SCREEN_STORAGE_KEY = "isocity-cobie-screen";
 
 export type DayNightMode = "auto" | "day" | "night";
+
+type CobieScreenSetting = boolean;
 
 // Info about a saved city (for restore functionality)
 export type SavedCityInfo = {
@@ -124,6 +136,11 @@ type GameContextValue = {
   dayNightMode: DayNightMode;
   setDayNightMode: (mode: DayNightMode) => void;
   visualHour: number; // The hour to use for rendering (respects day/night mode override)
+  showCobieScreen: boolean;
+  setShowCobieScreen: (show: boolean) => void;
+  // User ingestion consent
+  ingestionConsent: boolean;
+  setIngestionConsent: (consented: boolean) => void;
   // Save/restore city for shared links
   saveCurrentCityForRestore: () => void;
   restoreSavedCity: () => boolean;
@@ -137,6 +154,12 @@ type GameContextValue = {
   acceptPetition: () => void;
   rejectPetition: () => void;
   resolveEvent: (choiceIndex: number) => void;
+  // City AI integration
+  cityAIEnabled: boolean;
+  cityAIAggressiveness: AIAggressiveness;
+  cityAIPendingActions: CityAction[];
+  toggleCityAI: () => void;
+  setCityAIAggressiveness: (level: AIAggressiveness) => void;
 };
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -510,6 +533,22 @@ function saveDayNightMode(mode: DayNightMode): void {
   }
 }
 
+function loadCobieScreenSetting(): CobieScreenSetting {
+  if (typeof window === "undefined") return true;
+  const raw = localStorage.getItem(COBIE_SCREEN_STORAGE_KEY);
+  if (raw === null) return true;
+  return raw === "true";
+}
+
+function saveCobieScreenSetting(show: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(COBIE_SCREEN_STORAGE_KEY, String(show));
+  } catch (e) {
+    console.error("Failed to save Cobie screen preference:", e);
+  }
+}
+
 // Save current city for later restoration (when viewing shared cities)
 function saveCityForRestore(state: GameState): void {
   if (typeof window === "undefined") return;
@@ -595,6 +634,44 @@ function clearSavedCityStorage(): void {
     console.error("Failed to clear saved city:", e);
   }
 }
+
+// ==== CITY AI PERSISTENCE ====
+// City AI state that persists across sessions
+interface CityAIPersistState {
+  enabled: boolean;
+  aggressiveness: AIAggressiveness;
+}
+
+// Load City AI settings from localStorage
+function loadCityAISettings(): CityAIPersistState {
+  if (typeof window === "undefined") return { enabled: false, aggressiveness: "moderate" };
+  try {
+    const saved = localStorage.getItem(CITY_AI_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed.enabled === "boolean") {
+        return {
+          enabled: parsed.enabled,
+          aggressiveness: parsed.aggressiveness || "moderate",
+        };
+      }
+    }
+  } catch (e) {
+    console.error("Failed to load City AI settings:", e);
+  }
+  return { enabled: false, aggressiveness: "moderate" };
+}
+
+// Save City AI settings to localStorage
+function saveCityAISettings(settings: CityAIPersistState): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CITY_AI_STORAGE_KEY, JSON.stringify(settings));
+  } catch (e) {
+    console.error("Failed to save City AI settings:", e);
+  }
+}
+// ==== END CITY AI PERSISTENCE ====
 
 // Generate a UUID v4
 function generateUUID(): string {
@@ -749,6 +826,8 @@ export function GameProvider({
 
   // Day/night mode state
   const [dayNightMode, setDayNightModeState] = useState<DayNightMode>("auto");
+  const [showCobieScreen, setShowCobieScreenState] = useState(true);
+  const [ingestionConsent, setIngestionConsentState] = useState(false);
 
   // Saved cities state for multi-city save system
   const [savedCities, setSavedCities] = useState<SavedCityMeta[]>([]);
@@ -757,6 +836,13 @@ export function GameProvider({
   const [selectedCryptoBuilding, setSelectedCryptoBuilding] = useState<
     string | null
   >(null);
+
+  // ==== CITY AI STATE ====
+  // CityAI settings that persist and sync with the CityAIManager singleton
+  const [cityAIEnabled, setCityAIEnabled] = useState(false);
+  const [cityAIAggressiveness, setCityAIAggressivenessState] = useState<AIAggressiveness>("moderate");
+  const [cityAIPendingActions, setCityAIPendingActions] = useState<CityAction[]>([]);
+  const cityAIManagerRef = useRef(getCityAIManager());
 
   // Load game state and sprite pack from localStorage on mount (client-side only)
   useEffect(() => {
@@ -771,9 +857,26 @@ export function GameProvider({
     const savedDayNightMode = loadDayNightMode();
     setDayNightModeState(savedDayNightMode);
 
+    const savedCobieScreen = loadCobieScreenSetting();
+    setShowCobieScreenState(savedCobieScreen);
+
+    setIngestionConsentState(getIngestionConsent());
+
     // Load saved cities index
     const cities = loadSavedCitiesIndex();
     setSavedCities(cities);
+
+    // Load City AI settings and sync with manager
+    const cityAISettings = loadCityAISettings();
+    setCityAIEnabled(cityAISettings.enabled);
+    setCityAIAggressivenessState(cityAISettings.aggressiveness);
+    const aiManager = cityAIManagerRef.current;
+    aiManager.setAggressiveness(cityAISettings.aggressiveness);
+    if (cityAISettings.enabled) {
+      aiManager.enable();
+    } else {
+      aiManager.disable();
+    }
 
     // Load game state (unless startFresh is true - used for co-op to start with a new city)
     if (!startFresh) {
@@ -920,7 +1023,24 @@ export function GameProvider({
         const now = performance.now();
 
         // PERF: Run simulation and update ref immediately (for canvas)
-        const newState = simulateTick(latestStateRef.current);
+        let newState = simulateTick(latestStateRef.current);
+        
+        // ==== CITY AI INTEGRATION ====
+        // If CityAI is enabled, let it tick and potentially modify the state
+        const aiManager = cityAIManagerRef.current;
+        if (aiManager.isEnabled()) {
+          // AI tick returns potentially modified state with actions applied
+          // Pass null for cryptoEconomy since it's managed separately
+          newState = aiManager.tick(newState, null);
+          
+          // Update pending actions for UI display (every 10 ticks to reduce overhead)
+          if (tickCountRef.current % 10 === 0) {
+            const pendingActions = aiManager.getActionQueue();
+            setCityAIPendingActions([...pendingActions]);
+          }
+        }
+        // ==== END CITY AI INTEGRATION ====
+        
         latestStateRef.current = newState;
         stateChangedRef.current = true;
 
@@ -1094,30 +1214,75 @@ export function GameProvider({
   const placeCryptoBuilding = useCallback(
     (x: number, y: number, buildingId: string, isRemote = false) => {
       setState((prev) => {
-        const tile = prev.grid[y]?.[x];
-        if (!tile) return prev;
-        if (tile.building.type !== "grass" && tile.building.type !== "tree")
-          return prev;
+        // Get building definition for footprint info
+        const building = getCryptoBuilding(buildingId);
+        if (!building) return prev;
+        
+        const footprintW = building.footprint.width;
+        const footprintH = building.footprint.height;
+        
+        // Check if all tiles in footprint are available
+        for (let dy = 0; dy < footprintH; dy++) {
+          for (let dx = 0; dx < footprintW; dx++) {
+            const checkX = x + dx;
+            const checkY = y + dy;
+            const tile = prev.grid[checkY]?.[checkX];
+            if (!tile) return prev;
+            if (tile.building.type !== "grass" && tile.building.type !== "tree") {
+              return prev;
+            }
+          }
+        }
+        
+        // Check if we can afford the building
+        const cost = building.cost || 0;
+        if (prev.stats.money < cost && cost > 0) return prev;
 
         const newGrid = prev.grid.map((row) =>
           row.map((t) => ({ ...t, building: { ...t.building } })),
         );
-        newGrid[y][x].building = {
-          type: "crypto_building",
-          level: 1,
-          population: 0,
-          jobs: 25,
-          powered: false,
-          watered: false,
-          onFire: false,
-          fireProgress: 0,
-          age: 0,
-          constructionProgress: 100,
-          abandoned: false,
-          cryptoBuildingId: buildingId,
-        };
+        
+        // Place all tiles in the footprint
+        for (let dy = 0; dy < footprintH; dy++) {
+          for (let dx = 0; dx < footprintW; dx++) {
+            const placeX = x + dx;
+            const placeY = y + dy;
+            const isOrigin = dx === 0 && dy === 0;
+            
+            newGrid[placeY][placeX].building = {
+              type: "crypto_building",
+              level: 1,
+              population: 0,
+              jobs: isOrigin ? 25 : 0, // Only origin tile has jobs
+              powered: false,
+              watered: false,
+              onFire: false,
+              fireProgress: 0,
+              age: 0,
+              constructionProgress: 100,
+              abandoned: false,
+              cryptoBuildingId: buildingId,
+            };
+            
+            // Mark non-origin tiles as part of this building
+            if (!isOrigin) {
+              newGrid[placeY][placeX].isOrigin = false;
+              newGrid[placeY][placeX].originX = x;
+              newGrid[placeY][placeX].originY = y;
+            } else {
+              newGrid[placeY][placeX].isOrigin = true;
+            }
+          }
+        }
 
-        return { ...prev, grid: newGrid };
+        return { 
+          ...prev, 
+          grid: newGrid,
+          stats: {
+            ...prev.stats,
+            money: prev.stats.money - cost,
+          },
+        };
       });
     },
     [],
@@ -1271,6 +1436,52 @@ export function GameProvider({
     saveDayNightMode(mode);
   }, []);
 
+  const setShowCobieScreen = useCallback((show: boolean) => {
+    setShowCobieScreenState(show);
+    saveCobieScreenSetting(show);
+  }, []);
+
+  // ==== CITY AI CALLBACKS ====
+  /**
+   * Toggle City AI autonomous mode on/off.
+   * When enabled, the AI will autonomously manage the city during simulation.
+   */
+  const toggleCityAI = useCallback(() => {
+    const aiManager = cityAIManagerRef.current;
+    const newEnabled = aiManager.toggle();
+    setCityAIEnabled(newEnabled);
+    
+    // Persist the setting
+    saveCityAISettings({
+      enabled: newEnabled,
+      aggressiveness: cityAIAggressiveness,
+    });
+    
+    // Clear pending actions display when disabled
+    if (!newEnabled) {
+      setCityAIPendingActions([]);
+    }
+  }, [cityAIAggressiveness]);
+
+  /**
+   * Set the City AI aggressiveness level.
+   * - conservative: Build slowly, maintain high treasury buffer
+   * - moderate: Balanced approach (default)
+   * - aggressive: Zone everything in sight, maximize growth
+   */
+  const setCityAIAggressiveness = useCallback((level: AIAggressiveness) => {
+    const aiManager = cityAIManagerRef.current;
+    aiManager.setAggressiveness(level);
+    setCityAIAggressivenessState(level);
+    
+    // Persist the setting
+    saveCityAISettings({
+      enabled: cityAIEnabled,
+      aggressiveness: level,
+    });
+  }, [cityAIEnabled]);
+  // ==== END CITY AI CALLBACKS ====
+
   // Compute the visual hour based on the day/night mode override
   // This doesn't affect time progression, just the rendering
   const visualHour =
@@ -1279,6 +1490,11 @@ export function GameProvider({
       : dayNightMode === "day"
         ? 12 // Noon - full daylight
         : 22; // Night time
+
+  const setIngestionConsent = useCallback((consented: boolean) => {
+    setIngestionConsentState(consented);
+    persistIngestionConsent(consented, 'settings');
+  }, []);
 
   const newGame = useCallback((name?: string, size?: number) => {
     clearGameState(); // Clear saved state when starting fresh
@@ -2023,6 +2239,10 @@ export function GameProvider({
     dayNightMode,
     setDayNightMode,
     visualHour,
+    showCobieScreen,
+    setShowCobieScreen,
+    ingestionConsent,
+    setIngestionConsent,
     // Save/restore city for shared links
     saveCurrentCityForRestore,
     restoreSavedCity,
@@ -2040,6 +2260,12 @@ export function GameProvider({
     acceptPetition,
     rejectPetition,
     resolveEvent,
+    // City AI integration
+    cityAIEnabled,
+    cityAIAggressiveness,
+    cityAIPendingActions,
+    toggleCityAI,
+    setCityAIAggressiveness,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
