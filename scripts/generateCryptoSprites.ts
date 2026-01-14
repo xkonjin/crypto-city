@@ -1,923 +1,341 @@
+#!/usr/bin/env node
 /**
- * CRYPTO BUILDING SPRITE GENERATOR
+ * CRYPTO SPRITE GENERATOR - High Quality Isometric Pixel Art
  * 
- * Uses Gemini API (Nano Banana) to generate isometric building sprites
- * matching the ISOCITY pixel art style. Uses reference images from existing
- * game assets to maintain visual consistency.
+ * Generates isometric building sprites using Google's Gemini API that match
+ * the existing IsoCity style (512x512, transparent, bottom-anchored, pixel art).
  * 
  * Usage:
- *   GEMINI_API_KEY=your_key node --loader ts-node/esm scripts/generateCryptoSprites.ts
- *   Or with npx: npx ts-node --esm scripts/generateCryptoSprites.ts
- * 
+ *   GEMINI_API_KEY=your_key npx ts-node scripts/generateCryptoSprites.ts
+ *   
  * Options:
- *   --building <id>   Generate specific building
- *   --category <cat>  Generate all buildings in category
- *   --limit <n>       Limit number of buildings
- *   --dry-run         Show prompts without generating
+ *   --limit <n>        Maximum number of sprites to generate
+ *   --category <c>     Only generate for specific category
+ *   --building <id>    Generate specific building by ID
+ *   --dry-run          Show what would be generated without calling API
+ *   --test-one         Generate just one test sprite to validate style
  */
 
-const fs = require('fs');
-const path = require('path');
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { GoogleGenAI } from '@google/genai';
 
-// =============================================================================
-// CONFIGURATION
-// =============================================================================
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 if (!GEMINI_API_KEY) {
   console.error('Error: GEMINI_API_KEY environment variable is required');
-  console.error('Usage: GEMINI_API_KEY=your_key npx ts-node --esm scripts/generateCryptoSprites.ts');
+  console.error('Usage: GEMINI_API_KEY=your_key npx ts-node scripts/generateCryptoSprites.ts');
   process.exit(1);
 }
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent';
-const SCRIPT_DIR = __dirname || process.cwd();
-const PROJECT_ROOT = path.resolve(SCRIPT_DIR, '..');
-const OUTPUT_DIR = path.join(PROJECT_ROOT, 'public', 'Building', 'crypto');
-const REFERENCE_DIR = path.join(PROJECT_ROOT, 'public', 'Building');
 
-// Reference images for style consistency
-const STYLE_REFERENCES = {
-  residential: '3x3limestones_south.png',
-  commercial: '4x4bookstore_south.png', 
-  landmark: '6x6internet_archive_south.png',
+const PROJECT_ROOT = path.resolve(__dirname, '..');
+const BUILDINGS_FILE = path.join(PROJECT_ROOT, 'src/games/isocity/crypto/buildings.ts');
+const OUTPUT_DIR = path.join(PROJECT_ROOT, 'public/Building/crypto');
+const REFERENCE_SPRITE = path.join(PROJECT_ROOT, 'public/Building/residential/2x2limestone_south.png');
+
+// =============================================================================
+// OFFICIAL BRAND COLORS (from research)
+// =============================================================================
+
+const BRAND_COLORS: Record<string, { primary: string; secondary?: string; accent?: string }> = {
+  // DeFi
+  'uniswap': { primary: '#FF007A', secondary: '#FF007A', accent: '#FFD7E6' },
+  'aave': { primary: '#B6509E', secondary: '#2EBAC6', accent: '#9896FF' },
+  'lido': { primary: '#00A3FF', secondary: '#F69988', accent: '#F5F5F5' },
+  'curve': { primary: '#FF007A', secondary: '#0000FF', accent: '#FFFF00' },
+  'makerdao': { primary: '#1AAB9B', secondary: '#6ACEBB', accent: '#F4B731' },
+  'compound': { primary: '#00D395', secondary: '#070A0E', accent: '#F5F5F5' },
+  'eigenlayer': { primary: '#1A0A3E', secondary: '#7B5BE6', accent: '#FFFFFF' },
+  'balancer': { primary: '#1E1E1E', secondary: '#FFFFFF', accent: '#FFD700' },
+  'yearn': { primary: '#006AE3', secondary: '#0657F9', accent: '#F5F5F5' },
+  'pendle': { primary: '#EAEAEA', secondary: '#00C6A2', accent: '#1B1B1B' },
+  'morpho': { primary: '#1F2A37', secondary: '#7ED321', accent: '#FFFFFF' },
+  'jupiter': { primary: '#00D8A5', secondary: '#131313', accent: '#FFFFFF' },
+  'raydium': { primary: '#3875BC', secondary: '#1FCB4F', accent: '#FFFFFF' },
+  'orca': { primary: '#FFD233', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'hyperliquid': { primary: '#00FFA3', secondary: '#1A1A2E', accent: '#FFFFFF' },
+  
+  // Exchanges
+  'binance': { primary: '#F0B90B', secondary: '#1E2026', accent: '#FFFFFF' },
+  'coinbase': { primary: '#0052FF', secondary: '#FFFFFF', accent: '#0A0B0D' },
+  'kraken': { primary: '#5741D9', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'okx': { primary: '#000000', secondary: '#FFFFFF', accent: '#00FF00' },
+  'bybit': { primary: '#F7A600', secondary: '#1E1E1E', accent: '#FFFFFF' },
+  'kucoin': { primary: '#23AF91', secondary: '#1B1B1B', accent: '#FFFFFF' },
+  'gemini': { primary: '#00DCFA', secondary: '#1B1B1B', accent: '#FFFFFF' },
+  
+  // Chains
+  'ethereum': { primary: '#627EEA', secondary: '#3C3C3D', accent: '#FFFFFF' },
+  'solana': { primary: '#9945FF', secondary: '#14F195', accent: '#000000' },
+  'bitcoin': { primary: '#F7931A', secondary: '#4D4D4D', accent: '#FFFFFF' },
+  'arbitrum': { primary: '#28A0F0', secondary: '#213147', accent: '#FFFFFF' },
+  'optimism': { primary: '#FF0420', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'polygon': { primary: '#8247E5', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'base': { primary: '#0052FF', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'avalanche': { primary: '#E84142', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'zksync': { primary: '#8B8DFC', secondary: '#1E1E1E', accent: '#FFFFFF' },
+  'scroll': { primary: '#FFEEDA', secondary: '#EBC28E', accent: '#1B1B1B' },
+  'linea': { primary: '#61DFFF', secondary: '#121212', accent: '#FFFFFF' },
+  'blast': { primary: '#FCFC03', secondary: '#000000', accent: '#FFFFFF' },
+  'mantle': { primary: '#000000', secondary: '#FFFFFF', accent: '#65D9E4' },
+  
+  // Stablecoins
+  'tether': { primary: '#26A17B', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'circle': { primary: '#2775CA', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'dai': { primary: '#F5AC37', secondary: '#1B1B1B', accent: '#FFFFFF' },
+  'ethena': { primary: '#000000', secondary: '#7B68EE', accent: '#FFFFFF' },
+  
+  // Infrastructure
+  'chainlink': { primary: '#375BD2', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'thegraph': { primary: '#6747ED', secondary: '#0C0A1D', accent: '#FFFFFF' },
+  'pyth': { primary: '#E5E7EB', secondary: '#7C3AED', accent: '#1B1B1B' },
+  'layerzero': { primary: '#000000', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'wormhole': { primary: '#FFFFFF', secondary: '#7B3FE4', accent: '#1B1B1B' },
+  
+  // Meme
+  'pepe': { primary: '#479A37', secondary: '#509624', accent: '#FFFFFF' },
+  'doge': { primary: '#C3A634', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'shiba': { primary: '#FFA409', secondary: '#E4202D', accent: '#FFFFFF' },
+  'wif': { primary: '#8B5CF6', secondary: '#F472B6', accent: '#1B1B1B' },
+  'bonk': { primary: '#F97316', secondary: '#FCD34D', accent: '#1B1B1B' },
+  'popcat': { primary: '#F97316', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'brett': { primary: '#0052FF', secondary: '#FFFFFF', accent: '#1B1B1B' },
+  'floki': { primary: '#D4A853', secondary: '#1B1B1B', accent: '#FFFFFF' },
+  'mog': { primary: '#FFD700', secondary: '#1B1B1B', accent: '#FFFFFF' },
+  
+  // Plasma (Official brand colors)
+  'plasma': { primary: '#569F8C', secondary: '#162F29', accent: '#DCEFEA' },
 };
 
-// Tile dimensions for isometric buildings (based on existing sprites)
-const TILE_DIMENSIONS: Record<string, { width: number; height: number }> = {
-  '1x1': { width: 128, height: 160 },
-  '1x2': { width: 128, height: 224 },
-  '2x1': { width: 192, height: 160 },
-  '2x2': { width: 192, height: 224 },
-  '2x3': { width: 192, height: 288 },
-  '3x2': { width: 256, height: 224 },
-  '3x3': { width: 256, height: 288 },
-  '3x4': { width: 256, height: 352 },
-  '4x3': { width: 320, height: 288 },
-  '4x4': { width: 320, height: 352 },
-};
-
-// Brand colors for each category
-const CATEGORY_COLORS: Record<string, { primary: string; secondary: string; accent: string }> = {
-  defi: { primary: '#3b82f6', secondary: '#1e40af', accent: '#60a5fa' },
-  exchange: { primary: '#22c55e', secondary: '#15803d', accent: '#4ade80' },
-  chain: { primary: '#a855f7', secondary: '#7e22ce', accent: '#c084fc' },
-  ct: { primary: '#06b6d4', secondary: '#0e7490', accent: '#22d3ee' },
-  meme: { primary: '#f59e0b', secondary: '#b45309', accent: '#fbbf24' },
-  plasma: { primary: '#ec4899', secondary: '#be185d', accent: '#f472b6' },
-  stablecoin: { primary: '#10b981', secondary: '#047857', accent: '#34d399' },
-  infrastructure: { primary: '#6366f1', secondary: '#4338ca', accent: '#818cf8' },
+// Category color themes
+const CATEGORY_COLORS: Record<string, { primary: string; secondary: string; accent: string; style: string }> = {
+  defi: { primary: '#3B82F6', secondary: '#1E3A5F', accent: '#93C5FD', style: 'modern financial glass tower' },
+  exchange: { primary: '#22C55E', secondary: '#14532D', accent: '#86EFAC', style: 'trading hub corporate building' },
+  chain: { primary: '#A855F7', secondary: '#581C87', accent: '#D8B4FE', style: 'futuristic blockchain datacenter' },
+  ct: { primary: '#06B6D4', secondary: '#164E63', accent: '#67E8F9', style: 'modern tech office building' },
+  meme: { primary: '#F59E0B', secondary: '#78350F', accent: '#FCD34D', style: 'playful colorful fun building' },
+  plasma: { primary: '#569F8C', secondary: '#162F29', accent: '#DCEFEA', style: 'sleek modern corporate tower' },
+  stablecoin: { primary: '#10B981', secondary: '#064E3B', accent: '#6EE7B7', style: 'solid bank-like vault' },
+  infrastructure: { primary: '#6366F1', secondary: '#312E81', accent: '#A5B4FC', style: 'industrial data center' },
+  legends: { primary: '#F97316', secondary: '#7C2D12', accent: '#FDBA74', style: 'dramatic monument statue' },
+  titan: { primary: '#8B5CF6', secondary: '#4C1D95', accent: '#C4B5FD', style: 'cozy creature dwelling cave' },
 };
 
 // =============================================================================
-// BUILDING DEFINITIONS WITH BRAND DETAILS
+// TYPES
 // =============================================================================
 
-interface BuildingSprite {
+interface BuildingInfo {
   id: string;
   name: string;
   category: string;
-  footprint: string; // e.g., "2x2", "3x3"
-  icon: string;
-  brandColor: string;
-  secondaryColor?: string;
-  protocol?: string;
+  footprint: { width: number; height: number };
   description: string;
-  styleHints: string; // Additional style guidance
+  protocol?: string;
 }
 
-const CRYPTO_BUILDINGS: BuildingSprite[] = [
-  // ==========================================================================
-  // DEFI BUILDINGS
-  // ==========================================================================
-  {
-    id: 'aave_lending_tower',
-    name: 'Aave Lending Tower',
-    category: 'defi',
-    footprint: '3x3',
-    icon: '🏦',
-    brandColor: '#B6509E',
-    secondaryColor: '#2EBAC6',
-    protocol: 'Aave',
-    description: 'A tall futuristic lending tower with purple and teal gradient',
-    styleHints: 'ghost-like ethereal glow, modern glass and steel, floating holographic displays',
-  },
-  {
-    id: 'uniswap_exchange',
-    name: 'Uniswap Exchange',
-    category: 'defi',
-    footprint: '2x2',
-    icon: '🦄',
-    brandColor: '#FF007A',
-    protocol: 'Uniswap',
-    description: 'A pink-magenta DEX building with unicorn horn spire on top',
-    styleHints: 'swirling liquidity pool effect at base, pink glass reflections, modern sleek',
-  },
-  {
-    id: 'lido_staking_hub',
-    name: 'Lido Staking Hub',
-    category: 'defi',
-    footprint: '3x2',
-    icon: '🌊',
-    brandColor: '#00A3FF',
-    secondaryColor: '#F69988',
-    protocol: 'Lido',
-    description: 'Ocean blue liquid staking facility with wave architecture',
-    styleHints: 'flowing water features, coral accents, beacon tower with staking light',
-  },
-  {
-    id: 'pendle_yield_factory',
-    name: 'Pendle Yield Factory',
-    category: 'defi',
-    footprint: '2x2',
-    icon: '⚗️',
-    brandColor: '#24C4FF',
-    protocol: 'Pendle',
-    description: 'Industrial yield factory with cyan theme',
-    styleHints: 'pipes and machinery, hourglasses and clocks, alchemist laboratory meets modern factory',
-  },
-  {
-    id: 'curve_finance_pool',
-    name: 'Curve Finance Pool',
-    category: 'defi',
-    footprint: '2x2',
-    icon: '🌀',
-    brandColor: '#0038FF',
-    secondaryColor: '#FF0000',
-    protocol: 'Curve',
-    description: 'Curved organic building shape with deep blue and red accents',
-    styleHints: 'flowing curved architecture, pool-like water features, stablecoin vault aesthetic',
-  },
-  {
-    id: 'makerdao_vault',
-    name: 'MakerDAO Vault',
-    category: 'defi',
-    footprint: '3x3',
-    icon: '🏛️',
-    brandColor: '#1AAB9B',
-    secondaryColor: '#F4B731',
-    protocol: 'MakerDAO',
-    description: 'Ancient temple-styled bank vault with teal and gold',
-    styleHints: 'classical columns with modern tech, massive vault doors, fortress appearance',
-  },
-  {
-    id: 'compound_bank',
-    name: 'Compound Bank',
-    category: 'defi',
-    footprint: '2x2',
-    icon: '🏧',
-    brandColor: '#00D395',
-    protocol: 'Compound',
-    description: 'Modern green bank building',
-    styleHints: 'algorithmic money market aesthetic, clean geometric shapes',
-  },
-  {
-    id: 'eigenlayer_restaking',
-    name: 'EigenLayer Restaking',
-    category: 'defi',
-    footprint: '2x3',
-    icon: '🔗',
-    brandColor: '#1A1A2E',
-    secondaryColor: '#6366F1',
-    protocol: 'EigenLayer',
-    description: 'Layered stacking building with purple glow',
-    styleHints: 'multiple stacked layers, restaking visualization, futuristic',
-  },
-  {
-    id: 'balancer_vault',
-    name: 'Balancer Vault',
-    category: 'defi',
-    footprint: '2x2',
-    icon: '⚖️',
-    brandColor: '#1E1E1E',
-    secondaryColor: '#FFFFFF',
-    protocol: 'Balancer',
-    description: 'Black and white balanced scale building',
-    styleHints: 'balanced weights motif, minimalist modern design',
-  },
-  {
-    id: 'yearn_vault',
-    name: 'Yearn Vault',
-    category: 'defi',
-    footprint: '2x2',
-    icon: '🏰',
-    brandColor: '#006AE3',
-    protocol: 'Yearn',
-    description: 'Blue castle-style vault building',
-    styleHints: 'automated yield visualization, fortress with blue accents',
-  },
-  {
-    id: 'hyperliquid_vault',
-    name: 'Hyperliquid Vault',
-    category: 'defi',
-    footprint: '3x3',
-    icon: '💧',
-    brandColor: '#00FF88',
-    secondaryColor: '#1A1A2E',
-    protocol: 'Hyperliquid',
-    description: 'Ultra-modern neon green trading terminal',
-    styleHints: 'high-speed data visualization, cyberpunk aesthetic, fastest perps exchange',
-  },
-  {
-    id: 'jupiter_terminal',
-    name: 'Jupiter Terminal',
-    category: 'defi',
-    footprint: '2x2',
-    icon: '🪐',
-    brandColor: '#FF8C00',
-    secondaryColor: '#008080',
-    protocol: 'Jupiter',
-    description: 'Space station styled terminal with orange and teal',
-    styleHints: 'planetary ring motifs, orbital trajectory, mission control center',
-  },
-  {
-    id: 'raydium_pool',
-    name: 'Raydium Pool',
-    category: 'defi',
-    footprint: '2x2',
-    icon: '💧',
-    brandColor: '#9400D3',
-    secondaryColor: '#32CD32',
-    protocol: 'Raydium',
-    description: 'Radioactive purple and green industrial facility',
-    styleHints: 'bubbling pool tanks, chemical plant aesthetic, glowing containers',
-  },
-  {
-    id: 'orca_whirlpool',
-    name: 'Orca Whirlpool',
-    category: 'defi',
-    footprint: '2x2',
-    icon: '🐋',
-    brandColor: '#0077BE',
-    protocol: 'Orca',
-    description: 'Ocean blue aquarium-styled building',
-    styleHints: 'glass walls showing water, whirlpool fountain, marine design',
-  },
-  {
-    id: 'kamino_finance',
-    name: 'Kamino Finance',
-    category: 'defi',
-    footprint: '2x2',
-    icon: '🎯',
-    brandColor: '#DC143C',
-    secondaryColor: '#FFFFFF',
-    protocol: 'Kamino',
-    description: 'Target/bullseye themed modern building',
-    styleHints: 'red and white concentric ring patterns, precision engineering aesthetic',
-  },
-  // ==========================================================================
-  // EXCHANGE BUILDINGS
-  // ==========================================================================
-  {
-    id: 'binance_tower',
-    name: 'Binance Tower',
-    category: 'exchange',
-    footprint: '4x4',
-    icon: '🏢',
-    brandColor: '#F0B90B',
-    secondaryColor: '#1E2026',
-    protocol: 'Binance',
-    description: 'Massive yellow and black trading complex',
-    styleHints: 'launchpad rocket on roof, BNB chain integration, empire-building aesthetic',
-  },
-  {
-    id: 'coinbase_hq',
-    name: 'Coinbase HQ',
-    category: 'exchange',
-    footprint: '3x3',
-    icon: '🪙',
-    brandColor: '#0052FF',
-    protocol: 'Coinbase',
-    description: 'Clean blue corporate headquarters',
-    styleHints: 'institutional trust aesthetic, NYSE-listed company vibe, compliant appearance',
-  },
-  {
-    id: 'kraken_exchange',
-    name: 'Kraken Exchange',
-    category: 'exchange',
-    footprint: '2x3',
-    icon: '🦑',
-    brandColor: '#5741D9',
-    protocol: 'Kraken',
-    description: 'Purple fortress-like exchange with octopus motifs',
-    styleHints: 'kraken tentacle architecture, security-focused, Nordic maritime influences',
-  },
-  {
-    id: 'okx_center',
-    name: 'OKX Center',
-    category: 'exchange',
-    footprint: '3x2',
-    icon: '🅾️',
-    brandColor: '#000000',
-    secondaryColor: '#FFFFFF',
-    protocol: 'OKX',
-    description: 'Black and white modern exchange building',
-    styleHints: 'global trading hub, sleek modern design',
-  },
-  {
-    id: 'bybit_arena',
-    name: 'Bybit Arena',
-    category: 'exchange',
-    footprint: '2x2',
-    icon: '🎯',
-    brandColor: '#F7A600',
-    protocol: 'Bybit',
-    description: 'Orange derivatives trading arena',
-    styleHints: 'trading competition aesthetic, leverage indicators, stadium-like',
-  },
-  // ==========================================================================
-  // CHAIN BUILDINGS
-  // ==========================================================================
-  {
-    id: 'ethereum_beacon',
-    name: 'Ethereum Beacon',
-    category: 'chain',
-    footprint: '4x4',
-    icon: '⟠',
-    brandColor: '#627EEA',
-    secondaryColor: '#8A92B2',
-    protocol: 'Ethereum',
-    description: 'Majestic purple beacon tower symbolizing proof-of-stake',
-    styleHints: 'octahedral diamond motifs, smart contract visualizations, world computer HQ',
-  },
-  {
-    id: 'solana_tower',
-    name: 'Solana Tower',
-    category: 'chain',
-    footprint: '3x3',
-    icon: '◎',
-    brandColor: '#9945FF',
-    secondaryColor: '#14F195',
-    protocol: 'Solana',
-    description: 'Ultra-fast purple and green gradient tower',
-    styleHints: '400ms block time lights, modern Silicon Valley aesthetic, tropical vibes',
-  },
-  {
-    id: 'bitcoin_vault',
-    name: 'Bitcoin Vault',
-    category: 'chain',
-    footprint: '3x3',
-    icon: '₿',
-    brandColor: '#F7931A',
-    protocol: 'Bitcoin',
-    description: 'Legendary orange citadel storing digital gold',
-    styleHints: 'massive fortress walls, laser eyes from tower, 21 million commemorated',
-  },
-  {
-    id: 'arbitrum_bridge',
-    name: 'Arbitrum Bridge',
-    category: 'chain',
-    footprint: '2x3',
-    icon: '🌉',
-    brandColor: '#213147',
-    secondaryColor: '#12AAFF',
-    protocol: 'Arbitrum',
-    description: 'Dark blue L2 bridge with light blue accents',
-    styleHints: 'bridge connecting L1 to L2, fast execution visualization',
-  },
-  {
-    id: 'optimism_hub',
-    name: 'Optimism Hub',
-    category: 'chain',
-    footprint: '2x2',
-    icon: '🔴',
-    brandColor: '#FF0420',
-    protocol: 'Optimism',
-    description: 'Red optimistic hub spreading positive vibes',
-    styleHints: 'public goods aesthetic, community-focused design',
-  },
-  {
-    id: 'base_camp',
-    name: 'Base Camp',
-    category: 'chain',
-    footprint: '2x2',
-    icon: '🔵',
-    brandColor: '#0052FF',
-    protocol: 'Base',
-    description: 'Blue onchain launchpad building',
-    styleHints: 'startup HQ energy, Coinbase integration, builder-focused aesthetic',
-  },
-  {
-    id: 'polygon_plaza',
-    name: 'Polygon Plaza',
-    category: 'chain',
-    footprint: '2x2',
-    icon: '💜',
-    brandColor: '#8247E5',
-    protocol: 'Polygon',
-    description: 'Purple scaling solutions plaza',
-    styleHints: 'cheap and fast visualization, geometric polygon shapes',
-  },
-  {
-    id: 'zksync_tower',
-    name: 'zkSync Era Tower',
-    category: 'chain',
-    footprint: '2x3',
-    icon: '🔐',
-    brandColor: '#8A2BE2',
-    protocol: 'zkSync',
-    description: 'Purple encryption-themed skyscraper',
-    styleHints: 'zero-knowledge proof symbols, padlock motifs, secure data fortress',
-  },
-  // ==========================================================================
-  // CT CULTURE BUILDINGS
-  // ==========================================================================
-  {
-    id: 'ct_studio',
-    name: 'CT Influencer Studio',
-    category: 'ct',
-    footprint: '2x2',
-    icon: '🎙️',
-    brandColor: '#1DA1F2',
-    description: 'Blue Twitter/X themed podcast studio',
-    styleHints: 'alpha broadcasting, microphone tower, social media aesthetic',
-  },
-  {
-    id: 'vc_office',
-    name: 'VC Office',
-    category: 'ct',
-    footprint: '2x2',
-    icon: '💼',
-    brandColor: '#2D3748',
-    description: 'Dark corporate venture capital office',
-    styleHints: 'fund the future aesthetic, institutional money flows',
-  },
-  {
-    id: 'nft_gallery',
-    name: 'NFT Gallery',
-    category: 'ct',
-    footprint: '2x2',
-    icon: '🖼️',
-    brandColor: '#FF6B6B',
-    description: 'Colorful digital art gallery',
-    styleHints: 'display frames showing art, modern museum aesthetic',
-  },
-  {
-    id: 'dao_hq',
-    name: 'DAO HQ',
-    category: 'ct',
-    footprint: '2x2',
-    icon: '🏛️',
-    brandColor: '#9B59B6',
-    description: 'Purple decentralized governance headquarters',
-    styleHints: 'voting visualization, community-owned aesthetic',
-  },
-  {
-    id: 'degen_lounge',
-    name: 'Degen Lounge',
-    category: 'ct',
-    footprint: '2x2',
-    icon: '🎰',
-    brandColor: '#FFD700',
-    secondaryColor: '#8B0000',
-    description: 'Gold and red trading casino lounge',
-    styleHints: 'slot machine aesthetic, ape gathering spot, high-risk vibes',
-  },
-  // ==========================================================================
-  // MEME BUILDINGS
-  // ==========================================================================
-  {
-    id: 'pepe_statue',
-    name: 'Pepe Statue',
-    category: 'meme',
-    footprint: '1x1',
-    icon: '🐸',
-    brandColor: '#3D9970',
-    description: 'Green Pepe the Frog statue monument',
-    styleHints: 'feels good man pose, golden pedestal, meme magic aesthetic',
-  },
-  {
-    id: 'doge_fountain',
-    name: 'Doge Fountain',
-    category: 'meme',
-    footprint: '2x2',
-    icon: '🐕',
-    brandColor: '#C2A633',
-    description: 'Golden Shiba Inu themed fountain',
-    styleHints: 'much wow, very fountain, OG meme coin celebration',
-  },
-  {
-    id: 'shiba_shrine',
-    name: 'Shiba Shrine',
-    category: 'meme',
-    footprint: '2x2',
-    icon: '🐕‍🦺',
-    brandColor: '#FFA409',
-    description: 'Orange Shiba Inu army shrine',
-    styleHints: 'Japanese shrine architecture, SHIB army honor',
-  },
-  {
-    id: 'moon_monument',
-    name: 'Moon Monument',
-    category: 'meme',
-    footprint: '2x3',
-    icon: '🌙',
-    brandColor: '#FFE4B5',
-    secondaryColor: '#4169E1',
-    description: 'Silver and blue moon-pointing monument',
-    styleHints: 'to the moon rocket, optimistic bull market energy',
-  },
-  {
-    id: 'lambo_dealership',
-    name: 'Lambo Dealership',
-    category: 'meme',
-    footprint: '3x2',
-    icon: '🏎️',
-    brandColor: '#FFD700',
-    secondaryColor: '#8B0000',
-    description: 'Gold and red luxury car dealership',
-    styleHints: 'every degens dream, showroom with supercars',
-  },
-  {
-    id: 'diamond_hands_plaza',
-    name: 'Diamond Hands Plaza',
-    category: 'meme',
-    footprint: '2x2',
-    icon: '💎',
-    brandColor: '#B9F2FF',
-    description: 'Crystal cyan diamond hands monument',
-    styleHints: 'sparkling diamonds holding crypto, HODL celebration',
-  },
-  {
-    id: 'wif_temple',
-    name: 'WIF Temple',
-    category: 'meme',
-    footprint: '2x2',
-    icon: '🐕',
-    brandColor: '#8B4513',
-    secondaryColor: '#FFD700',
-    description: 'Brown dog with hat temple',
-    styleHints: 'dogwifhat legendary meme, Solana meme culture',
-  },
-  {
-    id: 'bonk_arena',
-    name: 'BONK Arena',
-    category: 'meme',
-    footprint: '2x2',
-    icon: '🦴',
-    brandColor: '#FFB347',
-    description: 'Orange bone-themed arena',
-    styleHints: 'Solana dog coin, playful bone architecture',
-  },
-  {
-    id: 'brett_base',
-    name: 'Brett Base',
-    category: 'meme',
-    footprint: '2x2',
-    icon: '🔵',
-    brandColor: '#0052FF',
-    secondaryColor: '#90EE90',
-    description: 'Blue Base chain frog building',
-    styleHints: 'Base chains favorite frog, blue frog aesthetic',
-  },
-  // ==========================================================================
-  // PLASMA BUILDINGS
-  // ==========================================================================
-  {
-    id: 'plasma_hq',
-    name: 'Plasma HQ',
-    category: 'plasma',
-    footprint: '4x4',
-    icon: '🏢',
-    brandColor: '#EC4899',
-    secondaryColor: '#1E3A5F',
-    description: 'Pink and navy corporate headquarters',
-    styleHints: 'modern glass and steel, rooftop helipad, executive penthouse',
-  },
-  {
-    id: 'plasma_node',
-    name: 'Plasma Node',
-    category: 'plasma',
-    footprint: '1x1',
-    icon: '⚡',
-    brandColor: '#4A4A4A',
-    secondaryColor: '#EC4899',
-    description: 'Small pink-accented server node',
-    styleHints: 'compact data center, ventilation grilles, status light',
-  },
-  {
-    id: 'plasma_bridge',
-    name: 'Plasma Bridge',
-    category: 'plasma',
-    footprint: '2x3',
-    icon: '🌉',
-    brandColor: '#D4A574',
-    secondaryColor: '#EC4899',
-    description: 'Sandstone bridge with pink accents',
-    styleHints: 'Victorian-era bridge architecture, suspension cables',
-  },
-  {
-    id: 'plasma_vault',
-    name: 'Plasma Vault',
-    category: 'plasma',
-    footprint: '2x2',
-    icon: '🔐',
-    brandColor: '#5C5C5C',
-    secondaryColor: '#EC4899',
-    description: 'Gray vault with pink security accents',
-    styleHints: 'massive circular vault door, art deco security aesthetic',
-  },
-  {
-    id: 'plasma_reactor',
-    name: 'Plasma Reactor',
-    category: 'plasma',
-    footprint: '3x3',
-    icon: '⚛️',
-    brandColor: '#EC4899',
-    secondaryColor: '#808080',
-    description: 'Pink energy reactor facility',
-    styleHints: 'cooling towers with pink glow, industrial power plant',
-  },
-  {
-    id: 'plasma_arena',
-    name: 'Plasma Arena',
-    category: 'plasma',
-    footprint: '3x3',
-    icon: '🏟️',
-    brandColor: '#8B0000',
-    secondaryColor: '#EC4899',
-    description: 'Red and pink sports arena',
-    styleHints: 'curved roof structure, stadium seating, event venue',
-  },
-  // ==========================================================================
-  // STABLECOIN BUILDINGS
-  // ==========================================================================
-  {
-    id: 'tether_hq',
-    name: 'Tether HQ',
-    category: 'stablecoin',
-    footprint: '3x3',
-    icon: '💵',
-    brandColor: '#26A17B',
-    description: 'Green financial institution headquarters',
-    styleHints: 'neoclassical elements, bank-like architecture, Corinthian columns',
-  },
-  {
-    id: 'circle_tower',
-    name: 'Circle Tower',
-    category: 'stablecoin',
-    footprint: '3x3',
-    icon: '🔵',
-    brandColor: '#3773F5',
-    protocol: 'Circle',
-    description: 'Blue cylindrical modern tower',
-    styleHints: 'rounded contemporary architecture, Silicon Valley aesthetic',
-  },
-  {
-    id: 'dai_vault',
-    name: 'DAI Vault',
-    category: 'stablecoin',
-    footprint: '2x2',
-    icon: '🏛️',
-    brandColor: '#F4B731',
-    secondaryColor: '#1AAB9B',
-    description: 'Gold and teal stablecoin vault',
-    styleHints: 'MakerDAO DAI aesthetic, decentralized stablecoin',
-  },
-  // ==========================================================================
-  // INFRASTRUCTURE BUILDINGS
-  // ==========================================================================
-  {
-    id: 'chainlink_hub',
-    name: 'Chainlink Hub',
-    category: 'infrastructure',
-    footprint: '3x3',
-    icon: '🔗',
-    brandColor: '#375BD2',
-    protocol: 'Chainlink',
-    description: 'Blue hexagonal oracle data center',
-    styleHints: 'satellite dishes on roof, network operations center, antenna array',
-  },
-  {
-    id: 'the_graph_indexer',
-    name: 'The Graph Indexer',
-    category: 'infrastructure',
-    footprint: '2x2',
-    icon: '📊',
-    brandColor: '#6F4CFF',
-    protocol: 'The Graph',
-    description: 'Purple library-like data building',
-    styleHints: 'visible server racks, rows of indexed data visualization',
-  },
-  {
-    id: 'pyth_observatory',
-    name: 'Pyth Observatory',
-    category: 'infrastructure',
-    footprint: '2x2',
-    icon: '🔭',
-    brandColor: '#6B00FF',
-    secondaryColor: '#E6DAFE',
-    protocol: 'Pyth',
-    description: 'Purple observatory with rotating dome',
-    styleHints: 'high-precision measurement facility, stargazing architecture',
-  },
-  {
-    id: 'layerzero_bridge',
-    name: 'LayerZero Bridge',
-    category: 'infrastructure',
-    footprint: '2x3',
-    icon: '🌐',
-    brandColor: '#CD7F32',
-    protocol: 'LayerZero',
-    description: 'Bronze suspension bridge gatehouse',
-    styleHints: 'twin towers, Victorian engineering with modern elements',
-  },
-  {
-    id: 'wormhole_portal',
-    name: 'Wormhole Portal',
-    category: 'infrastructure',
-    footprint: '2x2',
-    icon: '🌀',
-    brandColor: '#00FFFF',
-    secondaryColor: '#191970',
-    protocol: 'Wormhole',
-    description: 'Cyan portal structure with spinning ring',
-    styleHints: 'sci-fi teleportation gate, interdimensional gateway, energy conduits',
-  },
-];
-
 // =============================================================================
-// ISOMETRIC STYLE PROMPT TEMPLATE
+// BUILDING EXTRACTION
 // =============================================================================
 
-const BASE_STYLE_PROMPT = `
-You are creating a pixel art isometric building sprite for a city-builder game called ISOCITY/CryptoCity.
+function extractAllBuildings(content: string): BuildingInfo[] {
+  const buildings: BuildingInfo[] = [];
+  
+  // Match building definitions
+  const buildingRegex = /'([a-z_]+)':\s*\{[^}]*id:\s*'([^']+)'[^}]*name:\s*'([^']+)'[^}]*category:\s*'([^']+)'[^}]*footprint:\s*\{\s*width:\s*(\d+),\s*height:\s*(\d+)/g;
+  
+  let match;
+  while ((match = buildingRegex.exec(content)) !== null) {
+    const id = match[2];
+    const name = match[3];
+    const category = match[4];
+    const width = parseInt(match[5], 10);
+    const height = parseInt(match[6], 10);
+    
+    // Extract description
+    const descStart = content.indexOf(`'${id}'`);
+    const descSection = content.substring(descStart, descStart + 2000);
+    const descMatch = descSection.match(/description:\s*["'`]([^"'`]+)/);
+    const description = descMatch ? descMatch[1].substring(0, 150) : '';
+    
+    // Extract protocol
+    const protocolMatch = descSection.match(/protocol:\s*'([^']+)'/);
+    const protocol = protocolMatch ? protocolMatch[1] : undefined;
+    
+    buildings.push({
+      id,
+      name,
+      category,
+      footprint: { width, height },
+      description,
+      protocol,
+    });
+  }
+  
+  return buildings;
+}
+
+function getExistingSprites(): Set<string> {
+  const sprites = new Set<string>();
+  if (!fs.existsSync(OUTPUT_DIR)) return sprites;
+  
+  const categories = fs.readdirSync(OUTPUT_DIR).filter(f => {
+    const fullPath = path.join(OUTPUT_DIR, f);
+    return fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory();
+  });
+  
+  for (const cat of categories) {
+    const catDir = path.join(OUTPUT_DIR, cat);
+    const files = fs.readdirSync(catDir).filter(f => f.endsWith('.png'));
+    for (const file of files) {
+      const match = file.match(/\d+x\d+(.+)_south\.png/);
+      if (match) sprites.add(match[1]);
+    }
+  }
+  
+  return sprites;
+}
+
+// =============================================================================
+// OPTIMIZED PROMPT GENERATION
+// =============================================================================
+
+function generateOptimizedPrompt(building: BuildingInfo): string {
+  const categoryTheme = CATEGORY_COLORS[building.category] || CATEGORY_COLORS.defi;
+  
+  // Get brand colors if available
+  const brandKey = building.protocol?.toLowerCase() || 
+                   building.id.split('_')[0] ||
+                   building.category;
+  const brandColors = BRAND_COLORS[brandKey];
+  
+  const colors = brandColors 
+    ? `${brandColors.primary} (primary), ${brandColors.secondary || categoryTheme.secondary} (secondary), ${brandColors.accent || categoryTheme.accent} (accent)`
+    : `${categoryTheme.primary}, ${categoryTheme.secondary}, ${categoryTheme.accent}`;
+  
+  const sizeDesc = building.footprint.width === 1 && building.footprint.height === 1 ? 'small 1x1' :
+                   building.footprint.width <= 2 && building.footprint.height <= 2 ? 'medium 2x2' :
+                   'large 3x3+';
+  
+  const archHints = getArchitectureHints(building);
+  
+  // Research-backed optimized prompt structure
+  return `Create a single isometric pixel art building sprite for a city builder video game.
 
 CRITICAL STYLE REQUIREMENTS:
-- Isometric projection with 2:1 pixel ratio (45-degree viewing angle)
-- Clean, crisp pixel art style with visible pixels - NOT smooth vector art
-- Single building isolated on TRANSPARENT background (PNG with alpha)
-- Building should be positioned at bottom-center of the canvas
-- Leave significant empty space above the building for the isometric perspective
-- Rich, vibrant colors with clear outlines
-- Consistent with retro city-builder games like SimCity 2000, OpenTTD
-- NO anti-aliasing artifacts - pixel edges should be sharp
-- NO shadows on the ground plane
-- NO people, vehicles, trees, or other objects
-- Building should have depth and 3D appearance in isometric view
-`.trim();
+- Classic 16-bit isometric pixel art style like SimCity 2000 or Pocket City
+- Clean, crisp pixel edges with NO anti-aliasing, NO blur, NO smoothing
+- LIMITED color palette (maximum 20-25 distinct colors)
+- Standard 2:1 isometric diamond perspective (dimetric projection)
+- TRANSPARENT BACKGROUND - just the building, no ground, no shadows
+- Building must be anchored at the BOTTOM of the 512x512 canvas
+- Top-left lighting source for consistent shadows
+- Output size: exactly 512x512 pixels
 
-const NEGATIVE_PROMPT = `
-blurry, low quality, realistic, photorealistic, 3D render CGI,
-people, characters, cars, trees, ground shadows, grass,
-text, watermark, logo, signature, multiple buildings,
-perspective distortion, non-isometric angle, flat 2D,
-smooth gradients, vector art, soft edges, anti-aliased
-`.trim();
+BUILDING DETAILS:
+Name: "${building.name}"
+Size: ${sizeDesc} building (${building.footprint.width}x${building.footprint.height} tiles)
+Category: ${building.category}
+Colors to use: ${colors}
+Architecture style: ${categoryTheme.style}
+Visual theme: ${archHints}
 
-// =============================================================================
-// PROMPT GENERATION
-// =============================================================================
+IMPORTANT:
+- NO text, NO labels, NO logos on the building
+- Use the color palette consistently
+- Make it look like a professional game asset
+- Ensure clean pixel edges suitable for a retro-style city builder
+- The building should be distinctive and recognizable as "${building.name}"`;
+}
 
-function generatePrompt(building: BuildingSprite): string {
-  const dims = TILE_DIMENSIONS[building.footprint] || TILE_DIMENSIONS['2x2'];
-  const categoryColors = CATEGORY_COLORS[building.category] || CATEGORY_COLORS.defi;
+function getArchitectureHints(building: BuildingInfo): string {
+  const id = building.id.toLowerCase();
+  const name = building.name.toLowerCase();
   
-  const colorDescription = building.secondaryColor 
-    ? `Primary color: ${building.brandColor}, Secondary color: ${building.secondaryColor}`
-    : `Primary brand color: ${building.brandColor}`;
+  // Architecture hints based on building characteristics
+  if (id.includes('tower') || id.includes('spire')) return 'tall vertical tower with multiple floors and rooftop details';
+  if (id.includes('vault') || id.includes('bunker') || id.includes('reserve')) return 'fortified vault with thick walls, secure entrance, heavy doors';
+  if (id.includes('fountain') || id.includes('pool')) return 'decorative water feature with basin and flowing water';
+  if (id.includes('monument') || id.includes('memorial') || id.includes('statue')) return 'commemorative statue or obelisk monument';
+  if (id.includes('lab') || id.includes('factory') || id.includes('reactor')) return 'industrial facility with machinery, pipes, glowing elements';
+  if (id.includes('arena') || id.includes('stadium')) return 'large venue with grand entrance, seating areas visible';
+  if (id.includes('cafe') || id.includes('lounge')) return 'cozy establishment with outdoor seating, warm lighting';
+  if (id.includes('museum') || id.includes('gallery')) return 'cultural building with display windows, classical elements';
+  if (id.includes('academy') || id.includes('campus')) return 'educational institution with scholarly architecture';
+  if (id.includes('garden') || id.includes('park')) return 'green space with plants, trees, landscaping';
+  if (id.includes('hq') || id.includes('headquarters') || id.includes('office')) return 'corporate headquarters with prominent entrance, modern design';
+  if (id.includes('ruins') || id.includes('crater')) return 'damaged/destroyed building, broken walls, debris';
+  if (id.includes('yacht') || id.includes('boat')) return 'nautical vessel, maritime elements';
+  if (id.includes('den') || id.includes('enclosure')) return 'cozy dwelling, creature home with warm interior';
+  if (id.includes('plaza') || id.includes('square')) return 'open gathering space with central feature';
+  if (id.includes('mint')) return 'money production facility, industrial bank aesthetic';
+  if (id.includes('terminal') || id.includes('station')) return 'transit hub, arrivals/departures, modern infrastructure';
+  if (id.includes('bridge') || id.includes('gateway') || id.includes('portal')) return 'connecting structure, archway or portal';
+  if (id.includes('billboard') || id.includes('sign')) return 'advertising display, prominent signage structure';
+  if (id.includes('shrine') || id.includes('temple')) return 'sacred/worship building, ornate decorations';
+  if (id.includes('beacon') || id.includes('lighthouse')) return 'glowing beacon tower, signal light at top';
+  if (id.includes('hub') || id.includes('center')) return 'central building with radiating design, connector architecture';
+  if (id.includes('exchange')) return 'trading floor building, financial architecture';
+  if (id.includes('node')) return 'small technical building with blinking lights, servers';
+  if (id.includes('observatory')) return 'dome-topped building, telescope or viewing equipment';
+  if (id.includes('nexus')) return 'interconnected building, glowing energy conduits';
   
-  return `
-${BASE_STYLE_PROMPT}
-
-BUILDING SPECIFICATIONS:
-- Name: ${building.name}
-- Category: ${building.category.toUpperCase()}
-- Grid footprint: ${building.footprint} tiles (${dims.width}x${dims.height} pixels)
-- Icon/Theme: ${building.icon}
-${building.protocol ? `- Protocol: ${building.protocol}` : ''}
-
-COLOR PALETTE:
-${colorDescription}
-Category accent: ${categoryColors.accent}
-
-BUILDING DESCRIPTION:
-${building.description}
-
-STYLE DETAILS:
-${building.styleHints}
-
-Generate a beautiful isometric pixel art building sprite. The building should:
-1. Clearly represent a ${building.name} in a crypto/DeFi themed city
-2. Use the specified brand colors prominently
-3. Have interesting architectural details visible from the isometric angle
-4. Look professional and polished like a game asset
-5. Be on a completely transparent background
-
-Output a ${dims.width}x${dims.height} pixel PNG image with transparency.
-`.trim();
+  // Category-based defaults
+  if (building.category === 'meme') return 'playful, colorful, whimsical design with fun elements';
+  if (building.category === 'defi') return 'modern financial building, glass and steel, professional';
+  if (building.category === 'exchange') return 'trading hub, screens/charts visible, corporate';
+  if (building.category === 'chain') return 'futuristic datacenter, network connectivity visual';
+  if (building.category === 'plasma') return 'sleek modern design, green energy glow accents';
+  if (building.category === 'legends') return 'dramatic monument or historic building';
+  if (building.category === 'ct') return 'modern tech office, social media aesthetic';
+  if (building.category === 'stablecoin') return 'solid bank-like structure, stable and trustworthy';
+  if (building.category === 'infrastructure') return 'technical facility, servers, data processing';
+  if (building.category === 'titan') return 'creature dwelling, cozy cave or den';
+  
+  return 'distinctive crypto-themed architecture';
 }
 
 // =============================================================================
-// API CLIENT
+// IMAGE GENERATION
 // =============================================================================
 
-/**
- * Load a reference image and convert to base64
- */
-function loadReferenceImage(category: string): string | null {
-  const refPaths: Record<string, string> = {
-    residential: path.join(REFERENCE_DIR, 'residential', '3x3limestones_south.png'),
-    commercial: path.join(REFERENCE_DIR, 'commercial', '4x4bookstore_south.png'),
-    landmark: path.join(REFERENCE_DIR, 'landmark', '6x6internet_archive_south.png'),
-  };
-  
-  // Map crypto categories to reference styles
-  const categoryMapping: Record<string, string> = {
-    defi: 'commercial',
-    exchange: 'commercial',
-    chain: 'landmark',
-    ct: 'commercial',
-    meme: 'residential',
-    plasma: 'landmark',
-    stablecoin: 'landmark',
-    infrastructure: 'commercial',
-  };
-  
-  const refCategory = categoryMapping[category] || 'commercial';
-  const refPath = refPaths[refCategory];
-  
-  if (!refPath || !fs.existsSync(refPath)) {
-    console.log(`  No reference image found for ${category}`);
-    return null;
-  }
+async function generateImage(prompt: string, building: BuildingInfo): Promise<Buffer | null> {
+  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
   
   try {
-    const imageBuffer = fs.readFileSync(refPath);
-    return imageBuffer.toString('base64');
-  } catch (error) {
-    console.log(`  Could not load reference: ${(error as Error).message}`);
-    return null;
-  }
-}
-
-async function generateImage(prompt: string, category: string): Promise<Buffer | null> {
-  console.log('  Calling Gemini API (Nano Banana)...');
-  
-  // Load reference image for style consistency
-  const referenceBase64 = loadReferenceImage(category);
-  
-  // Build request parts
-  const parts: Array<{ text?: string; inline_data?: { mime_type: string; data: string } }> = [];
-  
-  // Add reference image if available for style guidance
-  if (referenceBase64) {
-    parts.push({
-      inline_data: {
-        mime_type: 'image/png',
-        data: referenceBase64,
-      }
-    });
-    parts.push({
-      text: `Use this image as a style reference for the isometric pixel art style, perspective, and level of detail. Generate a NEW building in this EXACT same style:\n\n${prompt}`
-    });
-  } else {
-    parts.push({ text: prompt });
-  }
-  
-  try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: parts
-        }],
-        generationConfig: {
-          responseModalities: ['IMAGE'],
+    // Load reference sprite to guide style
+    let parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [];
+    
+    if (fs.existsSync(REFERENCE_SPRITE)) {
+      const refData = fs.readFileSync(REFERENCE_SPRITE).toString('base64');
+      parts.push({
+        inlineData: {
+          mimeType: 'image/png',
+          data: refData,
         }
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`  API Error: ${response.status} - ${errorText}`);
-      return null;
+      });
+      parts.push({
+        text: `Use this reference image as a STYLE GUIDE. Match the exact pixel art style, isometric perspective, color palette approach, and level of detail. The building should look like it belongs in the same game as this reference.\n\nNow create a NEW building:\n\n${prompt}`
+      });
+    } else {
+      parts.push({ text: prompt });
     }
-
-    const data = await response.json() as {
-      candidates?: Array<{
-        content?: {
-          parts?: Array<{
-            text?: string;
-            inlineData?: {
-              mimeType: string;
-              data: string;
-            };
-          }>;
-        };
-      }>;
-      error?: { message: string };
-    };
-
-    if (data.error) {
-      console.error(`  API Error: ${data.error.message}`);
-      return null;
-    }
-
-    // Extract image data from response
-    const candidate = data.candidates?.[0];
+    
+    console.log('   Calling Gemini API...');
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash-exp',
+      contents: parts,
+      config: {
+        responseModalities: ['image', 'text'],
+      },
+    } as any);
+    
+    // Extract image from response
+    const candidate = response.candidates?.[0];
     const responseParts = candidate?.content?.parts || [];
     
     for (const part of responseParts) {
@@ -926,11 +344,12 @@ async function generateImage(prompt: string, category: string): Promise<Buffer |
       }
     }
     
-    console.error('  No image data in response');
+    console.error('   No image data in response');
     return null;
     
-  } catch (error) {
-    console.error(`  Error: ${(error as Error).message}`);
+  } catch (error: unknown) {
+    const err = error as Error & { status?: number; message?: string };
+    console.error(`   API Error: ${err.message || err}`);
     return null;
   }
 }
@@ -945,12 +364,12 @@ function ensureDir(dir: string): void {
   }
 }
 
-async function saveImage(imageBuffer: Buffer, building: BuildingSprite): Promise<string> {
+function saveImage(imageBuffer: Buffer, building: BuildingInfo): string {
   const categoryDir = path.join(OUTPUT_DIR, building.category);
   ensureDir(categoryDir);
   
-  // Save with footprint in filename for clarity
-  const filename = `${building.footprint}${building.id}_south.png`;
+  const footprint = `${building.footprint.width}x${building.footprint.height}`;
+  const filename = `${footprint}${building.id}_south.png`;
   const filepath = path.join(categoryDir, filename);
   
   fs.writeFileSync(filepath, imageBuffer);
@@ -958,59 +377,66 @@ async function saveImage(imageBuffer: Buffer, building: BuildingSprite): Promise
 }
 
 // =============================================================================
-// MAIN GENERATION LOGIC
+// CLI
 // =============================================================================
 
 interface CLIOptions {
-  buildingId?: string;
-  category?: string;
-  dryRun: boolean;
   limit?: number;
+  category?: string;
+  building?: string;
+  dryRun: boolean;
+  testOne: boolean;
 }
 
 function parseArgs(): CLIOptions {
   const args = process.argv.slice(2);
-  const options: CLIOptions = { dryRun: false };
+  const options: CLIOptions = { dryRun: false, testOne: false };
 
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
-      case '--building':
-      case '-b':
-        options.buildingId = args[++i];
+      case '--limit':
+      case '-l':
+        options.limit = parseInt(args[++i], 10);
         break;
       case '--category':
       case '-c':
         options.category = args[++i];
         break;
+      case '--building':
+      case '-b':
+        options.building = args[++i];
+        break;
       case '--dry-run':
       case '-d':
         options.dryRun = true;
         break;
-      case '--limit':
-      case '-l':
-        options.limit = parseInt(args[++i], 10);
+      case '--test-one':
+      case '-t':
+        options.testOne = true;
         break;
       case '--help':
       case '-h':
         console.log(`
-Crypto Building Sprite Generator
+Crypto Sprite Generator
 
 Usage:
-  npx ts-node scripts/generateCryptoSprites.ts [options]
+  GEMINI_API_KEY=key npx ts-node scripts/generateCryptoSprites.ts [options]
 
 Options:
-  --building, -b <id>    Generate a specific building by ID
-  --category, -c <name>  Generate all buildings in a category
-  --limit, -l <n>        Limit number of buildings to generate
-  --dry-run, -d          Show prompts without generating
-  --help, -h             Show this help
+  --limit, -l <n>       Maximum number to generate
+  --category, -c <name> Only generate for specific category  
+  --building, -b <id>   Generate specific building by ID
+  --dry-run, -d         Show what would be generated
+  --test-one, -t        Generate just one test sprite
+  --help, -h            Show this help
 
-Categories: defi, exchange, chain, ct, meme, plasma, stablecoin, infrastructure
+Categories: defi, exchange, chain, ct, meme, plasma, stablecoin, infrastructure, legends, titan
 
 Examples:
-  npx ts-node scripts/generateCryptoSprites.ts --category defi --limit 5
-  npx ts-node scripts/generateCryptoSprites.ts --building uniswap_exchange
   npx ts-node scripts/generateCryptoSprites.ts --dry-run
+  npx ts-node scripts/generateCryptoSprites.ts --test-one
+  npx ts-node scripts/generateCryptoSprites.ts --category plasma
+  npx ts-node scripts/generateCryptoSprites.ts --building uniswap_exchange
         `);
         process.exit(0);
     }
@@ -1019,83 +445,125 @@ Examples:
   return options;
 }
 
+// =============================================================================
+// MAIN
+// =============================================================================
+
 async function main(): Promise<void> {
   const options = parseArgs();
   
   console.log('🎨 Crypto Building Sprite Generator');
   console.log('====================================\n');
   
-  // Filter buildings
-  let buildings = CRYPTO_BUILDINGS;
+  const content = fs.readFileSync(BUILDINGS_FILE, 'utf-8');
+  let buildings = extractAllBuildings(content);
+  const existingSprites = getExistingSprites();
   
-  if (options.buildingId) {
-    buildings = buildings.filter(b => b.id === options.buildingId);
+  console.log(`📊 Found ${buildings.length} total buildings`);
+  console.log(`   ${existingSprites.size} already have sprites\n`);
+  
+  // Filter based on options
+  if (options.building) {
+    buildings = buildings.filter(b => b.id === options.building);
     if (buildings.length === 0) {
-      console.error(`❌ Building not found: ${options.buildingId}`);
-      console.log('\nAvailable buildings:');
-      CRYPTO_BUILDINGS.forEach(b => console.log(`  - ${b.id} (${b.category})`));
+      console.error(`Building '${options.building}' not found`);
       process.exit(1);
     }
+  } else if (!options.testOne) {
+    // Only generate for buildings without sprites
+    buildings = buildings.filter(b => !existingSprites.has(b.id));
   }
   
   if (options.category) {
     buildings = buildings.filter(b => b.category === options.category);
-    if (buildings.length === 0) {
-      console.error(`❌ No buildings in category: ${options.category}`);
-      const categories = [...new Set(CRYPTO_BUILDINGS.map(b => b.category))];
-      console.log('\nAvailable categories:', categories.join(', '));
-      process.exit(1);
-    }
+    console.log(`   Filtered to ${buildings.length} in category: ${options.category}`);
+  }
+  
+  if (options.testOne) {
+    // Pick a representative building for testing
+    const testBuilding = buildings.find(b => b.id === 'uniswap_exchange') || buildings[0];
+    buildings = testBuilding ? [testBuilding] : [];
+    console.log(`   Test mode: generating only "${testBuilding?.name}"`);
   }
   
   if (options.limit) {
     buildings = buildings.slice(0, options.limit);
+    console.log(`   Limited to ${buildings.length} buildings\n`);
   }
   
-  console.log(`📦 Generating ${buildings.length} building sprite(s)\n`);
+  if (buildings.length === 0) {
+    console.log('✅ All buildings have sprites!');
+    return;
+  }
+  
+  // Show category breakdown
+  const byCategory = buildings.reduce((acc, b) => {
+    acc[b.category] = (acc[b.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  console.log('📦 Buildings to generate:');
+  for (const [cat, count] of Object.entries(byCategory)) {
+    console.log(`   ${cat}: ${count}`);
+  }
+  console.log('');
   
   if (options.dryRun) {
-    console.log('🔍 DRY RUN - Showing prompts only\n');
+    console.log('🔍 DRY RUN - Showing prompts\n');
+    for (const building of buildings.slice(0, 3)) {
+      console.log(`\n📍 ${building.name} (${building.id})`);
+      console.log(`   Category: ${building.category}`);
+      console.log(`   Footprint: ${building.footprint.width}x${building.footprint.height}`);
+      const prompt = generateOptimizedPrompt(building);
+      console.log(`   Prompt:\n${prompt.split('\n').map(l => '   ' + l).join('\n')}`);
+    }
+    if (buildings.length > 3) {
+      console.log(`\n... and ${buildings.length - 3} more buildings`);
+    }
+    return;
   }
   
-  ensureDir(OUTPUT_DIR);
-  
+  // Generate sprites
   let successCount = 0;
   let failCount = 0;
+  const failedBuildings: string[] = [];
   
-  for (const building of buildings) {
-    console.log(`🏗️  ${building.name} (${building.id})`);
+  for (let i = 0; i < buildings.length; i++) {
+    const building = buildings[i];
+    console.log(`\n[${i + 1}/${buildings.length}] 🏗️  ${building.name}`);
     console.log(`   Category: ${building.category}`);
-    console.log(`   Footprint: ${building.footprint}`);
-    console.log(`   Color: ${building.brandColor}`);
+    console.log(`   Footprint: ${building.footprint.width}x${building.footprint.height}`);
     
-    const prompt = generatePrompt(building);
-    
-    if (options.dryRun) {
-      console.log(`\n   PROMPT:\n   ${prompt.split('\n').slice(0, 10).join('\n   ')}...`);
-      console.log('   ✅ Would generate\n');
-      continue;
-    }
-    
-    const imageBuffer = await generateImage(prompt, building.category);
+    const prompt = generateOptimizedPrompt(building);
+    const imageBuffer = await generateImage(prompt, building);
     
     if (imageBuffer) {
-      const filepath = await saveImage(imageBuffer, building);
-      console.log(`   ✅ Saved: ${filepath}\n`);
+      const filepath = saveImage(imageBuffer, building);
+      const sizeKB = (imageBuffer.length / 1024).toFixed(1);
+      console.log(`   ✅ Saved: ${path.basename(filepath)} (${sizeKB}KB)`);
       successCount++;
     } else {
-      console.log(`   ❌ Failed to generate\n`);
+      console.log(`   ❌ Failed to generate`);
       failCount++;
+      failedBuildings.push(building.id);
     }
     
-    // Rate limiting - wait between requests
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Rate limiting - 2 seconds between requests
+    if (i < buildings.length - 1) {
+      console.log(`   Waiting 2s...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
   }
   
-  console.log('====================================');
+  console.log('\n====================================');
   console.log(`✨ Generation complete!`);
   console.log(`   Success: ${successCount}`);
   console.log(`   Failed: ${failCount}`);
+  
+  if (failedBuildings.length > 0) {
+    console.log(`\n❌ Failed buildings:`);
+    failedBuildings.forEach(id => console.log(`   - ${id}`));
+  }
 }
 
 main().catch(error => {

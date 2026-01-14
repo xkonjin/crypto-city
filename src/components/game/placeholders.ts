@@ -430,10 +430,9 @@ export const PLACEHOLDER_COLORS: Record<string, PlaceholderColor> = {
   default: { top: '#9ca3af', left: '#6b7280', right: '#d1d5db', height: 0.6 },
 };
 
-// CRYPTO_SPRITES_ENABLED: Set to false to use colored placeholders instead of AI sprites
-// The AI-generated sprites have issues (wrong size, black backgrounds, text)
-// Enable once proper sprites are available
-const CRYPTO_SPRITES_ENABLED = false;
+// CRYPTO_SPRITES_ENABLED: Set to true to use AI sprites
+// Sprites have been resized to 512x512 with background removal
+const CRYPTO_SPRITES_ENABLED = true;
 
 export function drawPlaceholderBuilding(
   ctx: CanvasRenderingContext2D,
