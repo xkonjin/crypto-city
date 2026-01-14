@@ -1,15 +1,50 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Dismiss any Next.js error overlays that might be blocking the UI
- * These appear in dev mode when API calls fail (e.g., CoinGecko rate limits)
+ * Set up localStorage to skip onboarding dialogs and disable blocking UI
+ * This prevents Tutorial, Terminology Onboarding, Daily Rewards dialogs,
+ * and the Cobie floating head from blocking UI interactions during tests
  */
-async function dismissErrorOverlays(page: import("@playwright/test").Page) {
+async function setupLocalStorage(page: import("@playwright/test").Page) {
+  await page.addInitScript(() => {
+    // Tutorial system
+    localStorage.setItem('cryptocity-tutorial-dismissed', 'true');
+    localStorage.setItem('cryptocity-tutorial-progress', '100');
+    // Terminology onboarding
+    localStorage.setItem('cryptocity-terminology-onboarding-shown', 'true');
+    localStorage.setItem('cryptocity-terminology-mode', 'crypto');
+    // Daily rewards - mark as claimed today
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem('cryptoCityDailyRewards', JSON.stringify({
+      lastClaimDate: today,
+      streak: 1,
+      totalClaimed: 100
+    }));
+    // Tip system - disable tips
+    localStorage.setItem('cryptocity-tips-dismissed', 'true');
+    // Disable Cobie floating head assistant (blocks clicks at z-index 9998)
+    localStorage.setItem('cryptocity-cobie-head-settings', JSON.stringify({
+      enabled: false,
+      position: 'bottom-left',
+      scale: 'medium',
+      talkativeness: 'normal',
+      showIdleBehaviors: false
+    }));
+  });
+}
+
+/**
+ * Dismiss any overlays that might be blocking the UI
+ * - Next.js error overlays (dev mode API failures)
+ * - Tutorial dialogs
+ * - Terminology onboarding
+ * - Daily rewards dialogs
+ */
+async function dismissOverlays(page: import("@playwright/test").Page) {
   try {
     // Check for Next.js error dialog and close it
     const errorDialog = page.locator('dialog[aria-label*="Console"]').first();
     if (await errorDialog.isVisible({ timeout: 1000 }).catch(() => false)) {
-      // Press Escape to close the dialog
       await page.keyboard.press("Escape");
       await page.waitForTimeout(500);
     }
@@ -20,6 +55,28 @@ async function dismissErrorOverlays(page: import("@playwright/test").Page) {
       const collapseBtn = page.locator('button[aria-label*="Collapse"]').first();
       if (await collapseBtn.isVisible({ timeout: 500 }).catch(() => false)) {
         await collapseBtn.click();
+      }
+    }
+    
+    // Dismiss any open dialogs (Tutorial, Daily Rewards, Terminology, etc.)
+    // Try pressing Escape multiple times to close stacked dialogs
+    for (let i = 0; i < 3; i++) {
+      const dialogOverlay = page.locator('[data-state="open"][data-radix-dialog-overlay], [role="dialog"]').first();
+      if (await dialogOverlay.isVisible({ timeout: 500 }).catch(() => false)) {
+        await page.keyboard.press("Escape");
+        await page.waitForTimeout(300);
+      } else {
+        break;
+      }
+    }
+    
+    // Also try clicking any "Skip" or "Close" or "Got it" buttons
+    const skipButtons = ['Skip', 'Close', 'Got it', 'Continue', 'Dismiss', 'X'];
+    for (const text of skipButtons) {
+      const btn = page.locator(`button:has-text("${text}")`).first();
+      if (await btn.isVisible({ timeout: 200 }).catch(() => false)) {
+        await btn.click({ force: true }).catch(() => {});
+        await page.waitForTimeout(200);
       }
     }
   } catch {
@@ -64,10 +121,14 @@ async function startGame(page: import("@playwright/test").Page) {
       await page.waitForTimeout(4000);
     }
   }
+  
+  // Dismiss any dialogs that appeared (Tutorial, Daily Rewards, etc.)
+  await dismissOverlays(page);
 }
 
 test.describe("Crypto City Game", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -197,6 +258,7 @@ test.describe("Crypto City Game", () => {
 
 test.describe("Crypto Economy Features", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -230,6 +292,7 @@ test.describe("Crypto Economy Features", () => {
 
 test.describe("Building Placement", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -378,6 +441,7 @@ test.describe("Home Screen", () => {
 
 test.describe("Crypto Buildings", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -396,8 +460,8 @@ test.describe("Crypto Buildings", () => {
     const panelHeading = page.locator("text=/Crypto Buildings/i").first();
     await expect(panelHeading).toBeVisible({ timeout: 5000 });
 
-    // Check that total count is displayed (118 buildings with legends category)
-    const totalCount = page.locator("text=/\\d+ total/i").first();
+    // Check that building count is displayed (127 buildings)
+    const totalCount = page.locator("text=/\\d+ buildings/i").first();
     await expect(totalCount).toBeVisible({ timeout: 5000 });
   });
 
@@ -430,11 +494,20 @@ test.describe("Crypto Buildings", () => {
   test("should select a crypto building", async ({ page }) => {
     await page.waitForTimeout(2000);
 
+    // Use sidebar button with specific text pattern
     const cryptoButton = page
-      .locator("button")
-      .filter({ hasText: /Crypto Buildings/i })
+      .locator('button:has-text("₿ Crypto Buildings")')
       .first();
-    await cryptoButton.click();
+    await expect(cryptoButton).toBeVisible({ timeout: 10000 });
+    await cryptoButton.click({ force: true });
+    await page.waitForTimeout(500);
+
+    // Categories are collapsed by default, expand DeFi first
+    const defiCategory = page
+      .locator("button")
+      .filter({ hasText: /DeFi/i })
+      .first();
+    await defiCategory.click({ force: true });
     await page.waitForTimeout(500);
 
     const aaveBuilding = page
@@ -442,7 +515,7 @@ test.describe("Crypto Buildings", () => {
       .filter({ hasText: /Aave Lending Tower/i })
       .first();
     await expect(aaveBuilding).toBeVisible({ timeout: 5000 });
-    await aaveBuilding.click();
+    await aaveBuilding.click({ force: true });
     await page.waitForTimeout(300);
 
     const buildingInfo = page.locator("text=/Aave/i");
@@ -455,18 +528,27 @@ test.describe("Crypto Buildings", () => {
     const initialJobs = page.locator("text=/Jobs/i").first();
     await expect(initialJobs).toBeVisible({ timeout: 10000 });
 
+    // Use sidebar button with specific text pattern
     const cryptoButton = page
-      .locator("button")
-      .filter({ hasText: /Crypto Buildings/i })
+      .locator('button:has-text("₿ Crypto Buildings")')
       .first();
-    await cryptoButton.click();
+    await expect(cryptoButton).toBeVisible({ timeout: 10000 });
+    await cryptoButton.click({ force: true });
+    await page.waitForTimeout(500);
+
+    // Categories are collapsed by default, expand DeFi first
+    const defiCategory = page
+      .locator("button")
+      .filter({ hasText: /DeFi/i })
+      .first();
+    await defiCategory.click({ force: true });
     await page.waitForTimeout(500);
 
     const aaveBuilding = page
       .locator("button")
       .filter({ hasText: /Aave Lending Tower/i })
       .first();
-    await aaveBuilding.click();
+    await aaveBuilding.click({ force: true });
     await page.waitForTimeout(500);
 
     const canvas = page.locator("canvas").first();
@@ -483,29 +565,33 @@ test.describe("Crypto Buildings", () => {
   test("should switch between crypto building categories", async ({ page }) => {
     await page.waitForTimeout(2000);
 
+    // Use sidebar button with specific text pattern
     const cryptoButton = page
-      .locator("button")
-      .filter({ hasText: /Crypto Buildings/i })
+      .locator('button:has-text("₿ Crypto Buildings")')
       .first();
-    await cryptoButton.click();
+    await expect(cryptoButton).toBeVisible({ timeout: 10000 });
+    await cryptoButton.click({ force: true });
     await page.waitForTimeout(500);
 
-    const exchangeTab = page
+    // Click Exchange category to expand it
+    const exchangeCategory = page
       .locator("button")
       .filter({ hasText: /Exchange/i })
       .first();
-    await exchangeTab.click();
-    await page.waitForTimeout(300);
+    await exchangeCategory.click({ force: true });
+    await page.waitForTimeout(500);
 
-    const binanceBuilding = page
+    // Now we should see exchange buildings like Binance, Coinbase, Kraken
+    const exchangeBuilding = page
       .locator("text=/Binance|Coinbase|Kraken/i")
       .first();
-    await expect(binanceBuilding).toBeVisible({ timeout: 5000 });
+    await expect(exchangeBuilding).toBeVisible({ timeout: 5000 });
   });
 });
 
 test.describe("Game Speed Controls", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -546,6 +632,7 @@ test.describe("Game Speed Controls", () => {
 
 test.describe("Zoning System", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -579,6 +666,7 @@ test.describe("Zoning System", () => {
 
 test.describe("Road Placement", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -611,6 +699,7 @@ test.describe("Road Placement", () => {
 
 test.describe("Bulldoze Tool", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -640,6 +729,7 @@ test.describe("Bulldoze Tool", () => {
 
 test.describe("Panel System", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -676,6 +766,7 @@ test.describe("Panel System", () => {
 
 test.describe("Save System", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -724,6 +815,7 @@ test.describe("Save System", () => {
 
 test.describe("Date and Time Display", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -743,6 +835,7 @@ test.describe("Date and Time Display", () => {
 
 test.describe("Demand Indicators", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -770,6 +863,7 @@ test.describe("Demand Indicators", () => {
 
 test.describe("Data Overlay System", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -867,6 +961,7 @@ test.describe("Data Overlay System", () => {
 
 test.describe("Statistics Panel", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -918,7 +1013,7 @@ test.describe("Statistics Panel", () => {
     await page.waitForTimeout(2000);
     
     // Dismiss any error overlays that might be blocking UI
-    await dismissErrorOverlays(page);
+    await dismissOverlays(page);
 
     const statsButton = page
       .locator('[title*="Statistics"], button:has-text("Statistics")')
@@ -928,7 +1023,7 @@ test.describe("Statistics Panel", () => {
       .catch(() => false);
 
     if (isVisible) {
-      await dismissErrorOverlays(page);
+      await dismissOverlays(page);
       await statsButton.click({ force: true });
       await page.waitForTimeout(1000);
 
@@ -1018,7 +1113,7 @@ test.describe("Statistics Panel", () => {
     await page.waitForTimeout(2000);
     
     // Dismiss any error overlays that might be blocking UI
-    await dismissErrorOverlays(page);
+    await dismissOverlays(page);
 
     const statsButton = page
       .locator('[title*="Statistics"], button:has-text("Statistics")')
@@ -1028,7 +1123,7 @@ test.describe("Statistics Panel", () => {
       .catch(() => false);
 
     if (isVisible) {
-      await dismissErrorOverlays(page);
+      await dismissOverlays(page);
       await statsButton.click({ force: true });
       await page.waitForTimeout(1000);
 
@@ -1054,6 +1149,7 @@ test.describe("Statistics Panel", () => {
 
 test.describe("Budget Panel", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -1105,6 +1201,7 @@ test.describe("Budget Panel", () => {
 
 test.describe("Advisors Panel", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -1164,6 +1261,7 @@ test.describe("Advisors Panel", () => {
 
 test.describe("Building Rotation", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -1202,6 +1300,7 @@ test.describe("Building Rotation", () => {
 
 test.describe("News Ticker", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
@@ -1232,6 +1331,7 @@ test.describe("News Ticker", () => {
 
 test.describe("Settings Panel", () => {
   test.beforeEach(async ({ page }) => {
+    await setupLocalStorage(page);
     await page.goto("/");
     await startGame(page);
   });
