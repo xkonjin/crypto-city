@@ -384,6 +384,7 @@ export const CRYPTO_CATEGORY_COLORS: Record<CryptoCategory, PlaceholderColor> = 
   infrastructure: { top: '#6366f1', left: '#4f46e5', right: '#818cf8', height: 1.2 },
   legends: { top: '#f97316', left: '#ea580c', right: '#fb923c', height: 1.4 },
   titan: { top: '#8b5cf6', left: '#7c3aed', right: '#a78bfa', height: 1.3 },  // Purple theme for Titan buildings
+  ingested: { top: '#ec4899', left: '#db2777', right: '#f472b6', height: 1.2 }, // Pink theme for user-generated buildings
 };
 
 export const PLACEHOLDER_COLORS: Record<string, PlaceholderColor> = {

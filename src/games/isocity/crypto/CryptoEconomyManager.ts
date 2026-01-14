@@ -364,6 +364,7 @@ export class CryptoEconomyManager {
       infrastructure: 0,
       legends: 0,
       titan: 0,
+      ingested: 0,
     };
     
     for (const building of this.placedBuildings.values()) {

@@ -28,6 +28,7 @@ export const ZONE_COLORS: Record<CryptoCategory, string> = {
   stablecoin: "rgba(34, 211, 238, 0.3)", // Cyan
   legends: "rgba(217, 70, 239, 0.3)", // Fuchsia
   titan: "rgba(124, 58, 237, 0.3)", // Violet
+  ingested: "rgba(236, 72, 153, 0.3)", // Pink for user-generated
 };
 
 /** Solid zone colors (for legend display) */
@@ -42,6 +43,7 @@ export const ZONE_COLORS_SOLID: Record<CryptoCategory, string> = {
   stablecoin: "#22D3EE", // Cyan
   legends: "#D946EF", // Fuchsia
   titan: "#7C3AED", // Violet
+  ingested: "#EC4899", // Pink for user-generated
 };
 
 /** Category display names */
@@ -56,6 +58,7 @@ export const CATEGORY_NAMES: Record<CryptoCategory, string> = {
   stablecoin: "Stablecoin",
   legends: "Legends",
   titan: "Titan",
+  ingested: "Custom",
 };
 
 // =============================================================================

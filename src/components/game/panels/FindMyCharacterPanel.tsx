@@ -41,22 +41,36 @@ export function FindMyCharacterPanel({
   const [ingestedNPCs, setIngestedNPCs] = useState<PersistedIngestedNPC[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedNPC, setSelectedNPC] = useState<string | null>(null);
+  const [loadTrigger, setLoadTrigger] = useState(0);
 
   // Load ingested NPCs from IndexedDB
-  const loadNPCs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const npcs = await IngestedNPCStore.getAll();
-      setIngestedNPCs(npcs.sort((a, b) => b.createdAt - a.createdAt));
-    } catch (error) {
-      console.error('[FindMyCharacter] Failed to load NPCs:', error);
-    }
-    setLoading(false);
-  }, []);
-
   useEffect(() => {
-    loadNPCs();
-  }, [loadNPCs]);
+    let cancelled = false;
+    
+    async function load() {
+      setLoading(true);
+      try {
+        const npcs = await IngestedNPCStore.getAll();
+        if (!cancelled) {
+          setIngestedNPCs(npcs.sort((a, b) => b.createdAt - a.createdAt));
+        }
+      } catch (error) {
+        console.error('[FindMyCharacter] Failed to load NPCs:', error);
+      }
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }
+    
+    load();
+    
+    return () => { cancelled = true; };
+  }, [loadTrigger]);
+  
+  // Trigger a reload
+  const loadNPCs = useCallback(() => {
+    setLoadTrigger(t => t + 1);
+  }, []);
 
   // Handle finding a character
   const handleFind = useCallback(

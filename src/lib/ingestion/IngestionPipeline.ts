@@ -33,6 +33,10 @@ import { extractPersonalityFromProfile } from './PersonalityExtractor';
 import { spawnIngestedNPC, type IngestedProfile } from './spawnIngestedNPC';
 import { AvatarQueue } from './avatarQueue';
 import IngestedNPCStore, { type PersistedIngestedNPC } from './IngestedNPCStore';
+import IngestedEntityStore, { type IngestionRecord } from './IngestedEntityStore';
+import { detectEntityType, type EntityType, type EntityTypeResult } from './EntityTypeDetector';
+import { generateBuilding, type IngestedBuildingDefinition } from './BuildingGenerator';
+import IngestedBuildingStore, { type PersistedIngestedBuilding } from './IngestedBuildingStore';
 
 // =============================================================================
 // TYPES
@@ -98,7 +102,9 @@ export type IngestionErrorCode =
   | 'HOUSING_ASSIGNMENT_FAILED'
   | 'WALLET_CREATION_FAILED'
   | 'SPAWN_FAILED'
+  | 'BUILDING_GENERATION_FAILED'
   | 'RATE_LIMITED'
+  | 'DUPLICATE'
   | 'CANCELLED';
 
 /**
@@ -123,6 +129,12 @@ export interface IngestionOptions {
   gridSize?: number;
   /** Force specific spawn position */
   spawnPosition?: { x: number; y: number };
+  /** Force entity type (skip auto-detection) */
+  forceEntityType?: EntityType;
+  /** Whether to generate building for companies (default: true) */
+  generateBuilding?: boolean;
+  /** How to handle duplicates: 'skip' | 'update' | 'force' */
+  duplicateHandling?: 'skip' | 'update' | 'force';
 }
 
 /**
@@ -138,7 +150,25 @@ export interface IngestionPreview {
   dialogueSeeds: string[];
   personality: NPCPersonality;
   confidence: number;
+  /** Detected entity type */
+  entityType: EntityTypeResult;
+  /** Whether this username has already been ingested */
+  isDuplicate: boolean;
+  /** Existing record if duplicate */
+  existingRecord?: IngestionRecord;
 }
+
+/**
+ * Extended ingestion result for company ingestion (includes building)
+ */
+export interface CompanyIngestionSuccess extends IngestionSuccess {
+  /** Generated building definition */
+  building?: IngestedBuildingDefinition;
+  /** Entity type detected */
+  entityType: EntityType;
+}
+
+export type ExtendedIngestionResult = IngestionSuccess | CompanyIngestionSuccess | IngestionFailure;
 
 // =============================================================================
 // RATE LIMITING
@@ -234,6 +264,14 @@ export async function previewIngestion(
   // Extract personality
   const traits = await extractPersonalityFromProfile(profile, options.extractionOptions);
 
+  // Detect entity type
+  const entityType = options.forceEntityType 
+    ? { type: options.forceEntityType, confidence: 1, signals: {} as EntityTypeResult['signals'], reason: 'Forced by user' }
+    : detectEntityType(profile);
+  
+  // Check for duplicates
+  const duplicationCheck = await IngestedEntityStore.checkDuplication(cleanUsername);
+  
   return {
     username: profile.username,
     displayName: profile.displayName,
@@ -244,6 +282,9 @@ export async function previewIngestion(
     dialogueSeeds: traits.dialogueSeeds,
     personality: traits.personality,
     confidence: traits.confidence,
+    entityType,
+    isDuplicate: duplicationCheck.isDuplicate,
+    existingRecord: duplicationCheck.existingRecord,
   };
 }
 
@@ -281,6 +322,21 @@ export async function ingestXProfile(
 
   // Default grid to null if undefined
   const gridValue = grid ?? null;
+  
+  // Check for duplicates (unless forcing)
+  const duplicateHandling = options.duplicateHandling || 'skip';
+  if (duplicateHandling !== 'force') {
+    const dupeCheck = await IngestedEntityStore.checkDuplication(cleanUsername);
+    if (dupeCheck.isDuplicate && duplicateHandling === 'skip') {
+      return {
+        success: false,
+        error: `@${cleanUsername} has already been ingested. Use "force" to regenerate.`,
+        code: 'DUPLICATE',
+        stage: 'idle',
+        duration: Date.now() - startTime,
+      };
+    }
+  }
 
   try {
     // ==========
@@ -441,7 +497,59 @@ export async function ingestXProfile(
     }
 
     // ==========
-    // STAGE 7: PERSIST TO INDEXEDDB
+    // STAGE 7: DETECT ENTITY TYPE & GENERATE BUILDING (if company)
+    // ==========
+    const entityType = options.forceEntityType || detectEntityType(profile).type;
+    let building: IngestedBuildingDefinition | undefined;
+    
+    // Generate building for companies/protocols if enabled
+    const shouldGenerateBuilding = 
+      options.generateBuilding !== false && 
+      (entityType === 'company' || entityType === 'protocol');
+    
+    if (shouldGenerateBuilding) {
+      updateProgress('spawning', 88, 'Generating company building...', onProgress);
+      
+      try {
+        const buildingResult = await generateBuilding({ profile });
+        
+        if (buildingResult.success && buildingResult.buildingDefinition) {
+          building = buildingResult.buildingDefinition;
+          
+          // Persist the building
+          const persistedBuilding: PersistedIngestedBuilding = {
+            buildingId: building.id,
+            profileId: profile.id,
+            username: profile.username.toLowerCase(),
+            name: building.name,
+            category: 'ingested',
+            footprint: building.footprint,
+            icon: building.icon,
+            tier: building.crypto.tier,
+            chain: building.crypto.chain,
+            description: building.crypto.description,
+            cost: building.cost,
+            effects: building.crypto.effects,
+            spriteBase64: buildingResult.spriteBase64 || '',
+            spriteBlobUrl: buildingResult.spriteBlobUrl,
+            profileImageUrl: profile.profileImageUrl,
+            ingestedAt: Date.now(),
+            lastUpdatedAt: Date.now(),
+            isPlaced: false,
+            placementCount: 0,
+          };
+          await IngestedBuildingStore.save(persistedBuilding);
+          
+          console.log(`[Ingestion] Generated building: ${building.name}`);
+        }
+      } catch (buildingError) {
+        console.warn('[Ingestion] Building generation failed:', buildingError);
+        // Don't fail the whole ingestion if building generation fails
+      }
+    }
+
+    // ==========
+    // STAGE 8: PERSIST TO INDEXEDDB
     // ==========
     updateProgress('completed', 95, 'Saving to database...', onProgress);
 
@@ -463,12 +571,42 @@ export async function ingestXProfile(
         x402WalletAddress,
       };
       await IngestedNPCStore.save(persistedNPC);
+      
+      // Save to unified entity registry
+      const ingestionRecord: IngestionRecord = {
+        username: profile.username.toLowerCase(),
+        profileId: profile.id,
+        entityType,
+        npcId: npc.id,
+        buildingId: building?.id,
+        ingestedAt: Date.now(),
+        lastCheckedAt: Date.now(),
+        displayName: profile.displayName,
+        profileImageUrl: profile.profileImageUrl,
+      };
+      await IngestedEntityStore.save(ingestionRecord);
     } catch (persistError) {
       console.warn('[Ingestion] Failed to persist NPC:', persistError);
       // Don't fail the whole ingestion if persistence fails
     }
 
-    updateProgress('completed', 100, `@${cleanUsername} is now a citizen!`, onProgress);
+    const completionMessage = building 
+      ? `@${cleanUsername} is now a citizen with ${building.name}!`
+      : `@${cleanUsername} is now a citizen!`;
+    updateProgress('completed', 100, completionMessage, onProgress);
+
+    // Return extended result for companies
+    if (building) {
+      return {
+        success: true,
+        npc,
+        profile,
+        traits,
+        duration: Date.now() - startTime,
+        building,
+        entityType,
+      } as CompanyIngestionSuccess;
+    }
 
     return {
       success: true,
@@ -610,3 +748,19 @@ export async function ingestCuratedCTProfiles(
 
   return batchIngestXProfiles([...CURATED_CT_PROFILES], mockOptions);
 }
+
+// =============================================================================
+// RE-EXPORTS FOR CONVENIENCE
+// =============================================================================
+
+export { detectEntityType, isKnownProtocol, suggestBuildingCategory } from './EntityTypeDetector';
+export type { EntityType, EntityTypeResult } from './EntityTypeDetector';
+
+export { generateBuilding } from './BuildingGenerator';
+export type { IngestedBuildingDefinition, BuildingGenerationResult } from './BuildingGenerator';
+
+export { default as IngestedEntityStore } from './IngestedEntityStore';
+export type { IngestionRecord, DuplicationCheckResult } from './IngestedEntityStore';
+
+export { default as IngestedBuildingStore } from './IngestedBuildingStore';
+export type { PersistedIngestedBuilding } from './IngestedBuildingStore';
