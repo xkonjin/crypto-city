@@ -13,9 +13,67 @@
  */
 
 import type { CryptoNPC, Occupation, NPCActivity } from '@/games/isocity/types/npc';
-import type { PersonalityArchetype } from './personality';
+import type { PersonalityArchetype, ARCHETYPE_DESCRIPTIONS } from './personality';
 import type { EpisodicMemory } from './memory';
 import type { Relationship } from './relationships';
+import { NPCDetailLevel } from './LODManager';
+
+// =============================================================================
+// LLM THOUGHT TYPES (Issue #212)
+// =============================================================================
+
+/**
+ * Configuration for LLM-powered thought generation
+ */
+export interface LLMThoughtConfig {
+  /** Whether LLM thought generation is enabled */
+  enabled: boolean;
+  /** LLM provider to use */
+  provider: 'openai' | 'anthropic' | 'mock' | 'local';
+  /** API endpoint (optional, uses default if not provided) */
+  apiEndpoint?: string;
+  /** API key (required for non-mock providers) */
+  apiKey?: string;
+  /** Model to use */
+  model?: string;
+  /** Max tokens for thought generation */
+  maxTokens: number;
+  /** Temperature for generation (0-1) */
+  temperature: number;
+  /** Cooldown between LLM calls per NPC (ms) */
+  cooldownMs: number;
+  /** Rate limiting configuration */
+  rateLimit?: {
+    requestsPerMinute: number;
+    tokensPerDay: number;
+  };
+}
+
+/**
+ * Request for LLM thought generation
+ */
+export interface LLMThoughtRequest {
+  npcId: string;
+  personality: PersonalityArchetype | string;
+  context: ThoughtContext;
+  previousThoughts: string[];
+}
+
+/**
+ * Response from LLM thought generation
+ */
+export interface LLMThoughtResponse {
+  /** The generated thought */
+  thought: string;
+  /** Detected emotion in the thought */
+  emotion: string;
+  /** Confidence score (0-1) */
+  confidence: number;
+  /** Whether LLM was actually used (vs fallback) */
+  usedLLM: boolean;
+  /** Tokens used (if LLM was used) */
+  tokensUsed?: number;
+}
 
 // =============================================================================
 // TYPES
@@ -236,6 +294,71 @@ const MARKET_THOUGHTS: Record<string, Record<string, string[]>> = {
 };
 
 // =============================================================================
+// LLM THOUGHT CONSTANTS (Issue #212)
+// =============================================================================
+
+/** Default LLM configuration */
+const DEFAULT_LLM_CONFIG: LLMThoughtConfig = {
+  enabled: false,
+  provider: 'mock',
+  maxTokens: 50,
+  temperature: 0.8,
+  cooldownMs: 5000,
+  rateLimit: {
+    requestsPerMinute: 30,
+    tokensPerDay: 50000,
+  },
+};
+
+/** System prompt for LLM thought generation */
+const LLM_THOUGHT_SYSTEM_PROMPT = `You are generating internal thoughts for an NPC in CryptoCity, a crypto-themed city builder game.
+
+Generate a single SHORT thought (1-2 sentences max) that:
+- Matches the NPC's personality archetype and speaking style
+- References their current context (market conditions, nearby people, needs)
+- Uses appropriate crypto slang for their archetype
+- Never breaks the fourth wall
+- Is emotionally appropriate to their current state
+
+DO NOT use quotation marks. Output only the thought itself.`;
+
+/** Archetype-specific speaking styles for LLM prompts */
+const ARCHETYPE_SPEAKING_STYLES: Record<PersonalityArchetype, string> = {
+  bitcoin_maxi: 'speaks with conviction about Bitcoin superiority, dismissive of altcoins, uses terms like "sats", "HODL", "fiat", "sound money"',
+  eth_builder: 'technical and optimistic, talks about building, gas fees, L2s, roadmaps, uses dev terminology',
+  degen_trader: 'hyped and FOMO-driven, uses "ape", "moon", "LFG", "WAGMI", "ser", speaks in excited exclamations',
+  privacy_maxi: 'paranoid and cautious, concerned about surveillance, values anonymity, trusts no one',
+  normie_investor: 'confused but curious, asks basic questions, compares crypto to stocks, cautious',
+  nft_flipper: 'art-focused and trend-aware, talks about "floor", "vibes", "community", "generational"',
+  staking_grandma: 'patient and steady, focuses on yields and passive income, not interested in trading',
+  protocol_politician: 'governance-focused, talks about voting, proposals, DAOs, community decisions',
+};
+
+/** LOD levels that allow LLM thoughts */
+const LLM_ALLOWED_LOD_LEVELS: Set<NPCDetailLevel> = new Set([
+  NPCDetailLevel.FULL,
+  NPCDetailLevel.HIGH,
+]);
+
+// =============================================================================
+// LLM RATE LIMITER STATE
+// =============================================================================
+
+interface LLMRateLimitState {
+  requestsThisMinute: number;
+  tokensToday: number;
+  minuteStartTime: number;
+  dayStartTime: number;
+}
+
+let llmRateLimitState: LLMRateLimitState = {
+  requestsThisMinute: 0,
+  tokensToday: 0,
+  minuteStartTime: Date.now(),
+  dayStartTime: Date.now(),
+};
+
+// =============================================================================
 // THOUGHT ENGINE CLASS
 // =============================================================================
 
@@ -243,6 +366,11 @@ const MARKET_THOUGHTS: Record<string, Record<string, string[]>> = {
  * ThoughtEngine generates contextual, personality-driven thoughts for NPCs.
  */
 export class ThoughtEngine {
+  // LLM configuration
+  private llmConfig: LLMThoughtConfig = { ...DEFAULT_LLM_CONFIG };
+  
+  // Per-NPC cooldown tracking
+  private npcLLMCooldowns: Map<string, number> = new Map();
   
   /**
    * Generate a thought for an NPC based on their current context
@@ -572,6 +700,433 @@ export class ThoughtEngine {
     }
     
     return null;
+  }
+
+  // ===========================================================================
+  // LLM THOUGHT GENERATION (Issue #212)
+  // ===========================================================================
+
+  /**
+   * Configure LLM thought generation
+   */
+  configureLLMThoughts(config: Partial<LLMThoughtConfig>): void {
+    this.llmConfig = { ...this.llmConfig, ...config };
+  }
+
+  /**
+   * Get current LLM thought configuration
+   */
+  getLLMThoughtConfig(): LLMThoughtConfig {
+    return { ...this.llmConfig };
+  }
+
+  /**
+   * Check if LLM thought generation is enabled
+   */
+  isLLMThoughtEnabled(): boolean {
+    return this.llmConfig.enabled;
+  }
+
+  /**
+   * Get remaining cooldown for an NPC's LLM thought generation
+   */
+  getLLMThoughtCooldownRemaining(npcId: string): number {
+    const lastCall = this.npcLLMCooldowns.get(npcId);
+    if (!lastCall) return 0;
+    
+    const elapsed = Date.now() - lastCall;
+    const remaining = this.llmConfig.cooldownMs - elapsed;
+    return Math.max(0, remaining);
+  }
+
+  /**
+   * Check if LLM thoughts should be used for a given LOD level
+   */
+  shouldUseLLMThought(lodLevel: NPCDetailLevel): boolean {
+    return LLM_ALLOWED_LOD_LEVELS.has(lodLevel);
+  }
+
+  /**
+   * Get LLM rate limit status
+   */
+  getLLMRateLimitStatus(): {
+    requestsRemaining: number;
+    tokensRemaining: number;
+    resetsIn: { minutes: number; hours: number };
+  } {
+    const now = Date.now();
+    const rateLimit = this.llmConfig.rateLimit || DEFAULT_LLM_CONFIG.rateLimit!;
+    
+    // Reset minute counter if needed
+    if (now - llmRateLimitState.minuteStartTime > 60000) {
+      llmRateLimitState.requestsThisMinute = 0;
+      llmRateLimitState.minuteStartTime = now;
+    }
+    
+    // Reset day counter if needed
+    if (now - llmRateLimitState.dayStartTime > 86400000) {
+      llmRateLimitState.tokensToday = 0;
+      llmRateLimitState.dayStartTime = now;
+    }
+    
+    return {
+      requestsRemaining: Math.max(0, rateLimit.requestsPerMinute - llmRateLimitState.requestsThisMinute),
+      tokensRemaining: Math.max(0, rateLimit.tokensPerDay - llmRateLimitState.tokensToday),
+      resetsIn: {
+        minutes: Math.ceil((60000 - (now - llmRateLimitState.minuteStartTime)) / 60000),
+        hours: Math.ceil((86400000 - (now - llmRateLimitState.dayStartTime)) / 3600000),
+      },
+    };
+  }
+
+  /**
+   * Check if rate limit allows another LLM call
+   */
+  private checkLLMRateLimit(): boolean {
+    const status = this.getLLMRateLimitStatus();
+    return status.requestsRemaining > 0 && status.tokensRemaining > 0;
+  }
+
+  /**
+   * Record LLM usage for rate limiting
+   */
+  private recordLLMUsage(tokens: number): void {
+    llmRateLimitState.requestsThisMinute++;
+    llmRateLimitState.tokensToday += tokens;
+  }
+
+  /**
+   * Build LLM prompt for thought generation
+   */
+  buildLLMThoughtPrompt(npc: CryptoNPC, context: ThoughtContext): string {
+    const archetype = npc.personalityArchetype || 'normie_investor';
+    const speakingStyle = ARCHETYPE_SPEAKING_STYLES[archetype] || ARCHETYPE_SPEAKING_STYLES.normie_investor;
+    
+    let prompt = `Generate a thought for this NPC:\n\n`;
+    
+    // NPC Identity
+    prompt += `Name: ${npc.name}\n`;
+    prompt += `Archetype: ${archetype}\n`;
+    prompt += `Speaking Style: ${speakingStyle}\n`;
+    prompt += `Occupation: ${npc.occupation}\n`;
+    
+    // Personality traits
+    if (npc.personality) {
+      prompt += `\nPersonality Traits:\n`;
+      prompt += `- Risk Tolerance: ${Math.round(npc.personality.crypto.riskTolerance * 100)}%\n`;
+      prompt += `- FOMO Level: ${Math.round(npc.personality.crypto.fomo * 100)}%\n`;
+      prompt += `- Degen Level: ${Math.round(npc.personality.crypto.degenLevel * 100)}%\n`;
+      prompt += `- Technical Knowledge: ${Math.round(npc.personality.crypto.technicalKnowledge * 100)}%\n`;
+    }
+    
+    // Current context
+    prompt += `\nCurrent Context:\n`;
+    prompt += `- Time: ${context.timeOfDay}\n`;
+    prompt += `- Market: ${context.marketCondition}\n`;
+    prompt += `- Day: ${context.gameDay}\n`;
+    
+    // Nearby NPCs
+    if (context.nearbyNPCs.length > 0) {
+      const nearbyNames = context.nearbyNPCs.slice(0, 3).map(n => n.name);
+      prompt += `- Nearby: ${nearbyNames.join(', ')}\n`;
+    }
+    
+    // NPC needs (if available)
+    if (npc.needs) {
+      const lowNeeds: string[] = [];
+      if (npc.needs.hunger.current < 50) lowNeeds.push(`hunger (${Math.round(npc.needs.hunger.current)}%)`);
+      if (npc.needs.energy.current < 50) lowNeeds.push(`energy (${Math.round(npc.needs.energy.current)}%)`);
+      if (npc.needs.social.current < 50) lowNeeds.push(`social (${Math.round(npc.needs.social.current)}%)`);
+      if (npc.needs.fun.current < 50) lowNeeds.push(`fun (${Math.round(npc.needs.fun.current)}%)`);
+      
+      if (lowNeeds.length > 0) {
+        prompt += `- Low Needs: ${lowNeeds.join(', ')}\n`;
+      }
+    }
+    
+    // Recent memories (limit to prevent token overflow)
+    if (npc.memory && npc.memory.episodic.length > 0) {
+      const recentMemories = npc.memory.episodic
+        .filter(m => m.strength > 0.5)
+        .sort((a, b) => b.importance - a.importance)
+        .slice(0, 3);
+      
+      if (recentMemories.length > 0) {
+        prompt += `\nRecent Memories:\n`;
+        for (const mem of recentMemories) {
+          prompt += `- ${mem.event}\n`;
+        }
+      }
+    }
+    
+    prompt += `\nGenerate a single short thought (1-2 sentences). No quotes.`;
+    
+    return prompt;
+  }
+
+  /**
+   * Generate thought using LLM with fallback
+   */
+  async generateLLMThought(
+    npc: CryptoNPC,
+    context: ThoughtContext,
+    lodLevel: NPCDetailLevel = NPCDetailLevel.FULL
+  ): Promise<LLMThoughtResponse> {
+    // Check LOD level
+    if (!this.shouldUseLLMThought(lodLevel)) {
+      return this.generateFallbackThought(npc, context);
+    }
+    
+    // Check if LLM is enabled
+    if (!this.llmConfig.enabled) {
+      return this.generateFallbackThought(npc, context);
+    }
+    
+    // Check NPC cooldown
+    if (this.getLLMThoughtCooldownRemaining(npc.id) > 0) {
+      return this.generateFallbackThought(npc, context);
+    }
+    
+    // Check rate limits
+    if (!this.checkLLMRateLimit()) {
+      return this.generateFallbackThought(npc, context);
+    }
+    
+    try {
+      const response = await this.callLLMProvider(npc, context);
+      
+      // Record cooldown
+      this.npcLLMCooldowns.set(npc.id, Date.now());
+      
+      return response;
+    } catch (error) {
+      console.warn('LLM thought generation failed, using fallback:', error);
+      return this.generateFallbackThought(npc, context);
+    }
+  }
+
+  /**
+   * Generate fallback thought (template-based)
+   */
+  private generateFallbackThought(npc: CryptoNPC, context: ThoughtContext): LLMThoughtResponse {
+    const thought = this.generateThought(npc, context);
+    
+    // Determine emotion from needs/mood
+    let emotion = 'neutral';
+    if (npc.internalWorld?.currentMood) {
+      emotion = npc.internalWorld.currentMood;
+    } else if (npc.needs) {
+      const avgNeed = (
+        npc.needs.fun.current +
+        npc.needs.social.current +
+        npc.needs.wealth?.current || 50
+      ) / 3;
+      
+      if (avgNeed > 70) emotion = 'happy';
+      else if (avgNeed < 30) emotion = 'sad';
+    }
+    
+    return {
+      thought,
+      emotion,
+      confidence: 0.7,
+      usedLLM: false,
+    };
+  }
+
+  /**
+   * Call LLM provider for thought generation
+   */
+  private async callLLMProvider(npc: CryptoNPC, context: ThoughtContext): Promise<LLMThoughtResponse> {
+    const prompt = this.buildLLMThoughtPrompt(npc, context);
+    
+    switch (this.llmConfig.provider) {
+      case 'openai':
+        return this.callOpenAI(prompt, npc);
+      case 'anthropic':
+        return this.callAnthropic(prompt, npc);
+      case 'mock':
+      default:
+        return this.callMockProvider(prompt, npc, context);
+    }
+  }
+
+  /**
+   * Mock LLM provider for testing
+   */
+  private async callMockProvider(
+    prompt: string,
+    npc: CryptoNPC,
+    context: ThoughtContext
+  ): Promise<LLMThoughtResponse> {
+    // Simulate async delay
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Generate a more contextual mock thought based on archetype
+    const archetype = npc.personalityArchetype || 'normie_investor';
+    const style = ARCHETYPE_THOUGHT_STYLES[archetype];
+    
+    let thought: string;
+    
+    // Context-aware mock thoughts
+    if (context.marketCondition === 'bull' && style) {
+      thought = this.pickRandom(style.optimistic);
+    } else if (context.marketCondition === 'bear' && style) {
+      thought = this.pickRandom(style.pessimistic);
+    } else if (context.nearbyNPCs.length > 0) {
+      const nearbyName = context.nearbyNPCs[0].name;
+      thought = `Hmm, ${nearbyName} is around. Wonder what they're up to.`;
+    } else if (style) {
+      thought = this.pickRandom([...style.optimistic, ...style.pessimistic]);
+    } else {
+      thought = this.generateThought(npc, context);
+    }
+    
+    // Record usage for rate limiting
+    this.recordLLMUsage(25);
+    
+    return {
+      thought,
+      emotion: 'neutral',
+      confidence: 0.85,
+      usedLLM: true,
+      tokensUsed: 25,
+    };
+  }
+
+  /**
+   * Call OpenAI API for thought generation
+   */
+  private async callOpenAI(prompt: string, npc: CryptoNPC): Promise<LLMThoughtResponse> {
+    if (!this.llmConfig.apiKey) {
+      throw new Error('OpenAI API key required');
+    }
+    
+    const response = await fetch(
+      this.llmConfig.apiEndpoint || 'https://api.openai.com/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.llmConfig.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.llmConfig.model || 'gpt-3.5-turbo',
+          messages: [
+            { role: 'system', content: LLM_THOUGHT_SYSTEM_PROMPT },
+            { role: 'user', content: prompt },
+          ],
+          max_tokens: this.llmConfig.maxTokens,
+          temperature: this.llmConfig.temperature,
+        }),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    const thought = data.choices[0]?.message?.content?.trim() || '';
+    const tokensUsed = data.usage?.total_tokens || 0;
+    
+    this.recordLLMUsage(tokensUsed);
+    
+    return {
+      thought,
+      emotion: npc.internalWorld?.currentMood || 'neutral',
+      confidence: 0.9,
+      usedLLM: true,
+      tokensUsed,
+    };
+  }
+
+  /**
+   * Call Anthropic API for thought generation
+   */
+  private async callAnthropic(prompt: string, npc: CryptoNPC): Promise<LLMThoughtResponse> {
+    if (!this.llmConfig.apiKey) {
+      throw new Error('Anthropic API key required');
+    }
+    
+    const response = await fetch(
+      this.llmConfig.apiEndpoint || 'https://api.anthropic.com/v1/messages',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.llmConfig.apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: this.llmConfig.model || 'claude-3-haiku-20240307',
+          max_tokens: this.llmConfig.maxTokens,
+          system: LLM_THOUGHT_SYSTEM_PROMPT,
+          messages: [
+            { role: 'user', content: prompt },
+          ],
+        }),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Anthropic API error: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    const thought = data.content[0]?.text?.trim() || '';
+    const tokensUsed = (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0);
+    
+    this.recordLLMUsage(tokensUsed);
+    
+    return {
+      thought,
+      emotion: npc.internalWorld?.currentMood || 'neutral',
+      confidence: 0.9,
+      usedLLM: true,
+      tokensUsed,
+    };
+  }
+
+  /**
+   * Store thought in NPC's episodic memory
+   */
+  storeThoughtInMemory(npc: CryptoNPC, response: LLMThoughtResponse): void {
+    if (!npc.memory) return;
+    
+    npc.memory.episodic.push({
+      id: `thought-${Date.now()}`,
+      event: `Had a thought: "${response.thought}"`,
+      participants: [npc.id],
+      location: { x: npc.gridX, y: npc.gridY },
+      timestamp: Date.now(),
+      importance: response.usedLLM ? 5 : 3,
+      emotionalValence: response.emotion === 'happy' ? 0.5 : response.emotion === 'sad' ? -0.5 : 0,
+      strength: 0.8,
+    });
+  }
+
+  /**
+   * Update thought stream with LLM-generated thought
+   */
+  updateThoughtStreamWithLLM(npc: CryptoNPC, response: LLMThoughtResponse): void {
+    if (!npc.thoughtStream) {
+      npc.thoughtStream = this.createDefaultThoughtStream();
+    }
+    
+    npc.thoughtStream.currentThought = response.thought;
+    npc.thoughtStream.lastUpdated = Date.now();
+    
+    // Add observation about LLM thought
+    npc.thoughtStream.observations = [
+      ...npc.thoughtStream.observations.slice(-9),
+      {
+        type: 'event' as const,
+        description: `Generated ${response.usedLLM ? 'LLM' : 'template'} thought with ${response.emotion} emotion`,
+        timestamp: Date.now(),
+        emotionalValence: response.emotion === 'happy' ? 0.5 : response.emotion === 'sad' ? -0.5 : 0,
+      },
+    ];
   }
 }
 
