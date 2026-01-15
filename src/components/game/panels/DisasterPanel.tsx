@@ -326,7 +326,7 @@ export function DisasterPanel({ onClose }: DisasterPanelProps = {}) {
 
   return (
     <Dialog open={true} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[500px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-dialog-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="w-5 h-5 text-yellow-500" />

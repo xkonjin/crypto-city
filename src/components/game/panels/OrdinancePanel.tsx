@@ -324,7 +324,7 @@ export function OrdinancePanel() {
   
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
-      <DialogContent className="max-w-[600px] max-h-[80vh]" data-testid="ordinance-panel">
+      <DialogContent className="max-w-dialog-md max-h-[80vh]" data-testid="ordinance-panel">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Scroll className="w-5 h-5" />

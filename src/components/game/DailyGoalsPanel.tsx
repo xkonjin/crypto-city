@@ -5,22 +5,13 @@ import { Target, Trophy, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import type { DailyGoal } from '@/lib/engagementHooks';
+import { formatCurrency } from '@/lib/formatters';
 
 export interface DailyGoalsPanelProps {
   goals: DailyGoal[];
   className?: string;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
-}
-
-function formatNumber(num: number): string {
-  if (num >= 1_000_000) {
-    return `$${(num / 1_000_000).toFixed(1)}M`;
-  }
-  if (num >= 1_000) {
-    return `$${(num / 1_000).toFixed(0)}K`;
-  }
-  return `$${num.toLocaleString()}`;
 }
 
 function GoalItem({ goal }: { goal: DailyGoal }) {
@@ -64,7 +55,7 @@ function GoalItem({ goal }: { goal: DailyGoal }) {
             <Trophy className="w-4 h-4 text-yellow-400" />
           ) : (
             <span className="text-xs text-green-400 font-medium">
-              {formatNumber(goal.reward)}
+              {formatCurrency(goal.reward)}
             </span>
           )}
         </div>
@@ -86,7 +77,7 @@ function GoalItem({ goal }: { goal: DailyGoal }) {
       {goal.completed && (
         <div className="mt-2 flex items-center gap-1 text-sm text-green-400">
           <Trophy className="w-3 h-3" />
-          <span>+{formatNumber(goal.reward)} earned!</span>
+          <span>+{formatCurrency(goal.reward)} earned!</span>
         </div>
       )}
     </div>
@@ -191,7 +182,7 @@ export function DailyGoalsPanel({
             <div className="mt-3 pt-3 border-t border-gray-700/50 flex items-center justify-between text-sm">
               <span className="text-gray-400">Total earned today:</span>
               <span className="text-green-400 font-bold">
-                {formatNumber(totalReward)}
+                {formatCurrency(totalReward)}
               </span>
             </div>
           )}

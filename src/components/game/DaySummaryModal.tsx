@@ -23,6 +23,7 @@ import type {
   EngagementStreak,
   CliffhangerEvent,
 } from '@/lib/engagementHooks';
+import { formatCurrency } from '@/lib/formatters';
 
 // ============================================
 // TYPES
@@ -44,21 +45,11 @@ export interface DaySummaryModalProps {
 // HELPER FUNCTIONS
 // ============================================
 
-function formatNumber(num: number): string {
-  if (Math.abs(num) >= 1_000_000) {
-    return `$${(num / 1_000_000).toFixed(2)}M`;
-  }
-  if (Math.abs(num) >= 1_000) {
-    return `$${(num / 1_000).toFixed(1)}K`;
-  }
-  return `$${num.toLocaleString()}`;
-}
-
 function formatChange(num: number): { text: string; isPositive: boolean } {
   const isPositive = num >= 0;
   const prefix = isPositive ? '+' : '';
   return {
-    text: `${prefix}${formatNumber(num)}`,
+    text: `${prefix}${formatCurrency(num)}`,
     isPositive,
   };
 }
@@ -137,7 +128,7 @@ function GoalCard({ goal }: { goal: DailyGoal }) {
       
       {goal.completed && (
         <div className="mt-2 text-sm text-green-400">
-          +{formatNumber(goal.reward)} earned!
+          +{formatCurrency(goal.reward)} earned!
         </div>
       )}
     </div>
@@ -304,7 +295,7 @@ function DaySummaryModalContent({
           <div className="grid grid-cols-2 gap-3">
             <StatCard 
               label="Treasury" 
-              value={formatNumber(summary.treasuryChange + 100000)} // Approximate current
+              value={formatCurrency(summary.treasuryChange + 100000)} // Approximate current
               change={treasuryChange}
               icon={Coins}
             />
@@ -334,7 +325,7 @@ function DaySummaryModalContent({
                 <span className="text-gray-300">Total Yield Earned</span>
               </div>
               <span className="text-xl font-bold text-green-400">
-                {formatNumber(summary.totalYield)}
+                {formatCurrency(summary.totalYield)}
               </span>
             </div>
           </div>
@@ -360,7 +351,7 @@ function DaySummaryModalContent({
               
               {totalGoalReward > 0 && (
                 <div className="text-center text-green-400 font-medium">
-                  Total earned from goals: {formatNumber(totalGoalReward)}
+                  Total earned from goals: {formatCurrency(totalGoalReward)}
                 </div>
               )}
             </div>

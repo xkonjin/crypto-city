@@ -181,7 +181,7 @@ export function PetitionsPanel() {
 
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel("none")}>
-      <DialogContent className="max-w-[500px] max-h-[600px]">
+      <DialogContent className="max-w-dialog-md max-h-[600px]">
         <DialogHeader>
           <DialogTitle>{m(UI_LABELS.citizenPetitions)}</DialogTitle>
         </DialogHeader>

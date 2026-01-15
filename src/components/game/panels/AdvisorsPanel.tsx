@@ -446,7 +446,7 @@ export function AdvisorsPanel({ economyState }: AdvisorsPanelProps) {
 
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel("none")}>
-      <DialogContent className="max-w-[600px] max-h-[700px]" data-testid="advisor-panel">
+      <DialogContent className="max-w-dialog-md max-h-[700px]" data-testid="advisor-panel">
         <DialogHeader>
           <DialogTitle>{m(UI_LABELS.cityAdvisors)}</DialogTitle>
         </DialogHeader>

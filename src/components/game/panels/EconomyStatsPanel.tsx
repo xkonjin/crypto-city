@@ -264,7 +264,7 @@ export function EconomyStatsPanel({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-dialog-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Activity className="size-5 text-purple-400" />

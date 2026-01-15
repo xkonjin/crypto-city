@@ -87,6 +87,11 @@ module.exports = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      maxWidth: {
+        'dialog-sm': 'var(--dialog-sm)',
+        'dialog-md': 'var(--dialog-md)',
+        'dialog-lg': 'var(--dialog-lg)',
+      },
       fontFamily: {
         sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-geist-mono)', 'monospace'],

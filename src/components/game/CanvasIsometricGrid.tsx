@@ -162,6 +162,7 @@ import { WeatherOverlay } from '@/components/game/WeatherOverlay';
 import { cryptoEconomy } from '@/games/isocity/crypto';
 import { onCobieAssetLoaded } from '@/lib/figurines/figurineLoader';
 import { NPCManager } from '@/lib/npc/NPCManager';
+import { drawCryptoNPCs } from './drawCryptoNPCs';
 
 export interface CanvasIsometricGridProps {
   overlayMode: OverlayMode;
@@ -779,6 +780,40 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     }
     
     return null;
+  }, []);
+
+  // Animation frame counter for NPC walk cycles
+  const npcAnimFrameRef = useRef(0);
+  
+  // Draw CryptoNPCs (simulation NPCs with AI personalities)
+  const drawCryptoNPCsCallback = useCallback((ctx: CanvasRenderingContext2D) => {
+    const { offset: currentOffset, zoom: currentZoom } = worldStateRef.current;
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Skip at very low zoom
+    if (currentZoom < 0.4) return;
+    
+    ctx.save();
+    ctx.scale(dpr * currentZoom, dpr * currentZoom);
+    ctx.translate(currentOffset.x / currentZoom, currentOffset.y / currentZoom);
+    
+    const viewWidth = canvas.width / (dpr * currentZoom);
+    const viewHeight = canvas.height / (dpr * currentZoom);
+    const viewBounds = {
+      viewLeft: -currentOffset.x / currentZoom - TILE_WIDTH,
+      viewTop: -currentOffset.y / currentZoom - TILE_HEIGHT * 2,
+      viewRight: viewWidth - currentOffset.x / currentZoom + TILE_WIDTH,
+      viewBottom: viewHeight - currentOffset.y / currentZoom + TILE_HEIGHT * 2,
+    };
+    
+    // Increment animation frame (cycles 0-3 for walk animation)
+    npcAnimFrameRef.current = (npcAnimFrameRef.current + 1) % 32; // Slow down animation
+    const animFrame = Math.floor(npcAnimFrameRef.current / 8); // 0-3
+    
+    drawCryptoNPCs(ctx, viewBounds, currentZoom, animFrame);
+    
+    ctx.restore();
   }, []);
 
   // Draw airplanes with contrails (uses extracted utility)
@@ -2838,6 +2873,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
           drawSmog(ctx); // Draw factory smog (skip when panning zoomed out on desktop)
         }
         drawPedestrians(ctx); // Draw walking pedestrians (below buildings)
+        drawCryptoNPCsCallback(ctx); // Draw simulation NPCs (AI personalities)
         drawEmergencyVehicles(ctx); // Draw emergency vehicles!
         clearAirCanvas();
         
@@ -2859,7 +2895,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     animationFrameId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationFrameId);
   // PERF: Removed grid, gridSize, speed from deps - they're accessed via worldStateRef to avoid restarting animation on every tick
-  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, drawRecreationPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateSeaplanes, drawSeaplanes, updateBoats, drawBoats, updateBarges, drawBarges, updateTrains, drawTrainsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, visualHour, isMobile]);
+  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, drawCryptoNPCsCallback, drawRecreationPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateSeaplanes, drawSeaplanes, updateBoats, drawBoats, updateBarges, drawBarges, updateTrains, drawTrainsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, visualHour, isMobile]);
   
   // Day/Night cycle lighting rendering - extracted to useLightingSystem hook
   useLightingSystem({

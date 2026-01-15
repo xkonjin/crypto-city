@@ -11,6 +11,7 @@
 
 import { useState, useCallback } from 'react';
 import { useGame } from '@/context/GameContext';
+import { formatNumber } from '@/lib/formatters';
 
 export interface TopBarState {
   // Game state
@@ -64,12 +65,6 @@ export interface TopBarState {
 }
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-function formatNumber(num: number): string {
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(0)}k`;
-  return num.toString();
-}
 
 export function useTopBarState(): TopBarState {
   const { state, setSpeed, setTaxRate, visualHour, saveCity } = useGame();

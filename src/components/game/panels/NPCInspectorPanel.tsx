@@ -342,7 +342,7 @@ export function NPCInspectorPanel({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[420px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-dialog-sm max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0">

@@ -136,7 +136,7 @@ export function StatisticsPanel() {
 
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel("none")}>
-      <DialogContent className="max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-dialog-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{m(UI_LABELS.cityStatistics)}</DialogTitle>
         </DialogHeader>

@@ -208,7 +208,7 @@ export function EventsPanel() {
 
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel("none")}>
-      <DialogContent className="max-w-[520px] max-h-[650px]">
+      <DialogContent className="max-w-dialog-md max-h-[650px]">
         <DialogHeader>
           <DialogTitle>{m(UI_LABELS.specialEvents)}</DialogTitle>
         </DialogHeader>

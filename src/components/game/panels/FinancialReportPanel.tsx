@@ -144,7 +144,7 @@ export function FinancialReportPanel({ economyState, buildings = [] }: Financial
   
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
-      <DialogContent className="max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col" data-testid="financial-report-panel">
+      <DialogContent className="max-w-dialog-lg max-h-[85vh] overflow-hidden flex flex-col" data-testid="financial-report-panel">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center justify-between">
             <span>{m(UI_LABELS.financialReport)}</span>

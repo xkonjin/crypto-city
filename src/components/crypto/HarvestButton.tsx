@@ -14,6 +14,7 @@
 import React, { useState } from 'react';
 import { cryptoEconomy, ECONOMY_CONFIG } from '@/games/isocity/crypto';
 import type { HarvestMode, MarketTiming } from '@/games/isocity/crypto';
+import { formatNumber } from '@/lib/formatters';
 
 // =============================================================================
 // TYPES
@@ -28,16 +29,6 @@ interface HarvestButtonProps {
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
-
-function formatNumber(num: number): string {
-  if (num >= 1_000_000) {
-    return (num / 1_000_000).toFixed(1) + 'M';
-  }
-  if (num >= 1_000) {
-    return (num / 1_000).toFixed(1) + 'K';
-  }
-  return num.toFixed(0);
-}
 
 function getSentimentLabel(sentiment: number): string {
   const thresholds = ECONOMY_CONFIG.SENTIMENT_THRESHOLDS;

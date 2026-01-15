@@ -125,18 +125,7 @@ function createStatsOverlay(stats: CityStats, width: number): HTMLCanvasElement 
   return canvas;
 }
 
-/**
- * Format large numbers for display
- */
-function formatNumber(num: number): string {
-  if (num >= 1_000_000) {
-    return `${(num / 1_000_000).toFixed(1)}M`;
-  }
-  if (num >= 1_000) {
-    return `${(num / 1_000).toFixed(1)}K`;
-  }
-  return num.toLocaleString();
-}
+import { formatNumber } from '../formatters';
 
 // =============================================================================
 // SCREENSHOT CAPTURE

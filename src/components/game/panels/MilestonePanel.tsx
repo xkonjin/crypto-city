@@ -431,7 +431,7 @@ export function MilestonePanel({
   
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
-      <DialogContent className="max-w-[600px] max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-dialog-md max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Flag className="w-5 h-5 text-amber-400" />

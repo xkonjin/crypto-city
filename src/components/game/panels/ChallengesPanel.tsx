@@ -192,7 +192,7 @@ export function ChallengesPanel({
   
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
-      <DialogContent className="max-w-[500px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-dialog-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-400" />

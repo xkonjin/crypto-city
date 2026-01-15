@@ -6,6 +6,7 @@
  */
 
 import { Achievement } from '@/types/game';
+import { formatNumber } from './formatters';
 
 // Achievement stats for card generation
 export interface AchievementShareStats {
@@ -163,15 +164,6 @@ const DEFAULT_QUIPS = [
 export function getCobieAchievementQuip(achievementId: string): string {
   const quips = COBIE_ACHIEVEMENT_QUIPS[achievementId] || DEFAULT_QUIPS;
   return quips[Math.floor(Math.random() * quips.length)];
-}
-
-/**
- * Format a number with K/M suffixes for display
- */
-function formatNumber(num: number): string {
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-  return num.toLocaleString();
 }
 
 /**

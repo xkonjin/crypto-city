@@ -8,6 +8,11 @@
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  
+  /* Standardized dialog sizes (Issue M1) */
+  --dialog-sm: 420px;   /* Simple panels: Settings, Referral, NPC Inspector */
+  --dialog-md: 550px;   /* Standard panels: Budget, Challenges, Events, Disasters */
+  --dialog-lg: 700px;   /* Data-rich panels: Financial, Statistics, Sprite Test */
 }
 
 @layer base {

@@ -426,7 +426,7 @@ export function SettingsPanel() {
   
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
-      <DialogContent className="max-w-[400px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-dialog-sm max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{m(UI_LABELS.settings)}</DialogTitle>
         </DialogHeader>

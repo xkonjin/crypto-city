@@ -292,7 +292,7 @@ export function SpriteTestPanel({ onClose }: { onClose: () => void }) {
   
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-[700px] max-h-[90vh]">
+      <DialogContent className="max-w-dialog-lg max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Sprite Test View</DialogTitle>
           <DialogDescription>

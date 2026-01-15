@@ -127,7 +127,7 @@ export function ReferralPanel() {
   
   return (
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
-      <DialogContent className="max-w-[450px]">
+      <DialogContent className="max-w-dialog-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5" />
