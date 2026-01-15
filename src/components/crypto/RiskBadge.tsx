@@ -118,7 +118,7 @@ export default function RiskBadge({ risk, compact = false, className = '' }: Ris
           💀
         </span>
       )}
-      <span>{config.label}</span>
+      <span data-testid="risk-level-text">{config.label}</span>
     </span>
   );
 }

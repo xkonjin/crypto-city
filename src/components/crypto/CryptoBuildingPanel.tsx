@@ -654,26 +654,21 @@ export default function CryptoBuildingPanel({
           onClickCategory={handleBreadcrumbCategory}
         />
         
-        <label className="flex items-center gap-2 text-xs cursor-pointer">
-          <input
-            type="checkbox"
-            checked={showAllBuildings}
-            onChange={handleShowAllToggle}
-            className="sr-only peer"
-          />
-          <span 
-            data-testid="show-all-toggle"
-            className={`
-              px-2 py-1 rounded transition-colors
-              ${showAllBuildings 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-700/50 text-gray-400 hover:text-white'
-              }
-            `}
-          >
-            Show All
-          </span>
-        </label>
+        <button
+          type="button"
+          data-testid="show-all-toggle"
+          onClick={handleShowAllToggle}
+          aria-pressed={showAllBuildings}
+          className={`
+            px-2 py-1 rounded text-xs transition-colors
+            ${showAllBuildings 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-700/50 text-gray-400 hover:text-white'
+            }
+          `}
+        >
+          Show All
+        </button>
       </div>
       
       {/* Filter Chips (#204) - shown when in "Show All" mode or searching */}
