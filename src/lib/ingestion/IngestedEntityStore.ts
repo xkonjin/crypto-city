@@ -72,8 +72,17 @@ const DB_VERSION = 1;
 
 let dbPromise: Promise<IDBPDatabase<IngestionRegistryDBSchema>> | null = null;
 
+/** Error type for IndexedDB quota exceeded */
+export class IndexedDBQuotaError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'IndexedDBQuotaError';
+  }
+}
+
 /**
  * Get or create the IndexedDB database
+ * Handles quota exceeded and blocked errors with retry
  */
 async function getDB(): Promise<IDBPDatabase<IngestionRegistryDBSchema>> {
   if (!dbPromise) {
@@ -86,9 +95,36 @@ async function getDB(): Promise<IDBPDatabase<IngestionRegistryDBSchema>> {
         store.createIndex('by-ingested-at', 'ingestedAt');
         store.createIndex('by-entity-type', 'entityType');
       },
+      blocked() {
+        console.warn('[IngestedEntityStore] Database blocked - close other tabs');
+      },
+      blocking() {
+        console.warn('[IngestedEntityStore] Database blocking other connections');
+      },
+    }).catch(error => {
+      // Reset promise so next call can retry
+      dbPromise = null;
+      throw error;
     });
   }
   return dbPromise;
+}
+
+/**
+ * Handle IndexedDB write errors with quota detection
+ */
+function handleWriteError(error: unknown, operation: string): never {
+  if (error instanceof Error) {
+    // Check for quota exceeded error
+    if (error.name === 'QuotaExceededError' || 
+        error.message.includes('quota') ||
+        error.message.includes('storage')) {
+      throw new IndexedDBQuotaError(
+        `Storage quota exceeded during ${operation}. Clear some data or request more storage.`
+      );
+    }
+  }
+  throw error;
 }
 
 // =============================================================================
@@ -97,16 +133,21 @@ async function getDB(): Promise<IDBPDatabase<IngestionRegistryDBSchema>> {
 
 /**
  * Save an ingestion record
+ * @throws {IndexedDBQuotaError} If storage quota is exceeded
  */
 export async function saveIngestionRecord(record: IngestionRecord): Promise<void> {
-  const db = await getDB();
-  // Ensure username is lowercase
-  const normalizedRecord = {
-    ...record,
-    username: record.username.toLowerCase(),
-  };
-  await db.put('ingestion-registry', normalizedRecord);
-  console.log(`[IngestedEntityStore] Saved record for @${record.username}`);
+  try {
+    const db = await getDB();
+    // Ensure username is lowercase
+    const normalizedRecord = {
+      ...record,
+      username: record.username.toLowerCase(),
+    };
+    await db.put('ingestion-registry', normalizedRecord);
+    console.log(`[IngestedEntityStore] Saved record for @${record.username}`);
+  } catch (error) {
+    handleWriteError(error, 'saveIngestionRecord');
+  }
 }
 
 /**

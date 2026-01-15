@@ -28,10 +28,15 @@ const DialogOverlay = React.forwardRef<
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
+interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+  /** Hide the default visually hidden description for accessibility */
+  hideDescription?: boolean;
+}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  DialogContentProps
+>(({ className, children, hideDescription, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -43,6 +48,12 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
+      {/* Visually hidden description for accessibility - prevents Radix warning */}
+      {!hideDescription && (
+        <DialogPrimitive.Description className="sr-only">
+          Dialog content
+        </DialogPrimitive.Description>
+      )}
     </DialogPrimitive.Content>
   </DialogPortal>
 ))

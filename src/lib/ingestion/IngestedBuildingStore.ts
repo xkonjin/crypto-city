@@ -87,8 +87,17 @@ const DB_VERSION = 1;
 
 let dbPromise: Promise<IDBPDatabase<IngestedBuildingDBSchema>> | null = null;
 
+/** Error type for IndexedDB quota exceeded */
+export class IndexedDBQuotaError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'IndexedDBQuotaError';
+  }
+}
+
 /**
  * Get or create the IndexedDB database
+ * Handles quota exceeded and blocked errors with retry
  */
 async function getDB(): Promise<IDBPDatabase<IngestedBuildingDBSchema>> {
   if (!dbPromise) {
@@ -102,9 +111,36 @@ async function getDB(): Promise<IDBPDatabase<IngestedBuildingDBSchema>> {
         store.createIndex('by-ingested-at', 'ingestedAt');
         store.createIndex('by-tier', 'tier');
       },
+      blocked() {
+        console.warn('[IngestedBuildingStore] Database blocked - close other tabs');
+      },
+      blocking() {
+        console.warn('[IngestedBuildingStore] Database blocking other connections');
+      },
+    }).catch(error => {
+      // Reset promise so next call can retry
+      dbPromise = null;
+      throw error;
     });
   }
   return dbPromise;
+}
+
+/**
+ * Handle IndexedDB write errors with quota detection
+ */
+function handleWriteError(error: unknown, operation: string): never {
+  if (error instanceof Error) {
+    // Check for quota exceeded error
+    if (error.name === 'QuotaExceededError' || 
+        error.message.includes('quota') ||
+        error.message.includes('storage')) {
+      throw new IndexedDBQuotaError(
+        `Storage quota exceeded during ${operation}. Clear some data or request more storage.`
+      );
+    }
+  }
+  throw error;
 }
 
 // =============================================================================
@@ -113,16 +149,21 @@ async function getDB(): Promise<IDBPDatabase<IngestedBuildingDBSchema>> {
 
 /**
  * Save an ingested building to IndexedDB
+ * @throws {IndexedDBQuotaError} If storage quota is exceeded
  */
 export async function saveIngestedBuilding(building: PersistedIngestedBuilding): Promise<void> {
-  const db = await getDB();
-  // Normalize username
-  const normalizedBuilding = {
-    ...building,
-    username: building.username.toLowerCase(),
-  };
-  await db.put('ingested-buildings', normalizedBuilding);
-  console.log(`[IngestedBuildingStore] Saved building ${building.buildingId}`);
+  try {
+    const db = await getDB();
+    // Normalize username
+    const normalizedBuilding = {
+      ...building,
+      username: building.username.toLowerCase(),
+    };
+    await db.put('ingested-buildings', normalizedBuilding);
+    console.log(`[IngestedBuildingStore] Saved building ${building.buildingId}`);
+  } catch (error) {
+    handleWriteError(error, 'saveIngestedBuilding');
+  }
 }
 
 /**

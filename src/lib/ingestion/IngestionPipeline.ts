@@ -166,6 +166,8 @@ export interface CompanyIngestionSuccess extends IngestionSuccess {
   building?: IngestedBuildingDefinition;
   /** Entity type detected */
   entityType: EntityType;
+  /** Error message if building generation failed (NPC was still created) */
+  buildingError?: string;
 }
 
 export type ExtendedIngestionResult = IngestionSuccess | CompanyIngestionSuccess | IngestionFailure;
@@ -507,6 +509,8 @@ export async function ingestXProfile(
       options.generateBuilding !== false && 
       (entityType === 'company' || entityType === 'protocol');
     
+    let buildingError: string | undefined;
+    
     if (shouldGenerateBuilding) {
       updateProgress('spawning', 88, 'Generating company building...', onProgress);
       
@@ -541,10 +545,14 @@ export async function ingestXProfile(
           await IngestedBuildingStore.save(persistedBuilding);
           
           console.log(`[Ingestion] Generated building: ${building.name}`);
+        } else if (!buildingResult.success) {
+          // Log the error but don't fail - NPC was still created
+          buildingError = buildingResult.error;
+          console.warn('[Ingestion] Building generation failed:', buildingError);
         }
-      } catch (buildingError) {
-        console.warn('[Ingestion] Building generation failed:', buildingError);
-        // Don't fail the whole ingestion if building generation fails
+      } catch (err) {
+        buildingError = err instanceof Error ? err.message : String(err);
+        console.warn('[Ingestion] Building generation exception:', buildingError);
       }
     }
 
@@ -592,11 +600,13 @@ export async function ingestXProfile(
 
     const completionMessage = building 
       ? `@${cleanUsername} is now a citizen with ${building.name}!`
-      : `@${cleanUsername} is now a citizen!`;
+      : buildingError
+        ? `@${cleanUsername} is now a citizen! (Building generation failed: ${buildingError})`
+        : `@${cleanUsername} is now a citizen!`;
     updateProgress('completed', 100, completionMessage, onProgress);
 
-    // Return extended result for companies
-    if (building) {
+    // Return extended result for companies (with or without successful building)
+    if (shouldGenerateBuilding) {
       return {
         success: true,
         npc,
@@ -605,6 +615,7 @@ export async function ingestXProfile(
         duration: Date.now() - startTime,
         building,
         entityType,
+        buildingError,
       } as CompanyIngestionSuccess;
     }
 

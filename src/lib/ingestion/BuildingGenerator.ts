@@ -14,6 +14,45 @@ import type { CryptoTier, CryptoChain, CryptoEffects, CryptoCategory } from '@/g
 import { suggestBuildingCategory } from './EntityTypeDetector';
 
 // =============================================================================
+// GEMINI API TYPES
+// =============================================================================
+
+/** Gemini API inline data part */
+interface GeminiInlineData {
+  mimeType: string;
+  data: string;
+}
+
+/** Gemini API response part */
+interface GeminiResponsePart {
+  text?: string;
+  inlineData?: GeminiInlineData;
+}
+
+/** Gemini API response content */
+interface GeminiContent {
+  parts: GeminiResponsePart[];
+  role?: string;
+}
+
+/** Gemini API candidate */
+interface GeminiCandidate {
+  content: GeminiContent;
+  finishReason?: string;
+}
+
+/** Gemini API response */
+interface GeminiResponse {
+  candidates?: GeminiCandidate[];
+  promptFeedback?: unknown;
+}
+
+/** Window with optional Gemini API key */
+interface WindowWithGeminiKey extends Window {
+  __GEMINI_API_KEY?: string;
+}
+
+// =============================================================================
 // TYPES
 // =============================================================================
 
@@ -86,8 +125,7 @@ export interface IngestedBuildingDefinition {
 // =============================================================================
 
 // Tile sizes for sprite generation
-const TILE_WIDTH = 64;
-const TILE_HEIGHT_RATIO = 0.8;  // Height is 80% wider for isometric depth
+// Note: TILE_WIDTH is used for documentation/reference of the 64px tile base
 
 // Base dimensions for each footprint size
 const FOOTPRINT_DIMENSIONS: Record<string, { width: number; height: number }> = {
@@ -154,7 +192,7 @@ export async function generateBuilding(
   try {
     // Check for API key
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
-      (typeof window !== 'undefined' ? (window as unknown as { __GEMINI_API_KEY?: string }).__GEMINI_API_KEY : null);
+      (typeof window !== 'undefined' ? (window as WindowWithGeminiKey).__GEMINI_API_KEY : null);
     
     if (!apiKey) {
       return {
@@ -252,12 +290,11 @@ export async function generateBuilding(
     
     updateProgress('processing_output', 70, 'Processing generated sprite...');
     
-    const data = await response.json();
+    const data: GeminiResponse = await response.json();
     
     // Extract the generated image
     const generatedImage = data.candidates?.[0]?.content?.parts?.find(
-      (part: { inlineData?: { mimeType?: string; data?: string } }) => 
-        part.inlineData?.mimeType?.startsWith('image/')
+      (part: GeminiResponsePart) => part.inlineData?.mimeType?.startsWith('image/')
     );
     
     if (!generatedImage?.inlineData?.data) {

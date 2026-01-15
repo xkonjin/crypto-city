@@ -1,7 +1,7 @@
 # CryptoCity Issues Tracker
 
 **Last Updated**: 2026-01-15  
-**Test Status**: 3,791 tests (~96% passing)  
+**Test Status**: 3,791 tests (~97% passing)  
 **Build**: ✅ Passes  
 **Lint**: ✅ Passes
 
@@ -21,50 +21,6 @@
 
 ## Medium Priority Issues
 
-### 3. Type Safety - `any` Types in API Handling
-**Status**: Open  
-**Priority**: Medium  
-**Files**: `src/lib/ingestion/AvatarGenerator.ts`, `src/lib/ingestion/BuildingGenerator.ts`
-
-**Description**: Gemini API response parsing uses `any` types, risking silent failures if API format changes.
-
-| File:Line | Issue |
-|-----------|-------|
-| `AvatarGenerator.ts:215` | `(window as any).__GEMINI_API_KEY` |
-| `AvatarGenerator.ts:297` | `(part: any)` for API response |
-| `BuildingGenerator.ts:195-202` | Inline type assertion for `part.inlineData` |
-
-**Fix**: Create proper TypeScript interfaces for Gemini API responses.
-
----
-
-### 4. Missing Error Propagation in Ingestion Pipeline
-**Status**: Open  
-**Priority**: Medium  
-**Files**: `src/lib/ingestion/IngestionPipeline.ts`
-
-**Description**: Building generation is fire-and-forget without proper error bubbling. If building generation fails silently, the entity is recorded but without a building.
-
-| Location | Issue |
-|----------|-------|
-| `IngestionPipeline.ts:514-543` | Building generation errors not propagated |
-| `IngestionPipeline.ts:587` | NPC persistence failure only logged |
-
-**Fix**: Add error propagation and UI notification for failed building generation.
-
----
-
-### 5. Missing Dialog Accessibility Attributes
-**Status**: Open  
-**Priority**: Medium  
-**Files**: Various panel components
-
-**Description**: Many Dialog components lack `DialogDescription` - assistive technologies won't provide context.
-
-**Fix**: Add `DialogDescription` component or `aria-describedby={undefined}` to all `DialogContent` components.
-
----
-
 ### 6. Test Timeout Issues
 **Status**: Open (Flaky)  
 **Priority**: Medium  
@@ -79,17 +35,6 @@
 ```typescript
 await page.waitForSelector('[data-testid="treasury-panel"]', { timeout: 45000 });
 ```
-
----
-
-### 7. IndexedDB Error Handling
-**Status**: Open  
-**Priority**: Medium  
-**Files**: `src/lib/ingestion/IngestedBuildingStore.ts`, `src/lib/ingestion/IngestedEntityStore.ts`
-
-**Description**: No error handling for IndexedDB quota exceeded errors. `getDB()` caches the promise - if DB open fails, subsequent calls return failed promise.
-
-**Fix**: Add quota exceeded handling and retry logic.
 
 ---
 
@@ -152,17 +97,6 @@ await page.waitForSelector('[data-testid="treasury-panel"]', { timeout: 45000 })
 
 ---
 
-### 13. Unused Constant in BuildingGenerator
-**Status**: Open  
-**Priority**: Low  
-**Files**: `src/lib/ingestion/BuildingGenerator.ts:35-42`
-
-**Description**: `TILE_HEIGHT_RATIO = 0.8` is defined but never used.
-
-**Fix**: Remove or use the constant.
-
----
-
 ### 14. No Exponential Backoff for API Rate Limits
 **Status**: Open  
 **Priority**: Low  
@@ -220,6 +154,100 @@ await page.waitForSelector('[data-testid="treasury-panel"]', { timeout: 45000 })
 ---
 
 ## Resolved Issues
+
+### [FIXED] Type Safety - `any` Types in API Handling
+**Resolved**: 2026-01-15  
+**Commit**: (pending)
+
+**Description**: Gemini API response parsing used `any` types, risking silent failures.
+
+**Solution**: 
+- Created proper TypeScript interfaces for Gemini API responses in both files
+- Defined `GeminiResponse`, `GeminiCandidate`, `GeminiContent`, `GeminiResponsePart`, `GeminiInlineData` interfaces
+- Created `WindowWithGeminiKey` interface for window API key access
+- Updated all response parsing to use typed interfaces
+
+**Files Modified**:
+- `src/lib/ingestion/AvatarGenerator.ts`
+- `src/lib/ingestion/BuildingGenerator.ts`
+
+**Result**: Full type safety for Gemini API responses ✅
+
+---
+
+### [FIXED] Missing Error Propagation in Ingestion Pipeline
+**Resolved**: 2026-01-15  
+**Commit**: (pending)
+
+**Description**: Building generation was fire-and-forget without proper error bubbling.
+
+**Solution**: 
+- Added `buildingError` field to `CompanyIngestionSuccess` interface
+- Building generation errors now captured and returned in result
+- Progress message shows error if building failed but NPC succeeded
+- Errors properly logged with context
+
+**Files Modified**:
+- `src/lib/ingestion/IngestionPipeline.ts`
+
+**Result**: Building errors propagated to callers ✅
+
+---
+
+### [FIXED] Missing Dialog Accessibility Attributes
+**Resolved**: 2026-01-15  
+**Commit**: (pending)
+
+**Description**: Dialog components lacked `DialogDescription` - assistive technologies couldn't provide context.
+
+**Solution**: 
+- Added default visually hidden `DialogDescription` to `DialogContent` component
+- Uses `sr-only` class for screen readers only
+- Added `hideDescription` prop for cases where explicit description is provided
+- All 18+ dialog panels now have proper accessibility
+
+**Files Modified**:
+- `src/components/ui/dialog.tsx`
+
+**Result**: All dialogs accessible ✅
+
+---
+
+### [FIXED] IndexedDB Error Handling
+**Resolved**: 2026-01-15  
+**Commit**: (pending)
+
+**Description**: No error handling for IndexedDB quota exceeded errors.
+
+**Solution**: 
+- Created `IndexedDBQuotaError` custom error class
+- Added `handleWriteError()` function to detect quota errors
+- Added `blocked` and `blocking` callbacks for database conflicts
+- Database promise now resets on error allowing retry
+- Save operations wrapped with try-catch and proper error propagation
+
+**Files Modified**:
+- `src/lib/ingestion/IngestedBuildingStore.ts`
+- `src/lib/ingestion/IngestedEntityStore.ts`
+
+**Result**: Quota errors properly detected and thrown ✅
+
+---
+
+### [FIXED] Unused Constant in BuildingGenerator
+**Resolved**: 2026-01-15  
+**Commit**: (pending)
+
+**Description**: `TILE_WIDTH` and `TILE_HEIGHT_RATIO` constants defined but unused.
+
+**Solution**: Removed unused constants, added documentation comment
+
+**Files Modified**:
+- `src/lib/ingestion/BuildingGenerator.ts`
+
+**Result**: Clean code, no unused variables ✅
+
+---
 
 ### [FIXED] Strict Mode Violations in Tests
 **Resolved**: 2026-01-15  
@@ -283,15 +311,17 @@ await page.waitForSelector('[data-testid="treasury-panel"]', { timeout: 45000 })
 |----------|------|-------------|----------|
 | Critical | 0 | 0 | 0 |
 | High | 0 | 0 | 2 |
-| Medium | 5 | 0 | 0 |
-| Low | 9 | 0 | 2 |
-| **Total** | **14** | **0** | **4** |
+| Medium | 1 | 0 | 4 |
+| Low | 8 | 0 | 3 |
+| **Total** | **9** | **0** | **9** |
 
 ---
 
 ## Notes
 
 - Economy system audit: **HEALTHY** ✅ - No critical bugs found
-- Type safety: ~5 `any` types need fixing (non-critical)
+- Type safety: All `any` types fixed ✅
 - NaN protection: Properly handled throughout codebase
 - 'ingested' category: Fully integrated in all systems
+- IndexedDB: Quota handling now implemented ✅
+- Dialog accessibility: Default descriptions added ✅

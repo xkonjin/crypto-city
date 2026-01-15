@@ -52,6 +52,46 @@ export interface AvatarGenerationProgress {
 }
 
 // =============================================================================
+// GEMINI API TYPES
+// =============================================================================
+
+/** Gemini API inline data part */
+interface GeminiInlineData {
+  mimeType: string;
+  data: string;
+}
+
+/** Gemini API response part (can be text or image) */
+interface GeminiResponsePart {
+  text?: string;
+  inlineData?: GeminiInlineData;
+}
+
+/** Gemini API response content */
+interface GeminiContent {
+  parts: GeminiResponsePart[];
+  role?: string;
+}
+
+/** Gemini API candidate response */
+interface GeminiCandidate {
+  content: GeminiContent;
+  finishReason?: string;
+  index?: number;
+}
+
+/** Gemini API full response */
+interface GeminiResponse {
+  candidates?: GeminiCandidate[];
+  promptFeedback?: unknown;
+}
+
+/** Window with optional Gemini API key */
+interface WindowWithGeminiKey extends Window {
+  __GEMINI_API_KEY?: string;
+}
+
+// =============================================================================
 // CONSTANTS
 // =============================================================================
 
@@ -212,7 +252,7 @@ export async function generatePixelAvatar(
   try {
     // Check for API key
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || 
-                   (typeof window !== 'undefined' ? (window as any).__GEMINI_API_KEY : null);
+                   (typeof window !== 'undefined' ? (window as WindowWithGeminiKey).__GEMINI_API_KEY : null);
     
     if (!apiKey) {
       return {
@@ -290,11 +330,11 @@ export async function generatePixelAvatar(
 
     updateProgress('processing_output', 80, 'Processing generated sprite...');
 
-    const data = await response.json();
+    const data: GeminiResponse = await response.json();
     
     // Extract the generated image from response
     const generatedImage = data.candidates?.[0]?.content?.parts?.find(
-      (part: any) => part.inlineData?.mimeType?.startsWith('image/')
+      (part: GeminiResponsePart) => part.inlineData?.mimeType?.startsWith('image/')
     );
 
     if (!generatedImage?.inlineData?.data) {
