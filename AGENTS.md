@@ -20,6 +20,9 @@ This project has specialized droids and skills in `.factory/` for targeted tasks
 | `ui-builder` | React panels, shadcn/ui, Cobie | UI components |
 | `test-runner` | Run/debug Playwright tests | Test failures |
 | `sprite-generator` | Generate/fix building sprites | Sprite issues |
+| `sprite-validator` | Validate sprite quality (transparency, colors) | Sprite QA |
+| `visual-tester` | Playwright visual regression tests | Render verification |
+| `animation-expert` | NPC walk cycles, spritesheets | Character animation |
 | `performance-auditor` | Profile and optimize | Performance |
 | `bug-hunter` | Trace data flow, find root causes | Bug investigation |
 
@@ -320,12 +323,14 @@ CanvasIsometricGrid is 147KB. For large cities, consider:
 **Testing:** Playwright
 **AI:** @google/genai (for sprite generation scripts)
 
-## Sprite Generation
+## Visual System
 
-AI-generated sprites use Google's Gemini 2.5 Flash Image API:
+### Sprite Generation
+
+AI-generated sprites use Google's Gemini 2.5 Flash Image (Nano Banana) API:
 
 ```bash
-# Scripts in /scripts/
+# Generation scripts in /scripts/
 generateSpritesNanoBanana.ts   # Main generator (Gemini 2.5 Flash Image)
 generateSpecificSprites.ts     # For specific buildings
 updateBuildingSpritePaths.ts   # Updates buildings.ts with paths
@@ -335,6 +340,54 @@ updateBuildingSpritePaths.ts   # Updates buildings.ts with paths
 - Example: `3x3aave_lending_tower_south.png`
 - All sprites have transparent backgrounds
 - Isometric pixel art style (64x64 base tile size)
+
+### Sprite Validation
+
+```bash
+# Validate all crypto sprites
+npx ts-node scripts/validateSprite.ts --all
+
+# Generate HTML report
+npx ts-node scripts/validateSprite.ts --report
+```
+
+**Quality Checks:**
+| Check | Pass Criteria |
+|-------|---------------|
+| Dimensions | 512x512 PNG |
+| Transparency | >5% transparent pixels |
+| Corners | ≥3 corners transparent |
+| Colors | ≤24 unique colors |
+
+### Dev Tools
+
+Access sprite preview tools at `/dev/sprites` (dev mode only):
+- **Sprite Preview**: Grid view with validation status
+- **Animation Preview**: Test NPC walk cycles
+- **Generator Playground**: Test AI generation (requires API key)
+
+### Visual Regression Tests
+
+```bash
+# Run visual tests
+npx playwright test tests/visual/
+
+# Update baselines
+npx playwright test tests/visual/ --update-snapshots
+```
+
+### NPC Avatar Spritesheet Format
+
+```
+128x192 PNG (4×4 grid, 32x48 per frame)
+
+Row 1: South (facing viewer)
+Row 2: East (right)
+Row 3: West (left)
+Row 4: North (away)
+
+Cols: idle, walk1, walk2, walk3
+```
 
 ## X402 NPC Economy (Testnet)
 
