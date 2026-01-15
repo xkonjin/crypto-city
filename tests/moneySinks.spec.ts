@@ -77,7 +77,7 @@ test.describe("Money Sinks - Maintenance Costs", () => {
     await page.waitForTimeout(3000);
     
     // Verify the game has loaded (canvas visible)
-    const canvas = page.locator('canvas');
+    const canvas = page.locator('[data-testid="game-canvas"]');
     await expect(canvas).toBeVisible({ timeout: 10000 });
     
     // The economy manager should be initialized with dailyMaintenanceCost field
@@ -90,7 +90,7 @@ test.describe("Money Sinks - Maintenance Costs", () => {
     await page.waitForTimeout(5000);
     
     // Check if the game is running
-    const canvas = page.locator('canvas');
+    const canvas = page.locator('[data-testid="game-canvas"]');
     await expect(canvas).toBeVisible({ timeout: 10000 });
     
     // Verify the economy state initializes correctly
@@ -110,7 +110,7 @@ test.describe("Money Sinks - Service Funding", () => {
     await page.waitForTimeout(3000);
     
     // Verify the game has loaded
-    const canvas = page.locator('canvas');
+    const canvas = page.locator('[data-testid="game-canvas"]');
     await expect(canvas).toBeVisible({ timeout: 10000 });
     
     // Default service funding should be 50% for all services
@@ -123,7 +123,7 @@ test.describe("Money Sinks - Service Funding", () => {
     await page.waitForTimeout(3000);
     
     // The economy manager with service funding should be active
-    const canvas = page.locator('canvas');
+    const canvas = page.locator('[data-testid="game-canvas"]');
     await expect(canvas).toBeVisible({ timeout: 10000 });
     
     // Service funding system is part of backend implementation
@@ -143,7 +143,7 @@ test.describe("Money Sinks - Emergency Repairs", () => {
     await page.waitForTimeout(3000);
     
     // Verify the game has loaded
-    const canvas = page.locator('canvas');
+    const canvas = page.locator('[data-testid="game-canvas"]');
     await expect(canvas).toBeVisible({ timeout: 10000 });
     
     // Initially no buildings should be damaged
@@ -155,7 +155,7 @@ test.describe("Money Sinks - Emergency Repairs", () => {
     await page.waitForTimeout(3000);
     
     // The repair system is implemented in the backend
-    const canvas = page.locator('canvas');
+    const canvas = page.locator('[data-testid="game-canvas"]');
     await expect(canvas).toBeVisible({ timeout: 10000 });
     
     // Repair mechanics are in CryptoEconomyManager
@@ -175,7 +175,7 @@ test.describe("Money Sinks - Building Upgrades", () => {
     await page.waitForTimeout(3000);
     
     // Verify the game has loaded
-    const canvas = page.locator('canvas');
+    const canvas = page.locator('[data-testid="game-canvas"]');
     await expect(canvas).toBeVisible({ timeout: 10000 });
     
     // Building upgrades are implemented in the economy manager
@@ -187,7 +187,7 @@ test.describe("Money Sinks - Building Upgrades", () => {
     await page.waitForTimeout(3000);
     
     // The upgrade system is part of PlacedCryptoBuilding type
-    const canvas = page.locator('canvas');
+    const canvas = page.locator('[data-testid="game-canvas"]');
     await expect(canvas).toBeVisible({ timeout: 10000 });
     
     // Upgrade tracking is in the backend implementation

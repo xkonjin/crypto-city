@@ -48,6 +48,7 @@ LAYER 3: AGENTS - Eye Candy
 | Crypto economy | `src/games/isocity/crypto/CryptoEconomyManager.ts` |
 | NPC simulation | `src/lib/npc/NPCSimulation.ts` |
 | Titan/Pet AI | `src/lib/titan/TitanAI.ts` |
+| X Profile ingestion | `src/lib/ingestion/IngestionPipeline.ts` |
 | UI panels | `src/components/game/panels/*.tsx` |
 
 ## Isometric Math
@@ -84,6 +85,13 @@ screenY = (gridX + gridY) * (TILE_HEIGHT / 2);
 - BDI AI (Belief-Desire-Intention)
 - God Hand praise/punish for training
 - 12 skills, moral alignment (-1 angelic to +1 demonic)
+
+### X Profile Ingestion
+- Transforms X/Twitter profiles into NPCs (individuals) or buildings (companies/protocols)
+- `EntityTypeDetector`: Classifies profiles using bio keywords, follower ratios, known protocol list
+- `AvatarGenerator` / `BuildingGenerator`: AI-generated pixel art via Gemini API
+- `IngestedEntityStore`, `IngestedNPCStore`, `IngestedBuildingStore`: IndexedDB persistence
+- `FindMyCharacterPanel`: UI to locate and manage ingested characters
 
 ## Save/Load
 

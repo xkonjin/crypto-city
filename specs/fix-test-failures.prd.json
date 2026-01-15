@@ -1,0 +1,110 @@
+{
+  "project": "Fix High-Priority Test Failures",
+  "branchName": "ralph/fix-test-failures",
+  "description": "Fix 13 Playwright test failures caused by selector strict mode violations where generic selectors resolve to multiple elements",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add data-testid to main game canvas",
+      "description": "As a developer running tests, I want the main game canvas to have a unique data-testid so that tests can select it without strict mode violations",
+      "acceptanceCriteria": [
+        "Add data-testid=\"game-canvas\" to the main canvas element in CanvasIsometricGrid.tsx (around line 3481)",
+        "The canvas element already has className and ref attributes - add data-testid alongside",
+        "Typecheck passes",
+        "Lint passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Main canvas is the first canvas in CanvasIsometricGrid, used for game interaction detection"
+    },
+    {
+      "id": "US-002",
+      "title": "Add data-testid to other canvas layers",
+      "description": "As a developer, I want all canvas layers to have unique data-testid attributes for comprehensive test coverage",
+      "acceptanceCriteria": [
+        "Add data-testid=\"hover-canvas\" to hover canvas in CanvasIsometricGrid.tsx (around line 3492)",
+        "Add data-testid=\"cars-canvas\" to cars canvas in CanvasIsometricGrid.tsx (around line 3499)",
+        "Add data-testid=\"buildings-canvas\" to buildings canvas in CanvasIsometricGrid.tsx (around line 3506)",
+        "Add data-testid=\"air-canvas\" to air canvas in CanvasIsometricGrid.tsx (around line 3513)",
+        "Add data-testid=\"lighting-canvas\" to lighting canvas in CanvasIsometricGrid.tsx (around line 3520)",
+        "Typecheck passes",
+        "Lint passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "These canvas layers are stacked on top of the main game canvas"
+    },
+    {
+      "id": "US-003",
+      "title": "Add data-testid to minimap canvas",
+      "description": "As a developer, I want the minimap canvas to have a data-testid so it can be distinguished from game canvas",
+      "acceptanceCriteria": [
+        "Add data-testid=\"minimap-canvas\" to the canvas element in MiniMap.tsx",
+        "Typecheck passes",
+        "Lint passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Minimap is a separate component with its own canvas"
+    },
+    {
+      "id": "US-004",
+      "title": "Update moneySinks.spec.ts canvas selectors",
+      "description": "As a developer running tests, I want moneySinks tests to use specific selectors so all 8 tests pass",
+      "acceptanceCriteria": [
+        "Replace all page.locator('canvas') calls with page.locator('[data-testid=\"game-canvas\"]')",
+        "Update startGame helper if it uses generic canvas selector",
+        "All 8 tests in moneySinks.spec.ts pass when run with: npx playwright test tests/moneySinks.spec.ts",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "8 test failures to fix"
+    },
+    {
+      "id": "US-005",
+      "title": "Update advisors.spec.ts dialog selectors",
+      "description": "As a developer running tests, I want advisors tests to use specific selectors so all 3 tests pass",
+      "acceptanceCriteria": [
+        "Replace page.locator('[role=\"dialog\"]') with page.locator('[data-testid=\"advisor-panel\"]') where appropriate",
+        "Use existing data-testid attributes in AdvisorsPanel.tsx if available",
+        "All 3 tests in advisors.spec.ts pass when run with: npx playwright test tests/advisors.spec.ts",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "3 test failures due to multiple dialogs matching role=dialog"
+    },
+    {
+      "id": "US-006",
+      "title": "Update cobieNarrator.spec.ts selectors",
+      "description": "As a developer running tests, I want Cobie narrator tests to use stable selectors so both tests pass",
+      "acceptanceCriteria": [
+        "Audit cobieNarrator.spec.ts for selectors that don't match actual DOM elements",
+        "Add missing data-testid attributes to Cobie components if needed (CobieSpeechBubble.tsx)",
+        "Update test selectors to match actual component structure",
+        "Both tests in cobieNarrator.spec.ts pass when run with: npx playwright test tests/cobieNarrator.spec.ts",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "2 test failures due to selector mismatches"
+    },
+    {
+      "id": "US-007",
+      "title": "Verify all 13 tests pass with no regressions",
+      "description": "As a developer, I want to verify all fixes work together without breaking other tests",
+      "acceptanceCriteria": [
+        "Run: npx playwright test tests/moneySinks.spec.ts - all 8 tests pass",
+        "Run: npx playwright test tests/advisors.spec.ts - all 3 tests pass",
+        "Run: npx playwright test tests/cobieNarrator.spec.ts - all 2 tests pass",
+        "Run: npm run typecheck - no errors",
+        "Run: npm run lint - no errors",
+        "Existing tests in game.spec.ts that use .first() still pass"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Final verification step - run full test suite to check for regressions"
+    }
+  ]
+}

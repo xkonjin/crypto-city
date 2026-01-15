@@ -3480,6 +3480,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       
       <canvas
         ref={canvasRef}
+        data-testid="game-canvas"
         width={canvasSize.width}
         height={canvasSize.height}
         className="absolute top-0 left-0"
@@ -3491,6 +3492,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       {/* PERF: Separate canvas for hover/selection highlights - avoids full redraw on mouse move */}
       <canvas
         ref={hoverCanvasRef}
+        data-testid="hover-canvas"
         width={canvasSize.width}
         height={canvasSize.height}
         className="absolute top-0 left-0 pointer-events-none"
@@ -3498,6 +3500,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       />
       <canvas
         ref={carsCanvasRef}
+        data-testid="cars-canvas"
         width={canvasSize.width}
         height={canvasSize.height}
         className="absolute top-0 left-0 pointer-events-none"
@@ -3505,6 +3508,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       />
       <canvas
         ref={buildingsCanvasRef}
+        data-testid="buildings-canvas"
         width={canvasSize.width}
         height={canvasSize.height}
         className="absolute top-0 left-0 pointer-events-none"
@@ -3512,6 +3516,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       />
       <canvas
         ref={airCanvasRef}
+        data-testid="air-canvas"
         width={canvasSize.width}
         height={canvasSize.height}
         className="absolute top-0 left-0 pointer-events-none"
@@ -3519,6 +3524,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       />
       <canvas
         ref={lightingCanvasRef}
+        data-testid="lighting-canvas"
         width={canvasSize.width}
         height={canvasSize.height}
         className="absolute top-0 left-0 pointer-events-none"

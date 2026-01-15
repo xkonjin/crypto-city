@@ -198,6 +198,7 @@ export const MiniMap = React.memo(function MiniMap({ onNavigate, viewport }: Min
       </div>
       <canvas
         ref={canvasRef}
+        data-testid="minimap-canvas"
         width={140}
         height={140}
         className="block rounded-md border border-border/60 cursor-pointer select-none"
