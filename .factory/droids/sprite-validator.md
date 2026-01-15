@@ -27,8 +27,10 @@ npx ts-node scripts/validateSprite.ts --report
 | Dimensions | 512x512 | 128x192 | Exact match |
 | Alpha channel | Required | Required | Has transparency |
 | Corners | Transparent | Transparent | ≥3 corners transparent |
-| Color count | ≤24 | ≤16 | Pixel art limits |
+| Color count | ≤64 | ≤32 | AI-generated limits |
 | Background | Transparent | Transparent | >5% transparent pixels |
+
+**Note**: MAX_PIXEL_ART_COLORS is 64 (not 24) to accommodate AI-generated sprites.
 
 ## Building Sprite Specs
 

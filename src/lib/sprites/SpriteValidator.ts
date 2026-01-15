@@ -62,7 +62,9 @@ export type SpriteType = 'building' | 'avatar' | 'tile' | 'unknown';
 export const BUILDING_DIMENSIONS = { width: 512, height: 512 };
 export const AVATAR_DIMENSIONS = { width: 128, height: 192 };
 export const TILE_DIMENSIONS = { width: 64, height: 64 };
-export const MAX_PIXEL_ART_COLORS = 24;
+// NOTE: AI-generated sprites often use more colors than traditional pixel art
+// Using 64 as limit to accommodate Gemini/DALL-E generated sprites
+export const MAX_PIXEL_ART_COLORS = 64;
 export const MIN_TRANSPARENCY_PERCENT = 5;
 
 // =============================================================================

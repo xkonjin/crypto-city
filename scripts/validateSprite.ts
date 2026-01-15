@@ -11,7 +11,11 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import sharp from 'sharp';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // =============================================================================
 // TYPES (duplicated for Node.js script - can't import browser code)
@@ -52,7 +56,8 @@ interface SpriteValidationResult {
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const CRYPTO_SPRITES_DIR = path.join(PROJECT_ROOT, 'public/Building/crypto');
 const BUILDING_SIZE = { width: 512, height: 512 };
-const MAX_COLORS = 24;
+// AI-generated sprites use more colors than traditional pixel art
+const MAX_COLORS = 64;
 const MIN_TRANSPARENCY = 5;
 
 // =============================================================================

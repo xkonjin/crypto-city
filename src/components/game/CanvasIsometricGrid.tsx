@@ -1151,20 +1151,8 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
     const greenBaseTileQueue = queues.greenBaseTileQueue;
     const overlayQueue = queues.overlayQueue;
     
-    // PERF: Insertion sort for nearly-sorted arrays (O(n) vs O(n log n) for .sort())
-    // Since tiles are iterated in diagonal order, queues are already nearly sorted
-    function insertionSortByDepth<T extends { depth: number }>(arr: T[]): void {
-      for (let i = 1; i < arr.length; i++) {
-        const current = arr[i];
-        let j = i - 1;
-        // Only move elements that are strictly greater (maintains stability)
-        while (j >= 0 && arr[j].depth > current.depth) {
-          arr[j + 1] = arr[j];
-          j--;
-        }
-        arr[j + 1] = current;
-      }
-    }
+    // NOTE: insertionSortByDepth is imported from canvas module (line 90)
+    // PERF: O(n) for nearly-sorted arrays vs O(n log n) for .sort()
     
     // Helper function to check if a tile is water
     function isWater(gridX: number, gridY: number): boolean {
