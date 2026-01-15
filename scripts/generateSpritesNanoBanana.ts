@@ -17,6 +17,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
+import * as sharpModule from 'sharp';
+const sharp = (sharpModule as any).default || sharpModule;
 
 // =============================================================================
 // CONFIGURATION
@@ -313,7 +315,112 @@ function ensureDir(dir: string): void {
   }
 }
 
-function saveImage(imageBuffer: Buffer, building: BuildingInfo): string {
+// Color distance for background detection
+function colorDistance(c1: { r: number; g: number; b: number }, c2: { r: number; g: number; b: number }): number {
+  return Math.sqrt(
+    Math.pow(c1.r - c2.r, 2) +
+    Math.pow(c1.g - c2.g, 2) +
+    Math.pow(c1.b - c2.b, 2)
+  );
+}
+
+// Remove background from generated sprite using flood-fill from edges
+async function addTransparency(imageBuffer: Buffer): Promise<Buffer> {
+  // Sample edges to find dominant background colors
+  const { data, info } = await sharp(imageBuffer)
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const { width, height, channels } = info;
+  const colorCounts = new Map<string, { count: number; r: number; g: number; b: number }>();
+  
+  // Sample from edges (10 pixels deep)
+  for (let i = 0; i < 10; i++) {
+    for (let x = 0; x < width; x += 5) {
+      // Top edge
+      let idx = (i * width + x) * channels;
+      let key = `${Math.round(data[idx] / 20) * 20},${Math.round(data[idx + 1] / 20) * 20},${Math.round(data[idx + 2] / 20) * 20}`;
+      const topEntry = colorCounts.get(key);
+      if (topEntry) topEntry.count++; else colorCounts.set(key, { count: 1, r: data[idx], g: data[idx + 1], b: data[idx + 2] });
+      
+      // Bottom edge
+      idx = ((height - 1 - i) * width + x) * channels;
+      key = `${Math.round(data[idx] / 20) * 20},${Math.round(data[idx + 1] / 20) * 20},${Math.round(data[idx + 2] / 20) * 20}`;
+      const bottomEntry = colorCounts.get(key);
+      if (bottomEntry) bottomEntry.count++; else colorCounts.set(key, { count: 1, r: data[idx], g: data[idx + 1], b: data[idx + 2] });
+    }
+    for (let y = 0; y < height; y += 5) {
+      // Left edge
+      let idx = (y * width + i) * channels;
+      let key = `${Math.round(data[idx] / 20) * 20},${Math.round(data[idx + 1] / 20) * 20},${Math.round(data[idx + 2] / 20) * 20}`;
+      const leftEntry = colorCounts.get(key);
+      if (leftEntry) leftEntry.count++; else colorCounts.set(key, { count: 1, r: data[idx], g: data[idx + 1], b: data[idx + 2] });
+      
+      // Right edge
+      idx = (y * width + (width - 1 - i)) * channels;
+      key = `${Math.round(data[idx] / 20) * 20},${Math.round(data[idx + 1] / 20) * 20},${Math.round(data[idx + 2] / 20) * 20}`;
+      const rightEntry = colorCounts.get(key);
+      if (rightEntry) rightEntry.count++; else colorCounts.set(key, { count: 1, r: data[idx], g: data[idx + 1], b: data[idx + 2] });
+    }
+  }
+
+  // Get top 5 background colors
+  const bgColors = Array.from(colorCounts.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // Read image with alpha channel
+  const { data: rawData, info: rawInfo } = await sharp(imageBuffer)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const newData = Buffer.from(rawData);
+  const tolerance = 35;
+
+  // Flood-fill from all edges
+  const visited = new Set<number>();
+  const queue: Array<{ x: number; y: number }> = [];
+
+  for (let x = 0; x < rawInfo.width; x++) {
+    queue.push({ x, y: 0 });
+    queue.push({ x, y: rawInfo.height - 1 });
+  }
+  for (let y = 0; y < rawInfo.height; y++) {
+    queue.push({ x: 0, y });
+    queue.push({ x: rawInfo.width - 1, y });
+  }
+
+  while (queue.length > 0) {
+    const { x, y } = queue.shift()!;
+    const idx = (y * rawInfo.width + x) * 4;
+    const key = y * rawInfo.width + x;
+
+    if (visited.has(key) || x < 0 || x >= rawInfo.width || y < 0 || y >= rawInfo.height) continue;
+
+    const r = newData[idx], g = newData[idx + 1], b = newData[idx + 2];
+    let isBackground = false;
+    for (const bg of bgColors) {
+      if (colorDistance({ r, g, b }, bg) < tolerance) {
+        isBackground = true;
+        break;
+      }
+    }
+    if (!isBackground) continue;
+
+    visited.add(key);
+    newData[idx + 3] = 0; // Make transparent
+
+    queue.push({ x: x - 1, y }, { x: x + 1, y }, { x, y: y - 1 }, { x, y: y + 1 });
+  }
+
+  // Save with compression
+  return await sharp(newData, { raw: { width: rawInfo.width, height: rawInfo.height, channels: 4 } })
+    .png({ compressionLevel: 9, palette: true, colors: 64 })
+    .toBuffer();
+}
+
+async function saveImage(imageBuffer: Buffer, building: BuildingInfo): Promise<string> {
   const categoryDir = path.join(OUTPUT_DIR, building.category);
   ensureDir(categoryDir);
   
@@ -321,7 +428,10 @@ function saveImage(imageBuffer: Buffer, building: BuildingInfo): string {
   const filename = `${footprint}${building.id}_south.png`;
   const filepath = path.join(categoryDir, filename);
   
-  fs.writeFileSync(filepath, imageBuffer);
+  // Add transparency and optimize
+  const processedBuffer = await addTransparency(imageBuffer);
+  
+  fs.writeFileSync(filepath, processedBuffer);
   return filepath;
 }
 
@@ -447,8 +557,10 @@ async function main(): Promise<void> {
     const imageBuffer = await generateImage(prompt, building.category);
     
     if (imageBuffer) {
-      const filepath = saveImage(imageBuffer, building);
-      console.log(`   ✅ Saved: ${path.basename(filepath)} (${(imageBuffer.length / 1024).toFixed(1)}KB)`);
+      console.log('   Processing transparency...');
+      const filepath = await saveImage(imageBuffer, building);
+      const stats = fs.statSync(filepath);
+      console.log(`   ✅ Saved: ${path.basename(filepath)} (${(stats.size / 1024).toFixed(1)}KB)`);
       successCount++;
     } else {
       console.log(`   ❌ Failed to generate`);
