@@ -55,3 +55,6 @@ _crypto_backup/
 
 # Local dev tools
 .opencode/
+# Backup folders for sprite fixes
+public/Building/crypto_backup_aggressive/
+public/Building/crypto_backup_pre_transparency/

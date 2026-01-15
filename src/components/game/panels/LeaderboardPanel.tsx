@@ -205,7 +205,7 @@ export function LeaderboardPanel() {
     <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
       <DialogContent 
         data-testid="leaderboard-panel"
-        className="max-w-md max-h-[90vh] flex flex-col"
+        className="max-w-dialog-md max-h-[90vh] flex flex-col"
       >
         <DialogHeader>
           <div className="flex items-center justify-between">

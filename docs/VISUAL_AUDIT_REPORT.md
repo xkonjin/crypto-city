@@ -105,27 +105,27 @@ The AI sprite generator (Gemini 2.5 Flash Image) outputs **RGB format** instead 
 
 ---
 
-## 2. UI COMPONENTS AUDIT
+## 2. UI COMPONENTS AUDIT (FIXED)
 
 ### Design System
 - **globals.css**: Well-organized HSL tokens
 - **tailwind.config.js**: Proper theme extension
 - **shadcn/ui**: Consistent component library
 
-### Issues Found
+### Issues Fixed
 
-#### High Priority (3)
-1. **Dialog width inconsistency** - 11 different max-width values
-   - Locations: Various panel components
-   - Fix: Use CSS variables (already defined: --dialog-small/medium/large)
+#### High Priority (3) - ALL RESOLVED ✅
+1. **Dialog width inconsistency** - FIXED
+   - Standardized PrestigePanel, LeaderboardPanel, CityAIPanel to use `max-w-dialog-*` tokens
+   - All panels now use consistent sizing: sm (420px), md (550px), lg (700px)
 
-2. **Focus management gaps** - Some modals don't trap focus
-   - Risk: Accessibility violation
-   - Fix: Ensure all Dialog use Radix focus lock
+2. **Focus management** - VERIFIED OK
+   - All dialogs use Radix UI which provides automatic focus trapping
+   - No additional fixes needed
 
-3. **Touch targets < 44px** - Some mobile buttons too small
-   - Location: MobileToolbar icon buttons
-   - Fix: Increase to 44x44px minimum
+3. **Touch targets < 44px** - FIXED
+   - Updated MobileToolbar buttons from h-10 to h-11 (44px)
+   - City Management buttons and Overlay buttons all now meet 44px minimum
 
 #### Medium Priority (5)
 1. Hardcoded colors in crypto components (should use tokens)

@@ -569,7 +569,7 @@ export function MobileToolbar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-10 w-full text-xs"
+                  className="h-11 w-full text-xs"
                   onClick={() => {
                     onOpenPanel("budget");
                     setShowMenu(false);
@@ -580,7 +580,7 @@ export function MobileToolbar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-10 w-full text-xs"
+                  className="h-11 w-full text-xs"
                   onClick={() => {
                     onOpenPanel("statistics");
                     setShowMenu(false);
@@ -591,7 +591,7 @@ export function MobileToolbar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-10 w-full text-xs"
+                  className="h-11 w-full text-xs"
                   onClick={() => {
                     onOpenPanel("advisors");
                     setShowMenu(false);
@@ -602,7 +602,7 @@ export function MobileToolbar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-10 w-full text-xs"
+                  className="h-11 w-full text-xs"
                   onClick={() => {
                     onOpenPanel("settings");
                     setShowMenu(false);
@@ -623,7 +623,7 @@ export function MobileToolbar({
                   <Button
                     variant={overlayMode === "none" ? "default" : "ghost"}
                     size="sm"
-                    className="h-10 w-full text-xs"
+                    className="h-11 w-full text-xs"
                     onClick={() => setOverlayMode("none")}
                   >
                     {m(UI_LABELS.none)}
@@ -631,7 +631,7 @@ export function MobileToolbar({
                   <Button
                     variant={overlayMode === "power" ? "default" : "ghost"}
                     size="sm"
-                    className={`h-10 w-full text-xs ${overlayMode === "power" ? "bg-amber-500 hover:bg-amber-600" : ""}`}
+                    className={`h-11 w-full text-xs ${overlayMode === "power" ? "bg-amber-500 hover:bg-amber-600" : ""}`}
                     onClick={() => setOverlayMode("power")}
                   >
                     {m(UI_LABELS.power)}
@@ -639,7 +639,7 @@ export function MobileToolbar({
                   <Button
                     variant={overlayMode === "water" ? "default" : "ghost"}
                     size="sm"
-                    className={`h-10 w-full text-xs ${overlayMode === "water" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
+                    className={`h-11 w-full text-xs ${overlayMode === "water" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
                     onClick={() => setOverlayMode("water")}
                   >
                     {m(UI_LABELS.water)}
@@ -647,7 +647,7 @@ export function MobileToolbar({
                   <Button
                     variant={overlayMode === "fire" ? "default" : "ghost"}
                     size="sm"
-                    className={`h-10 w-full text-xs ${overlayMode === "fire" ? "bg-red-500 hover:bg-red-600" : ""}`}
+                    className={`h-11 w-full text-xs ${overlayMode === "fire" ? "bg-red-500 hover:bg-red-600" : ""}`}
                     onClick={() => setOverlayMode("fire")}
                   >
                     {m(UI_LABELS.fire)}
@@ -655,7 +655,7 @@ export function MobileToolbar({
                   <Button
                     variant={overlayMode === "police" ? "default" : "ghost"}
                     size="sm"
-                    className={`h-10 w-full text-xs ${overlayMode === "police" ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+                    className={`h-11 w-full text-xs ${overlayMode === "police" ? "bg-blue-600 hover:bg-blue-700" : ""}`}
                     onClick={() => setOverlayMode("police")}
                   >
                     {m(UI_LABELS.police)}
@@ -663,7 +663,7 @@ export function MobileToolbar({
                   <Button
                     variant={overlayMode === "health" ? "default" : "ghost"}
                     size="sm"
-                    className={`h-10 w-full text-xs ${overlayMode === "health" ? "bg-green-500 hover:bg-green-600" : ""}`}
+                    className={`h-11 w-full text-xs ${overlayMode === "health" ? "bg-green-500 hover:bg-green-600" : ""}`}
                     onClick={() => setOverlayMode("health")}
                   >
                     {m(UI_LABELS.health)}
@@ -671,7 +671,7 @@ export function MobileToolbar({
                   <Button
                     variant={overlayMode === "education" ? "default" : "ghost"}
                     size="sm"
-                    className={`h-10 w-full text-xs ${overlayMode === "education" ? "bg-purple-500 hover:bg-purple-600" : ""}`}
+                    className={`h-11 w-full text-xs ${overlayMode === "education" ? "bg-purple-500 hover:bg-purple-600" : ""}`}
                     onClick={() => setOverlayMode("education")}
                   >
                     {m(UI_LABELS.education)}
@@ -679,7 +679,7 @@ export function MobileToolbar({
                   <Button
                     variant={overlayMode === "subway" ? "default" : "ghost"}
                     size="sm"
-                    className={`h-10 w-full text-xs ${overlayMode === "subway" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+                    className={`h-11 w-full text-xs ${overlayMode === "subway" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
                     onClick={() => setOverlayMode("subway")}
                   >
                     {m(UI_LABELS.subway)}

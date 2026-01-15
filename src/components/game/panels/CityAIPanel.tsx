@@ -190,7 +190,7 @@ export function CityAIPanel({ isOpen, onClose }: CityAIPanelProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg bg-gray-900/95 border-cyan-500/30">
+      <DialogContent className="max-w-dialog-lg bg-gray-900/95 border-cyan-500/30">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-cyan-400">
             <Bot className="h-5 w-5" />

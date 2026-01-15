@@ -139,7 +139,7 @@ function PrestigeConfirmDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-dialog-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-400" />
@@ -244,7 +244,7 @@ export function PrestigePanel({
   return (
     <>
       <Dialog open={true} onOpenChange={() => setActivePanel('none')}>
-        <DialogContent className="max-w-[500px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-dialog-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-amber-400" />
