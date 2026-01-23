@@ -3090,7 +3090,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
       setIsPanning(false);
       isPinchZoomingRef.current = true;
     }
-  }, [offset, zoom, getTouchDistance, getTouchCenter]);
+  }, [offset, zoom]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     // Note: preventDefault is called via native event listener to avoid passive listener warning
@@ -3139,7 +3139,7 @@ export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile
         lastTouchCenterRef.current = currentCenter;
       }
     }
-  }, [isPanning, dragStart, zoom, offset, clampOffset, getTouchDistance, getTouchCenter]);
+  }, [isPanning, dragStart, zoom, offset, clampOffset]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     const touchStart = touchStartRef.current;

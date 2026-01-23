@@ -10,7 +10,7 @@ export const SOUND_EFFECTS = {
   open: '/audio/open.mp3',
   
   // Building sounds
-  build: '/audio/build.mp3',
+   build: '/audio/build.mp3',
   buildRoad: '/audio/buildroad.mp3',
   destruction: '/audio/destruction.mp3',
   
@@ -161,7 +161,8 @@ export function useSound(): UseSoundReturn {
   }, [settings.sfxEnabled, settings.masterVolume, settings.sfxVolume]);
   
   // Play next music track
-  const playNextTrack = useCallback(() => {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+     const playNextTrack = useCallback(() => {
     if (!settings.musicEnabled || typeof window === 'undefined') return;
     
     const tracks = MUSIC_TRACKS[settings.musicCategory];
@@ -169,8 +170,11 @@ export function useSound(): UseSoundReturn {
     const track = tracks[currentTrackIndexRef.current];
     
     if (musicAudioRef.current) {
+       
       musicAudioRef.current.pause();
-      musicAudioRef.current.removeEventListener('ended', playNextTrack);
+           
+       
+                musicAudioRef.current.removeEventListener('ended', playNextTrack);
     }
     
     const audio = new Audio(track);

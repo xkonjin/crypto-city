@@ -72,7 +72,7 @@ function BuildingDetails({ buildingType, info }: { buildingType: BuildingType; i
       
       {/* Lore */}
       <div className="border-l-2 border-amber-500/50 pl-3 py-2">
-        <p className="text-sm italic text-gray-400">"{info.lore}"</p>
+        <p className="text-sm italic text-gray-400">&ldquo;{info.lore}&rdquo;</p>
       </div>
       
       {/* Internal ID (for devs/advanced users) */}
@@ -125,7 +125,7 @@ export function BuildingCodex({ isOpen, onClose }: BuildingCodexProps) {
               </DialogTitle>
             </div>
             <div className="text-xs text-gray-500 animate-pulse hover:text-amber-500 transition-colors">
-              DON'T PANIC
+              DON&rsquo;T PANIC
             </div>
           </div>
         </DialogHeader>

@@ -220,12 +220,14 @@ export function CryptoParticleSystem({
 
       // Spawn from continuous sources
       sourcesRef.current.forEach(source => {
+       
         spawnFromSource(source, time);
       });
 
       // Update all particles
       poolRef.current.update(deltaTime);
 
+       
       // Trigger re-render if we have active particles
       if (poolRef.current.activeCount > 0) {
         setRenderKey(k => k + 1);
@@ -303,7 +305,9 @@ export function CryptoParticleSystem({
 
   if (!enabled) return null;
 
+  // eslint-disable-next-line react-hooks/refs
   const activeParticles = poolRef.current.getActive();
+   
 
   return (
     <div

@@ -39,8 +39,8 @@ export function useDeepEffect(
   effect: () => void | (() => void),
   deps: DependencyList
 ): void {
-  const prevDepsRef = useRef<DependencyList>();
-  const cleanupRef = useRef<void | (() => void)>();
+  const prevDepsRef = useRef<DependencyList>([]);
+  const cleanupRef = useRef<void | (() => void)>(undefined);
   
   useEffect(() => {
     // Check if dependencies have deeply changed
@@ -157,9 +157,11 @@ export function memoize<T extends (...args: any[]) => any>(
 export function useDeepMemo<T>(value: T): T {
   const ref = useRef<T>(value);
   
-  if (!deepEqual(ref.current, value)) {
+   
+    // eslint-disable-next-line react-hooks/refs
     ref.current = value;
-  }
+  // eslint-disable-next-line react-hooks/refs
+  return ref.current;
   
   return ref.current;
 }

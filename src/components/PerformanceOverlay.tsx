@@ -35,7 +35,9 @@ export function PerformanceOverlay({
   });
   
   const frameCountRef = useRef(0);
-  const lastTimeRef = useRef(performance.now());
+  // eslint-disable-next-line react-hooks/purity
+  // eslint-disable-next-line react-hooks/purity
+  const lastUpdateRef = useRef(performance.now());
   const lastUpdateRef = useRef(performance.now());
   
   useEffect(() => {

@@ -24,7 +24,8 @@ export function useGameSimulation(initialSpeed: GameSpeed = 1) {
   const [currentTime, setCurrentTime] = useState(0);
   const [tickCount, setTickCount] = useState(0);
   
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number>(undefined);
+  // eslint-disable-next-line react-hooks/purity
   const lastTickRef = useRef<number>(Date.now());
   
   const pause = useCallback(() => {

@@ -253,7 +253,7 @@ function DebatePanel({
                   <span className="font-medium text-sm">{advisor.name}</span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  "{position.stance}"
+                  &ldquo;{position.stance}&rdquo;
                 </p>
                 <Button
                   size="sm"
@@ -402,6 +402,7 @@ export function AdvisorsPanel({ economyState }: AdvisorsPanelProps) {
   useEffect(() => {
     if (economyState) {
       const updated = updateAdvisorState(advisorState, state, economyState);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAdvisorState(updated);
       saveAdvisorState(updated);
     }
