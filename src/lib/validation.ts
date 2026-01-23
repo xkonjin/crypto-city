@@ -6,6 +6,9 @@
  * to prevent XSS, injection attacks, and invalid data
  */
 
+// Re-export accessibility functions for backward compatibility
+export { getContrastRatio, meetsWCAGAA } from './accessibility';
+
 /**
  * Sanitize a string by removing HTML tags and dangerous characters
  */

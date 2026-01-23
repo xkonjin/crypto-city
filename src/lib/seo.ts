@@ -15,6 +15,7 @@ export interface SEOConfig {
   author?: string;
   publishedTime?: string;
   modifiedTime?: string;
+  siteName?: string;
 }
 
 /**
@@ -27,6 +28,7 @@ export const defaultSEO: SEOConfig = {
   image: '/og-image.png',
   type: 'game',
   author: 'Plasma City Team',
+  siteName: 'Plasma City',
 };
 
 /**
@@ -68,7 +70,7 @@ export function generateMetaTags(config: Partial<SEOConfig> = {}): Record<string
 export function generateStructuredData(config: Partial<SEOConfig> = {}): string {
   const seo = { ...defaultSEO, ...config };
   
-  const structuredData = {
+  const structuredData: Record<string, any> = {
     '@context': 'https://schema.org',
     '@type': 'VideoGame',
     'name': seo.title,
@@ -77,7 +79,7 @@ export function generateStructuredData(config: Partial<SEOConfig> = {}): string 
     'url': seo.url,
     'author': {
       '@type': 'Organization',
-      'name': seo.author,
+      'name': seo.siteName,
     },
     'genre': 'City Building Simulation',
     'gamePlatform': 'Web Browser',

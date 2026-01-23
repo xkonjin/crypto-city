@@ -46,7 +46,7 @@ export function validateEnv(): { valid: boolean; env?: Env; errors?: string[] } 
     return { valid: true, env };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+      const errors = error.issues.map((err: z.ZodIssue) => `${err.path.join('.')}: ${err.message}`);
       return { valid: false, errors };
     }
     return { valid: false, errors: ['Unknown validation error'] };

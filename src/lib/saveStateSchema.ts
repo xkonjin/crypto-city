@@ -75,7 +75,7 @@ export function validateSaveState(data: unknown): { valid: boolean; data?: GameS
     if (error instanceof z.ZodError) {
       return { 
         valid: false, 
-        error: `Invalid save state: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}` 
+        error: `Invalid save state: ${error.issues.map((e: z.ZodIssue) => `${e.path.join('.')}: ${e.message}`).join(', ')}` 
       };
     }
     return { valid: false, error: 'Unknown validation error' };
