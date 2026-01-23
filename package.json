@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "build": "node scripts/optimize-assets.mjs && next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "test": "playwright test",
