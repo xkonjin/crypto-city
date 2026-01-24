@@ -6,3 +6,7 @@ export interface PersonalityArchetype {
 }
 
 export const ARCHETYPE_DESCRIPTIONS: Record<string, string> = {};
+
+export const ALL_ARCHETYPES: PersonalityArchetype[] = [];
+
+export const ARCHETYPE_PROFILES: Record<string, PersonalityArchetype> = {};

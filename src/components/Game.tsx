@@ -21,7 +21,7 @@ import { VinnieDialog } from "@/components/VinnieDialog";
 import { CommandMenu } from "@/components/ui/CommandMenu";
 import { CobieNarrator } from "@/components/game/CobieNarrator";
 import { useCobieNarrator } from "@/hooks/useCobieNarrator";
-import { CobieScreen } from "@/components/game/CobieScreen";
+import CobieScreen from "@/components/game/CobieScreen";
 import { Tutorial } from "@/components/game/Tutorial";
 import { TerminologyOnboarding } from "@/components/game/TerminologyOnboarding";
 import { DailyRewards } from "@/components/game/DailyRewards";

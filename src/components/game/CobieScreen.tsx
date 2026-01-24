@@ -2,3 +2,5 @@
 export default function CobieScreen() {
   return null;
 }
+
+export { CobieScreen };
