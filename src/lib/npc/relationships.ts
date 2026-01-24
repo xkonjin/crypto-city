@@ -4,6 +4,9 @@ export interface Relationship {
   trust: number;
   friendship: number;
   romantic: number;
+  respect: number;
+  familiarity: number;
+  attraction: number;
 }
 
 export type RelationshipType = 
