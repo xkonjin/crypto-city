@@ -99,7 +99,6 @@ import {
 import { applyPendingReferral, REFERRED_BONUS } from "@/lib/referral";
 
 // Import God Hand cursor system (Hero Pet System)
-import { GodHandCursor } from "@/components/titan/GodHandCursor";
 
 // Import weekly challenges system (Issue #40)
 import {
@@ -1616,7 +1615,6 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           />
           
           {/* God Hand Cursor - Mobile (Hero Pet System) */}
-          <GodHandCursor />
         </div>
       </TooltipProvider>
     );
@@ -1949,7 +1947,6 @@ export default function Game({ onExit }: { onExit?: () => void }) {
         />
 
         {/* God Hand Cursor - Desktop (Hero Pet System) */}
-        <GodHandCursor />
 
         {/* Crypto News Ticker - Bottom */}
         <NewsTicker events={cryptoEvents} className="z-50" />
