@@ -24,7 +24,8 @@ export type PersonalityArchetype =
   | 'privacy_maxi'
   | 'nft_flipper'
   | 'staking_grandma'
-  | 'defi_daoist';
+  | 'defi_daoist'
+  | 'protocol_politician';
 
 export interface PersonalityArchetypeData {
   id: string;
@@ -41,6 +42,7 @@ export const ARCHETYPE_DESCRIPTIONS: Record<string, string> = {
   'nft_flipper': 'An NFT collector and trader.',
   'staking_grandma': 'A long-term HODLer earning passive income.',
   'defi_daoist': 'A DAO governance participant.',
+  'protocol_politician': 'A protocol governance participant.',
 };
 
 export const ALL_ARCHETYPES: PersonalityArchetypeData[] = [];
