@@ -41,6 +41,14 @@ export interface PersonalityArchetypeData {
   crypto: CryptoTraits;
 }
 
+export const TRAIT_DESCRIPTIONS: Record<string, string> = {
+  openness: 'Openness to new experiences and ideas',
+  conscientiousness: 'Self-discipline and organization',
+  extraversion: 'Social energy and outgoing nature',
+  agreeableness: 'Cooperation and concern for others',
+  neuroticism: 'Emotional stability and stress tolerance',
+};
+
 export const ARCHETYPE_DESCRIPTIONS: Record<string, string> = {
   'normie_investor': 'A typical investor who follows market trends.',
   'bitcoin_maxi': 'A hardcore Bitcoin believer who won\'t touch alts.',
@@ -71,6 +79,36 @@ const createBaseTraits = (): { bigFive: BigFiveTraits; crypto: CryptoTraits } =>
     trustInInstitutions: 0.5,
   },
 });
+
+export function createBigFiveTraits(): BigFiveTraits {
+  return {
+    openness: 0.5,
+    conscientiousness: 0.5,
+    extraversion: 0.5,
+    agreeableness: 0.5,
+    neuroticism: 0.5,
+  };
+}
+
+export function createCryptoTraits(): CryptoTraits {
+  return {
+    riskTolerance: 0.5,
+    fomo: 0.5,
+    degenLevel: 0.5,
+    technicalKnowledge: 0.5,
+    socialInfluence: 0.5,
+    marketSentiment: 'neutral',
+    trustInInstitutions: 0.5,
+  };
+}
+
+export function createDefaultPersonality(archetype: PersonalityArchetype): NPCPersonality {
+  const base = createBaseTraits();
+  return {
+    bigFive: base.bigFive,
+    crypto: base.crypto,
+  };
+}
 
 export const ALL_ARCHETYPES: PersonalityArchetype[] = [
   'normie_investor',
