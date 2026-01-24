@@ -2,3 +2,7 @@
 export function generateThought(npcId: string): string {
   return 'NPC is thinking...';
 }
+
+export const thoughtEngine = {
+  generateThought
+};

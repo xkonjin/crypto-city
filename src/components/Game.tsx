@@ -21,7 +21,6 @@ import { VinnieDialog } from "@/components/VinnieDialog";
 import { CommandMenu } from "@/components/ui/CommandMenu";
 import { CobieNarrator } from "@/components/game/CobieNarrator";
 import { useCobieNarrator } from "@/hooks/useCobieNarrator";
-import CobieScreen from "@/components/game/CobieScreen";
 import { Tutorial } from "@/components/game/Tutorial";
 import { TerminologyOnboarding } from "@/components/game/TerminologyOnboarding";
 import { DailyRewards } from "@/components/game/DailyRewards";
@@ -1709,9 +1708,6 @@ export default function Game({ onExit }: { onExit?: () => void }) {
                 overlayMode={overlayMode}
                 setOverlayMode={setOverlayMode}
               />
-              {showCobieScreen && (
-                <CobieScreen className="absolute right-6 bottom-28 z-40" size={88} />
-              )}
               {/* Crypto Overlay Controls (Issue #58) */}
               <div className="fixed bottom-16 left-[240px] z-50">
                 <CryptoOverlaySelector
