@@ -35,6 +35,23 @@ export const RELATIONSHIP_THRESHOLDS: Record<RelationshipThreshold, number> = {
   best_friend: 90,
 };
 
+export function createDefaultRelationship(targetId: string): Relationship {
+  return {
+    targetId,
+    type: 'stranger',
+    trust: 0,
+    friendship: 0,
+    romantic: 0,
+    respect: 50,
+    familiarity: 0,
+    attraction: 0,
+  };
+}
+
+export function clampMetric(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
 export const RELATIONSHIP_DESCRIPTIONS: Record<RelationshipType, string> = {
   stranger: 'Someone you\'ve never met before.',
   acquaintance: 'Someone you know by name but haven\'t spoken to much.',
