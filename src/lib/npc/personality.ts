@@ -12,6 +12,7 @@ export interface NPCPersonality {
     technicalKnowledge: number;
     socialInfluence: number;
     marketSentiment: string;
+    trustInInstitutions: number;
   };
 }
 
