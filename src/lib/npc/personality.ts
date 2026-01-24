@@ -1,21 +1,25 @@
 // Stub file for NPC personality
+export interface BigFiveTraits {
+  openness: number;
+  conscientiousness: number;
+  extraversion: number;
+  agreeableness: number;
+  neuroticism: number;
+}
+
+export interface CryptoTraits {
+  riskTolerance: number;
+  fomo: number;
+  degenLevel: number;
+  technicalKnowledge: number;
+  socialInfluence: number;
+  marketSentiment: string;
+  trustInInstitutions: number;
+}
+
 export interface NPCPersonality {
-  bigFive: {
-    openness: number;
-    conscientiousness: number;
-    extraversion: number;
-    agreeableness: number;
-    neuroticism: number;
-  };
-  crypto: {
-    riskTolerance: number;
-    fomo: number;
-    degenLevel: number;
-    technicalKnowledge: number;
-    socialInfluence: number;
-    marketSentiment: string;
-    trustInInstitutions: number;
-  };
+  bigFive: BigFiveTraits;
+  crypto: CryptoTraits;
 }
 
 export type PersonalityArchetype =
