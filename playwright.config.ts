@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const TEST_PORT = 3001;
+const TEST_PORT = 3005;
 
 export default defineConfig({
   testDir: "./tests",
@@ -24,9 +24,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run dev -- --port ${TEST_PORT}`,
+    command: `NEXT_PUBLIC_E2E=1 npm run dev -- --port ${TEST_PORT}`,
     url: `http://localhost:${TEST_PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120000,
   },
 });
