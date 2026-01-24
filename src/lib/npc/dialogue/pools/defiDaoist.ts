@@ -6,7 +6,7 @@ export const DEFI_DAOIST_POOLS: DialoguePool[] = [
     id: 'defi_daoist_generic',
     archetype: 'defi_daoist',
     category: 'greeting',
-    marketCondition: 'any',
+    marketCondition: 'bull',
     relationshipLevel: 'neutral',
     dialogues: [
       {
