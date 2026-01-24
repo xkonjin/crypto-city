@@ -443,7 +443,7 @@ function NPCInspectorLevel2({
   const walletBalance = npc.wallet?.cash ?? 0;
   const currentThought = npc.thoughtStream?.currentThought ?? recentThoughts[0] ?? 'Just arrived in Crypto City...';
   
-  const archetypeKey = typeof npc.personalityArchetype === "string" ? npc.personalityArchetype : npc.personalityArchetype?.id || "normie_investor";
+  const archetypeKey = npc.personalityArchetype || "normie_investor";
   const archetypeDescription = npc.personalityArchetype
     ? ARCHETYPE_DESCRIPTIONS[archetypeKey]
     : "A mysterious citizen of Crypto City.";    
