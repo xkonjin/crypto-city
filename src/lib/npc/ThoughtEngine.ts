@@ -1,4 +1,6 @@
 // Stub file for NPC Thought Engine
+import type { CryptoNPC } from '@/games/isocity/types/npc';
+
 export interface ThoughtContext {
   targetId?: string;
   recentEvents?: string[];
@@ -6,7 +8,7 @@ export interface ThoughtContext {
   needs?: string[];
 }
 
-export function generateThought(npcId: string, context?: ThoughtContext): string {
+export function generateThought(npc: CryptoNPC | string, context?: ThoughtContext): string {
   return 'NPC is thinking...';
 }
 
