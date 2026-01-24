@@ -39,6 +39,7 @@ import { NORMIE_INVESTOR_POOLS } from "./pools/normieInvestor";
 import { NFT_FLIPPER_POOLS } from "./pools/nftFlipper";
 import { STAKING_GRANDMA_POOLS } from "./pools/stakingGrandma";
 import { PROTOCOL_POLITICIAN_POOLS } from "./pools/protocolPolitician";
+import { DEFI_DAOIST_POOLS } from "./pools/defiDaoist";
 
 // ============================================================================
 // TYPES
@@ -92,6 +93,7 @@ const ALL_POOLS: Record<PersonalityArchetype, DialoguePool[]> = {
   nft_flipper: NFT_FLIPPER_POOLS,
   staking_grandma: STAKING_GRANDMA_POOLS,
   protocol_politician: PROTOCOL_POLITICIAN_POOLS,
+  defi_daoist: DEFI_DAOIST_POOLS,
 };
 
 /** Maximum history size to track per NPC for repetition calculation */

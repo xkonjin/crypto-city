@@ -234,7 +234,7 @@ export function useNPCInspector(
           updated.thoughtStream.currentThought !== recentThoughts[0]
         ) {
           setRecentThoughts((prev) => [
-            updated.thoughtStream!.currentThought,
+            (updated.thoughtStream!.currentThought ?? '') as string,
             ...prev.slice(0, MAX_RECENT_THOUGHTS - 1),
           ]);
         }
