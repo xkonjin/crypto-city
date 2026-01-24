@@ -3,6 +3,6 @@ export interface NPCTransaction {
   id: string;
   fromNpcId: string;
   toNpcId: string;
-  amount: number;
+  amount: bigint;
   timestamp: number;
 }
