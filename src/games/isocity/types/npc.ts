@@ -126,6 +126,11 @@ export interface CryptoNPC {
   /** What they're currently doing */
   currentActivity: NPCActivity | null;
   
+  /** Stream of LLM-generated thoughts for this NPC */
+  thoughtStream?: {
+    currentThought?: string;
+    recentThoughts?: string[];
+  };
   // === NEEDS SYSTEM ===
   /** 
    * Sims-style needs that decay over time and drive NPC behavior.
