@@ -27,30 +27,39 @@ export type RelationshipType =
   | 'mentor'
   | 'mentee';
 
-export type RelationshipThreshold = 'stranger' | 'acquaintance' | 'friend' | 'close_friend' | 'best_friend';
+export interface RelationshipThresholds {
+  trust?: number;
+  friendship?: number;
+  romantic?: number;
+  respect?: number;
+  familiarity?: number;
+  attraction?: number;
+}
 
-export const RELATIONSHIP_THRESHOLDS: Record<RelationshipThreshold, number> = {
-  stranger: 0,
-  acquaintance: 20,
-  friend: 50,
-  close_friend: 70,
-  best_friend: 90,
+export type RelationshipThresholdType = 'stranger' | 'acquaintance' | 'friend' | 'close_friend' | 'best_friend';
+
+export const RELATIONSHIP_THRESHOLDS: Record<RelationshipThresholdType, RelationshipThresholds> = {
+  stranger: {},
+  acquaintance: { friendship: 20 },
+  friend: { friendship: 50, trust: 30 },
+  close_friend: { friendship: 70, trust: 60 },
+  best_friend: { friendship: 90, trust: 80 },
 };
 
-export const RELATIONSHIP_THRESHOLDS_ALL: Record<RelationshipType, number> = {
-  stranger: 0,
-  acquaintance: 20,
-  friend: 50,
-  close_friend: 70,
-  best_friend: 90,
-  rival: 30,
-  enemy: 10,
-  nemesis: 5,
-  romantic_interest: 60,
-  partner: 80,
-  business_partner: 50,
-  mentor: 70,
-  mentee: 40,
+export const RELATIONSHIP_THRESHOLDS_ALL: Record<RelationshipType, RelationshipThresholds> = {
+  stranger: {},
+  acquaintance: { friendship: 20 },
+  friend: { friendship: 50, trust: 30 },
+  close_friend: { friendship: 70, trust: 60 },
+  best_friend: { friendship: 90, trust: 80 },
+  rival: { trust: -20, respect: -30 },
+  enemy: { trust: -50, respect: -60 },
+  nemesis: { trust: -70, respect: -80 },
+  romantic_interest: { romantic: 60, attraction: 50 },
+  partner: { romantic: 80, friendship: 75, trust: 70 },
+  business_partner: { respect: 60, trust: 40 },
+  mentor: { respect: 70, trust: 50 },
+  mentee: { respect: 50, trust: 30 },
 };
 
 export function createDefaultRelationship(targetId: string): Relationship {
