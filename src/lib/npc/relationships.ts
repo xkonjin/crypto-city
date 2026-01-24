@@ -5,4 +5,4 @@ export interface Relationship {
   romantic: number;
 }
 
-export type RelationshipType = 'trust' | 'friendship' | 'romantic' | 'hostile' | 'neutral';
+export type RelationshipType = 'trust' | 'friendship' | 'romantic' | 'hostile' | 'neutral' | 'stranger';
