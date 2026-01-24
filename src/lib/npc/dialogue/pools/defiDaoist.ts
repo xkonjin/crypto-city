@@ -3,12 +3,11 @@ import type { DialoguePool } from "../types";
 
 export const DEFI_DAOIST_POOLS: DialoguePool[] = [
   {
-    id: 'defi_daoist_generic',
     archetype: 'defi_daoist',
-    category: 'greeting',
+    context: 'greeting',
     marketCondition: 'bull',
     relationshipLevel: 'friend',
-    dialogues: [
+    lines: [
       {
         text: "Have you voted in the latest proposal?",
         weight: 1,
