@@ -7,7 +7,7 @@ export const DEFI_DAOIST_POOLS: DialoguePool[] = [
     archetype: 'defi_daoist',
     category: 'greeting',
     marketCondition: 'bull',
-    relationshipLevel: 'neutral',
+    relationshipLevel: 'friend',
     dialogues: [
       {
         text: "Have you voted in the latest proposal?",
