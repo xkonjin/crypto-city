@@ -198,7 +198,6 @@ export default function Game({ onExit }: { onExit?: () => void }) {
     selectedCryptoBuilding,
     setSelectedCryptoBuilding,
     setCryptoTaxRevenue,
-    showCobieScreen,
   } = useGame();
   const [overlayMode, setOverlayMode] = useState<OverlayMode>("none");
   // Crypto overlay type - mapped to OverlayMode for canvas rendering (Issue #58)
