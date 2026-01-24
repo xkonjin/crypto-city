@@ -70,7 +70,7 @@ export function PerformanceOverlay({
         });
         
         frameCountRef.current = 0;
-        lastTimeRef.current = now;
+        lastUpdateRef.current = now;
         lastUpdateRef.current = now;
       }
       
