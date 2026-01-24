@@ -5,6 +5,9 @@ export interface NPCPersonality {
   extraversion: number;
   agreeableness: number;
   neuroticism: number;
+  crypto: {
+    riskTolerance: number;
+  };
 }
 
 export interface PersonalityArchetype {
