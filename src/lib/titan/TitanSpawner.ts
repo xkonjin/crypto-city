@@ -253,6 +253,8 @@ const SPECIES_PERSONALITY_PROFILES: Record<TitanSpecies, NPCPersonality> = {
       trustInInstitutions: 0.4,
       technicalKnowledge: 0.5,
       degenLevel: 0.7,
+      socialInfluence: 0.5,
+      marketSentiment: 'neutral',
     },
   },
   bear: {
@@ -269,6 +271,8 @@ const SPECIES_PERSONALITY_PROFILES: Record<TitanSpecies, NPCPersonality> = {
       trustInInstitutions: 0.3,
       technicalKnowledge: 0.6,
       degenLevel: 0.1,
+      socialInfluence: 0.5,
+      marketSentiment: 'neutral',
     },
   },
   ape: {
@@ -285,6 +289,8 @@ const SPECIES_PERSONALITY_PROFILES: Record<TitanSpecies, NPCPersonality> = {
       trustInInstitutions: 0.3,
       technicalKnowledge: 0.7,
       degenLevel: 0.6,
+      socialInfluence: 0.5,
+      marketSentiment: 'neutral',
     },
   },
   whale: {
@@ -301,6 +307,8 @@ const SPECIES_PERSONALITY_PROFILES: Record<TitanSpecies, NPCPersonality> = {
       trustInInstitutions: 0.7,
       technicalKnowledge: 0.6,
       degenLevel: 0.3,
+      socialInfluence: 0.5,
+      marketSentiment: 'neutral',
     },
   },
   phoenix: {
@@ -317,6 +325,8 @@ const SPECIES_PERSONALITY_PROFILES: Record<TitanSpecies, NPCPersonality> = {
       trustInInstitutions: 0.5,
       technicalKnowledge: 0.5,
       degenLevel: 0.4,
+      socialInfluence: 0.5,
+      marketSentiment: 'neutral',
     },
   },
 };
@@ -356,6 +366,8 @@ export function generateSpeciesPersonality(species: TitanSpecies): NPCPersonalit
       trustInInstitutions: addVariance(base.crypto.trustInInstitutions),
       technicalKnowledge: addVariance(base.crypto.technicalKnowledge),
       degenLevel: addVariance(base.crypto.degenLevel),
+      socialInfluence: 0.5,
+      marketSentiment: 'neutral',
     },
   };
 }
