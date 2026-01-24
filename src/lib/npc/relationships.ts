@@ -48,9 +48,31 @@ export function createDefaultRelationship(targetId: string): Relationship {
   };
 }
 
-export function clampMetric(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
+export function clampMetric(value: number, ...args: any[]): number {
+  if (args.length === 2 && typeof args[0] === 'number' && typeof args[1] === 'number') {
+    const min = args[0];
+    const max = args[1];
+    return Math.max(min, Math.min(max, value));
+  }
+  if (args.length === 1 && typeof args[0] === 'string') {
+    const metric = args[0] as keyof typeof METRIC_RANGES;
+    const range = METRIC_RANGES[metric];
+    if (range) {
+      return Math.max(range.min, Math.min(range.max, value));
+    }
+    return Math.max(0, Math.min(100, value));
+  }
+  return value;
 }
+
+const METRIC_RANGES: Record<string, { min: number; max: number }> = {
+  trust: { min: 0, max: 100 },
+  friendship: { min: 0, max: 100 },
+  romantic: { min: 0, max: 100 },
+  respect: { min: 0, max: 100 },
+  familiarity: { min: 0, max: 100 },
+  attraction: { min: 0, max: 100 },
+};
 
 export const RELATIONSHIP_DESCRIPTIONS: Record<RelationshipType, string> = {
   stranger: 'Someone you\'ve never met before.',
