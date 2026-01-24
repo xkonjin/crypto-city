@@ -50,7 +50,7 @@ export function PerformanceOverlay({
       
       // Update stats at interval
       if (now - lastUpdateRef.current >= updateInterval) {
-        const elapsed = now - lastTimeRef.current;
+        const elapsed = now - lastUpdateRef.current;
         const fps = Math.round((frameCountRef.current * 1000) / elapsed);
         const frameTime = elapsed / frameCountRef.current;
         
