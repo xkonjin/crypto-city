@@ -7,6 +7,7 @@ export interface NPCPersonality {
   neuroticism: number;
   crypto: {
     riskTolerance: number;
+    fomo: number;
   };
 }
 
