@@ -325,7 +325,7 @@ function NPCInspectorLevel1({
   const mood = npc.internalWorld?.currentMood ?? 'neutral';
   const moodEmoji = MOOD_EMOJIS[mood] ?? '😐';
   const activityEmoji = npc.currentActivity ? ACTIVITY_EMOJIS[npc.currentActivity] ?? '🧍' : '🧍';
-  const archetype = npc.personalityArchetype || 'normie_investor';
+  const archetype = npc.personalityArchetype ? (typeof npc.personalityArchetype === 'string' ? npc.personalityArchetype : npc.personalityArchetype.id) : 'normie_investor';
   
   return (
     <Card 
