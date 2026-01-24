@@ -9,6 +9,9 @@ export interface NPCPersonality {
     riskTolerance: number;
     fomo: number;
     degenLevel: number;
+    technicalKnowledge: number;
+    socialInfluence: number;
+    marketSentiment: string;
   };
 }
 
