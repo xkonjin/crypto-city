@@ -37,6 +37,22 @@ export const RELATIONSHIP_THRESHOLDS: Record<RelationshipThreshold, number> = {
   best_friend: 90,
 };
 
+export const RELATIONSHIP_THRESHOLDS_ALL: Record<RelationshipType, number> = {
+  stranger: 0,
+  acquaintance: 20,
+  friend: 50,
+  close_friend: 70,
+  best_friend: 90,
+  rival: 30,
+  enemy: 10,
+  nemesis: 5,
+  romantic_interest: 60,
+  partner: 80,
+  business_partner: 50,
+  mentor: 70,
+  mentee: 40,
+};
+
 export function createDefaultRelationship(targetId: string): Relationship {
   return {
     targetId,
