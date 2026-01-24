@@ -5,7 +5,9 @@ export interface PersonalityArchetype {
   description: string;
 }
 
-export const ARCHETYPE_DESCRIPTIONS: Record<string, string> = {};
+export const ARCHETYPE_DESCRIPTIONS: Record<string, string> = {
+  'normie_investor': 'A typical investor who follows the market trends.',
+};
 
 export const ALL_ARCHETYPES: PersonalityArchetype[] = [];
 
