@@ -6,7 +6,7 @@
  */
 
 import type { CryptoNPC } from '@/games/isocity/types/npc';
-import type { Relationship, RelationshipType, RelationshipThreshold } from './relationships';
+import type { Relationship, RelationshipType, RelationshipThresholds } from './relationships';
 import {
   RELATIONSHIP_THRESHOLDS,
   RELATIONSHIP_THRESHOLDS_ALL,
