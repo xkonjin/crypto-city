@@ -9,6 +9,7 @@ import type { CryptoNPC } from '@/games/isocity/types/npc';
 import type { Relationship, RelationshipType, RelationshipThreshold } from './relationships';
 import {
   RELATIONSHIP_THRESHOLDS,
+  RELATIONSHIP_THRESHOLDS_ALL,
   RELATIONSHIP_DESCRIPTIONS,
   createDefaultRelationship,
   clampMetric,
