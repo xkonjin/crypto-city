@@ -8,6 +8,7 @@ export interface NPCPersonality {
   crypto: {
     riskTolerance: number;
     fomo: number;
+    degenLevel: number;
   };
 }
 
