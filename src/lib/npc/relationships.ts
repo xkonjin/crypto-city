@@ -10,6 +10,7 @@ export interface Relationship {
   attraction: number;
   interactionCount: number;
   lastInteraction: number;
+  owedFavors: number;
 }
 
 export type RelationshipType = 
@@ -74,6 +75,7 @@ export function createDefaultRelationship(targetId: string): Relationship {
     attraction: 0,
     interactionCount: 0,
     lastInteraction: Date.now(),
+    owedFavors: 0,
   };
 }
 
