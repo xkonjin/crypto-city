@@ -99,7 +99,7 @@ export class RelationshipManager {
     delta: number
   ): void {
     const relationship = this.getOrCreateRelationship(npc, targetId);
-    relationship[metric] = clampMetric(relationship[metric] + delta, metric);
+    relationship[metric] = clampMetric(relationship[metric] + delta, 0, 100);
     relationship.type = this.deriveRelationshipType(relationship);
   }
 
@@ -172,7 +172,7 @@ export class RelationshipManager {
    * @returns True if all thresholds are met
    */
   private meetsThreshold(relationship: Relationship, type: Exclude<RelationshipType, 'stranger'>): boolean {
-    const threshold = RELATIONSHIP_THRESHOLDS[type];
+    const threshold = RELATIONSHIP_THRESHOLDS_ALL[type as RelationshipType];
     if (!threshold) return false;
 
     // Check each threshold - for negative thresholds, the value must be <= threshold
