@@ -1,3 +1,18 @@
+// Stub file for NPC relationships
+export interface Relationship {
+  targetId: string;
+  type: RelationshipType;
+  trust: number;
+  friendship: number;
+  romantic: number;
+  respect: number;
+  familiarity: number;
+  attraction: number;
+  interactionCount: number;
+  lastInteraction: number;
+  owedFavors: number;
+  firstMet: number;
+}
 
 export type RelationshipType = 
   | 'stranger'
