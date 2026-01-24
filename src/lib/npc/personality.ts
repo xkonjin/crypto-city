@@ -1,4 +1,12 @@
 // Stub file for NPC personality
+export interface NPCPersonality {
+  openness: number;
+  conscientiousness: number;
+  extraversion: number;
+  agreeableness: number;
+  neuroticism: number;
+}
+
 export interface PersonalityArchetype {
   id: string;
   name: string;
@@ -6,7 +14,7 @@ export interface PersonalityArchetype {
 }
 
 export const ARCHETYPE_DESCRIPTIONS: Record<string, string> = {
-  'normie_investor': 'A typical investor who follows the market trends.',
+  'normie_investor': 'A typical investor who follows market trends.',
 };
 
 export const ALL_ARCHETYPES: PersonalityArchetype[] = [];
