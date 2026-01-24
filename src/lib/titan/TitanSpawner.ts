@@ -235,6 +235,8 @@ const SPECIES_PERSONALITY_PROFILES: Record<TitanSpecies, NPCPersonality> = {
       trustInInstitutions: 0.5,
       technicalKnowledge: 0.4,
       degenLevel: 0.5,
+      socialInfluence: 0.5,
+      marketSentiment: 'neutral',
     },
   },
   bull: {
