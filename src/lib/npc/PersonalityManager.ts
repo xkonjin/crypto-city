@@ -60,6 +60,8 @@ export class PersonalityManager {
         trustInInstitutions: Math.random(),
         technicalKnowledge: Math.random(),
         degenLevel: Math.random(),
+        socialInfluence: Math.random(),
+        marketSentiment: 'neutral',
       },
     };
   }
@@ -98,6 +100,8 @@ export class PersonalityManager {
         trustInInstitutions: applyVariance(profile.crypto.trustInInstitutions),
         technicalKnowledge: applyVariance(profile.crypto.technicalKnowledge),
         degenLevel: applyVariance(profile.crypto.degenLevel),
+        socialInfluence: applyVariance(profile.crypto.socialInfluence ?? 0.5),
+        marketSentiment: profile.crypto.marketSentiment ?? 'neutral',
       },
     };
   }
