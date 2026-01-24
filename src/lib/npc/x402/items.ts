@@ -6,6 +6,7 @@ export interface InventoryItem {
   description: string;
   rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
   price: number;
+  icon?: string;
 }
 
 export function getItem(id: string): InventoryItem | null {
