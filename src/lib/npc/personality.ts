@@ -1,10 +1,12 @@
 // Stub file for NPC personality
 export interface NPCPersonality {
-  openness: number;
-  conscientiousness: number;
-  extraversion: number;
-  agreeableness: number;
-  neuroticism: number;
+  bigFive: {
+    openness: number;
+    conscientiousness: number;
+    extraversion: number;
+    agreeableness: number;
+    neuroticism: number;
+  };
   crypto: {
     riskTolerance: number;
     fomo: number;
