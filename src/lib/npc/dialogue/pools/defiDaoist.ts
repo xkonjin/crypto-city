@@ -11,6 +11,7 @@ export const DEFI_DAOIST_POOLS: DialoguePool[] = [
       {
         text: "Have you voted in the latest proposal?",
         weight: 1,
+        cooldown: 30000,
       },
     ],
   },
