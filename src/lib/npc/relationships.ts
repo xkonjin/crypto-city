@@ -11,6 +11,7 @@ export interface Relationship {
   interactionCount: number;
   lastInteraction: number;
   owedFavors: number;
+  firstMet: number;
 }
 
 export type RelationshipType = 
@@ -63,6 +64,22 @@ export const RELATIONSHIP_THRESHOLDS_ALL: Record<RelationshipType, RelationshipT
   mentee: { respect: 50, trust: 30 },
 };
 
+export const ALL_RELATIONSHIP_TYPES: RelationshipType[] = [
+  'stranger',
+  'acquaintance',
+  'friend',
+  'close_friend',
+  'best_friend',
+  'rival',
+  'enemy',
+  'nemesis',
+  'romantic_interest',
+  'partner',
+  'business_partner',
+  'mentor',
+  'mentee',
+];
+
 export function createDefaultRelationship(targetId: string): Relationship {
   return {
     targetId,
@@ -76,6 +93,7 @@ export function createDefaultRelationship(targetId: string): Relationship {
     interactionCount: 0,
     lastInteraction: Date.now(),
     owedFavors: 0,
+    firstMet: Date.now(),
   };
 }
 
