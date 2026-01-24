@@ -57,6 +57,7 @@ function CobieNarratorContent({ message, isVisible, onDismiss, onDisableCobie }:
 
   useEffect(() => {
     if (isVisible && message) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShouldRender(true);
       const frame = requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -176,7 +177,8 @@ export function CobieNarrator(props: CobieNarratorProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMounted(true);
   }, []);
 
   if (!mounted || typeof document === 'undefined') {

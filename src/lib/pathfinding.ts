@@ -291,7 +291,7 @@ export class PathfindingCache {
     if (this.cache.size >= this.maxSize) {
       // Remove oldest entry
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey) this.cache.delete(firstKey);
     }
     
     this.cache.set(this.getCacheKey(start, end), path);

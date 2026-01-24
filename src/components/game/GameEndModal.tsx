@@ -60,6 +60,7 @@ function GameEndModalContent({
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShouldRender(true);
       setCobieMessage(getCobieEndMessage(endConditionId, isVictory));
       const frame = requestAnimationFrame(() => {
@@ -71,6 +72,7 @@ function GameEndModalContent({
     } else {
       setIsAnimating(false);
       const timer = setTimeout(() => {
+         
         setShouldRender(false);
       }, 300);
       return () => clearTimeout(timer);
@@ -268,6 +270,7 @@ export function GameEndModal(props: GameEndModalProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

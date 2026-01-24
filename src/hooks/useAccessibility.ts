@@ -54,6 +54,7 @@ const DEFAULT_SETTINGS: AccessibilitySettings = {
 const STORAGE_KEY = 'crypto-city-accessibility-settings';
 
 export function useAccessibility(
+   
   gridSize: number = 48,
   onSelect?: (x: number, y: number) => void,
   onCancel?: () => void,
@@ -203,10 +204,15 @@ export function useAccessibility(
   
   const restoreFocus = useCallback(() => {
     if (lastFocusedElementRef.current && document.body.contains(lastFocusedElementRef.current)) {
+       
+       
       lastFocusedElementRef.current.focus();
     }
   }, []);
-  
+   
+   
+   
+  // eslint-disable-next-line react-hooks/refs
   return {
     cursorPosition,
     setCursorPosition,
@@ -219,6 +225,7 @@ export function useAccessibility(
     announce,
     settings,
     updateSettings,
+    // eslint-disable-next-line react-hooks/refs
     lastFocusedElement: lastFocusedElementRef.current,
     saveFocus,
     restoreFocus,

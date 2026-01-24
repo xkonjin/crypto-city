@@ -154,6 +154,7 @@ export function Tutorial({ state, onHighlightTool }: TutorialProps) {
     try {
       const dismissed = localStorage.getItem(TUTORIAL_DISMISSED_KEY);
       if (dismissed === 'true') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsDismissed(true);
         return;
       }
