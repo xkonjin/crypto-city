@@ -8,6 +8,8 @@ export interface Relationship {
   respect: number;
   familiarity: number;
   attraction: number;
+  interactionCount: number;
+  lastInteraction: number;
 }
 
 export type RelationshipType = 
@@ -45,6 +47,8 @@ export function createDefaultRelationship(targetId: string): Relationship {
     respect: 50,
     familiarity: 0,
     attraction: 0,
+    interactionCount: 0,
+    lastInteraction: Date.now(),
   };
 }
 
