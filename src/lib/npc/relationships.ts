@@ -14,4 +14,8 @@ export type RelationshipType =
   | 'rival'
   | 'enemy'
   | 'nemesis'
-  | 'romantic_interest';
+  | 'romantic_interest'
+  | 'partner'
+  | 'business_partner'
+  | 'mentor'
+  | 'mentee';
