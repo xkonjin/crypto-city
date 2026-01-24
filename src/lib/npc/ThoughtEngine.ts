@@ -6,7 +6,7 @@ export interface ThoughtContext {
   needs?: string[];
 }
 
-export function generateThought(npcId: string): string {
+export function generateThought(npcId: string, context?: ThoughtContext): string {
   return 'NPC is thinking...';
 }
 
