@@ -37,6 +37,8 @@ export interface PersonalityArchetypeData {
   id: string;
   name: string;
   description: string;
+  bigFive: BigFiveTraits;
+  crypto: CryptoTraits;
 }
 
 export const ARCHETYPE_DESCRIPTIONS: Record<string, string> = {
