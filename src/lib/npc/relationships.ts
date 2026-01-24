@@ -1,5 +1,6 @@
 // Stub file for NPC relationships
 export interface Relationship {
+  type: RelationshipType;
   trust: number;
   friendship: number;
   romantic: number;
