@@ -79,31 +79,47 @@ export function detectDeviceCapabilities(): {
   memory: number;
   gpu: string;
 } {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return {
+      isMobile: false,
+      isLowEnd: true,
+      cpuCores: 4,
+      memory: 4,
+      gpu: 'unknown',
+    };
+  }
+
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
     navigator.userAgent
   );
-  
-  // @ts-ignore - Navigator properties may not be available
-  const cpuCores = navigator.hardwareConcurrency || 4;
-  
-  // @ts-ignore - Navigator properties may not be available
-  const memory = navigator.deviceMemory || 4; // GB
-  
+
+  const cpuCores =
+    typeof navigator.hardwareConcurrency === 'number'
+      ? navigator.hardwareConcurrency
+      : 4;
+
+  const memory =
+    typeof navigator.deviceMemory === 'number'
+      ? navigator.deviceMemory
+      : 4; // GB
+
   // Detect GPU (basic detection)
   let gpu = 'unknown';
-  try {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (gl) {
-      const debugInfo = (gl as any).getExtension('WEBGL_debug_renderer_info');
-      if (debugInfo) {
-        gpu = (gl as any).getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+  if (typeof document !== 'undefined') {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (gl) {
+        const debugInfo = (gl as WebGLRenderingContext).getExtension('WEBGL_debug_renderer_info');
+        if (debugInfo) {
+          gpu = (gl as WebGLRenderingContext).getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        }
       }
+    } catch (e) {
+      // Ignore errors
     }
-  } catch (e) {
-    // Ignore errors
   }
-  
+
   // Determine if device is low-end
   const isLowEnd = isMobile || cpuCores < 4 || memory < 4;
   
