@@ -110,7 +110,14 @@ The codebase is in reasonable shape with no blocking lint errors. Most issues ar
 
 ## Immediate Actions
 
-### Test Fixes Needed
+### #230 Tile Iteration Status
+**SpatialHash already implemented** in `src/lib/spatialHash.ts` with tests!
+Remaining work:
+- [ ] Integrate SpatialHash into CanvasRenderer
+- [ ] Wire up `getVisibleTiles()` in rendering loop
+- [ ] Profile before/after
+
+### Test Fixes Needed (FIXED ✅)
 ```
 src/lib/validation.test.ts:
 1. sanitizeString test expects 'alertxss' but gets 'alert(xss)' - parentheses not being stripped
