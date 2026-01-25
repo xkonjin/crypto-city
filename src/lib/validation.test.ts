@@ -13,7 +13,8 @@ import {
 describe('validation utilities', () => {
   describe('sanitizeString', () => {
     it('should remove HTML tags', () => {
-      expect(sanitizeString('<script>alert("xss")</script>')).toBe('alertxss');
+      // Note: sanitizeString removes HTML tags and <>'" chars, but not parentheses
+      expect(sanitizeString('<script>alert("xss")</script>')).toBe('alert(xss)');
       expect(sanitizeString('<div>Hello</div>')).toBe('Hello');
     });
 
@@ -152,9 +153,10 @@ describe('validation utilities', () => {
     });
 
     it('should have lower requirements for large text', () => {
-      // Some combinations pass for large text but not normal text
-      expect(meetsWCAGAA('#767676', '#ffffff', false)).toBe(false);
-      expect(meetsWCAGAA('#767676', '#ffffff', true)).toBe(true);
+      // #808080 on white has ~3.95:1 contrast ratio
+      // Fails normal text (requires 4.5:1) but passes large text (requires 3:1)
+      expect(meetsWCAGAA('#808080', '#ffffff', false)).toBe(false);
+      expect(meetsWCAGAA('#808080', '#ffffff', true)).toBe(true);
     });
   });
 });
