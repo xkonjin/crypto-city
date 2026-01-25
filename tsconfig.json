@@ -39,22 +39,7 @@
     "node_modules",
     "_backup_crypto",
     "_crypto_backup",
-    "scripts"
+    "scripts",
+    "tests"
   ]
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
