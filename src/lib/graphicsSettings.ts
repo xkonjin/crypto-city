@@ -98,9 +98,10 @@ export function detectDeviceCapabilities(): {
       ? navigator.hardwareConcurrency
       : 4;
 
+  const nav = navigator as Navigator & { deviceMemory?: number };
   const memory =
-    typeof navigator.deviceMemory === 'number'
-      ? navigator.deviceMemory
+    typeof nav.deviceMemory === 'number'
+      ? nav.deviceMemory
       : 4; // GB
 
   // Detect GPU (basic detection)

@@ -27,7 +27,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npx tsc --noEmit
+      - run: npx tsc --noEmit --project tsconfig.app.json
 
   test:
     runs-on: ubuntu-latest

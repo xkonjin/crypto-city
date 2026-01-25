@@ -39,21 +39,7 @@ import { OverlayMode } from "@/components/game/types";
 import { getOverlayForTool } from "@/components/game/overlays";
 import { OverlayModeToggle } from "@/components/game/OverlayModeToggle";
 import { Sidebar } from "@/components/game/Sidebar";
-import {
-  BudgetPanel,
-  StatisticsPanel,
-  SettingsPanel,
-  AdvisorsPanel,
-  PetitionsPanel,
-  EventsPanel,
-  LeaderboardPanel,
-  ReferralPanel,
-  ChallengesPanel,
-  PrestigePanel,
-  MilestonePanel,
-  FinancialReportPanel,
-  OrdinancePanel,
-} from "@/components/game/panels";
+import { GamePanels } from "@/components/game/GamePanels";
 import { MiniMap } from "@/components/game/MiniMap";
 import { TopBar, StatsPanel } from "@/components/game/TopBar";
 import { CanvasIsometricGrid } from "@/components/game/CanvasIsometricGrid";
@@ -226,6 +212,7 @@ export default function Game({ onExit }: { onExit?: () => void }) {
   );
   const [cryptoEvents, setCryptoEvents] = useState<CryptoEvent[]>([]);
   const [showCryptoBuildingPanel, setShowCryptoBuildingPanel] = useState(false);
+  const placedBuildings = cryptoEconomy.getPlacedBuildings();
 
   // ==== GAME OBJECTIVES STATE (Issues #29, #43) ====
   const [gameMode, setGameMode] = useState<GameMode>('sandbox');
@@ -1477,55 +1464,25 @@ export default function Game({ onExit }: { onExit?: () => void }) {
             />
           </nav>
 
-          {state.activePanel === "budget" && <BudgetPanel />}
-          {state.activePanel === "statistics" && <StatisticsPanel />}
-          {state.activePanel === "advisors" && <AdvisorsPanel economyState={economyState} />}
-          {state.activePanel === "settings" && <SettingsPanel />}
-          {state.activePanel === "petitions" && <PetitionsPanel />}
-          {state.activePanel === "events" && <EventsPanel />}
-          {state.activePanel === "referral" && <ReferralPanel />}
-          {state.activePanel === "challenges" && (
-            <ChallengesPanel
-              cryptoState={economyState}
-              challengeState={challengeState}
-              onClaimReward={(amount) => {
-                addMoney(amount);
-                cryptoEconomy.deposit(amount);
-              }}
-              onUpdateChallengeState={setChallengeState}
-            />
-          )}
-          {state.activePanel === "prestige" && (
-            <PrestigePanel
-              cryptoState={economyState}
-              prestigeState={prestigeState}
-              onUpdatePrestigeState={(newState) => {
-                setPrestigeState(newState);
-                savePrestigeState(newState);
-              }}
-              onPrestige={handlePrestige}
-              gameDays={economyState.gameDays}
-            />
-          )}
-          {state.activePanel === "milestones" && (
-            <MilestonePanel
-              cryptoState={economyState}
-              milestoneState={milestoneState}
-              onClaimReward={(amount) => {
-                addMoney(amount);
-                cryptoEconomy.deposit(amount);
-              }}
-              onUpdateMilestoneState={setMilestoneState}
-              onStartMission={handleStartMission}
-            />
-          )}
-          {state.activePanel === "reports" && (
-            <FinancialReportPanel
-              economyState={economyState}
-              buildings={cryptoEconomy.getPlacedBuildings()}
-            />
-          )}
-          {state.activePanel === "ordinances" && <OrdinancePanel />}
+          <GamePanels
+            activePanel={state.activePanel}
+            economyState={economyState}
+            challengeState={challengeState}
+            onClaimChallengeReward={addMoney}
+            onUpdateChallengeState={setChallengeState}
+            prestigeState={prestigeState}
+            onUpdatePrestigeState={(newState) => {
+              setPrestigeState(newState);
+              savePrestigeState(newState);
+            }}
+            onPrestige={handlePrestige}
+            milestoneState={milestoneState}
+            onClaimMilestoneReward={addMoney}
+            onUpdateMilestoneState={setMilestoneState}
+            onStartMission={handleStartMission}
+            buildings={placedBuildings}
+            includeLeaderboard={false}
+          />
 
           <VinnieDialog
             open={showVinnieDialog}
@@ -1768,56 +1725,24 @@ export default function Game({ onExit }: { onExit?: () => void }) {
           </main>
         </div>
 
-        {state.activePanel === "budget" && <BudgetPanel />}
-        {state.activePanel === "statistics" && <StatisticsPanel />}
-        {state.activePanel === "advisors" && <AdvisorsPanel economyState={economyState} />}
-        {state.activePanel === "settings" && <SettingsPanel />}
-        {state.activePanel === "petitions" && <PetitionsPanel />}
-        {state.activePanel === "events" && <EventsPanel />}
-        {state.activePanel === "leaderboard" && <LeaderboardPanel />}
-        {state.activePanel === "referral" && <ReferralPanel />}
-        {state.activePanel === "challenges" && (
-          <ChallengesPanel
-            cryptoState={economyState}
-            challengeState={challengeState}
-            onClaimReward={(amount) => {
-              addMoney(amount);
-              cryptoEconomy.deposit(amount);
-            }}
-            onUpdateChallengeState={setChallengeState}
-          />
-        )}
-        {state.activePanel === "prestige" && (
-          <PrestigePanel
-            cryptoState={economyState}
-            prestigeState={prestigeState}
-            onUpdatePrestigeState={(newState) => {
-              setPrestigeState(newState);
-              savePrestigeState(newState);
-            }}
-            onPrestige={handlePrestige}
-            gameDays={economyState.gameDays}
-          />
-        )}
-        {state.activePanel === "milestones" && (
-          <MilestonePanel
-            cryptoState={economyState}
-            milestoneState={milestoneState}
-            onClaimReward={(amount) => {
-              addMoney(amount);
-              cryptoEconomy.deposit(amount);
-            }}
-            onUpdateMilestoneState={setMilestoneState}
-            onStartMission={handleStartMission}
-          />
-        )}
-        {state.activePanel === "reports" && (
-          <FinancialReportPanel
-            economyState={economyState}
-            buildings={cryptoEconomy.getPlacedBuildings()}
-          />
-        )}
-        {state.activePanel === "ordinances" && <OrdinancePanel />}
+        <GamePanels
+          activePanel={state.activePanel}
+          economyState={economyState}
+          challengeState={challengeState}
+          onClaimChallengeReward={addMoney}
+          onUpdateChallengeState={setChallengeState}
+          prestigeState={prestigeState}
+          onUpdatePrestigeState={(newState) => {
+            setPrestigeState(newState);
+            savePrestigeState(newState);
+          }}
+          onPrestige={handlePrestige}
+          milestoneState={milestoneState}
+          onClaimMilestoneReward={addMoney}
+          onUpdateMilestoneState={setMilestoneState}
+          onStartMission={handleStartMission}
+          buildings={placedBuildings}
+        />
 
         {/* Crypto Building Panel - shown via sidebar or toggle button */}
         {(showCryptoBuildingPanel || state.activePanel === "crypto") && (
