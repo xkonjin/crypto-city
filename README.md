@@ -1,347 +1,490 @@
-# Pogicity
+# 🏙️ CryptoCity
 
-An isometric city builder engine built with Phaser 3 and Next.js. Place buildings, lay roads, and watch citizens and cars roam your city.
+[![CI](https://github.com/xkonjin/crypto-city/actions/workflows/ci.yml/badge.svg)](https://github.com/xkonjin/crypto-city/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6)](https://www.typescriptlang.org/)
 
-This is a foundation for building isometric strategy games—city builders, tycoon games, RTS, or anything that needs a tile-based isometric world.
+> An isometric city builder with DeFi integration. Build your crypto empire, manage yields, survive rug pulls, and compete on global leaderboards.
 
-## Features
+[🎮 Play Now](https://crypto-city-demo.vercel.app) • [📖 Documentation](docs/) • [🐛 Report Bug](../../issues) • [💡 Request Feature](../../issues)
 
-- **Isometric Rendering** - Classic 2:1 isometric projection with proper depth sorting
-- **Building System** - Place multi-tile buildings with 4-direction rotation support
-- **Road Network** - Auto-connecting roads with proper intersection handling
-- **Animated Characters** - GIF-based walking animations in 4 directions
-- **Vehicles** - Cars that drive along roads
-- **Save/Load** - Persist your city to localStorage
-- **Multiple Tile Types** - Grass, asphalt, snow, and more
-- **Building Categories** - Residential, commercial, civic, landmarks, props, and seasonal (Christmas!)
+---
 
-## Getting Started
+## ✨ Overview
+
+CryptoCity is a browser-based isometric city-building game that combines classic SimCity-style gameplay with cryptocurrency and DeFi mechanics. Players build and manage a city while investing in crypto protocols, managing yields, and navigating market volatility.
+
+### Key Differentiators
+
+- **Real Crypto Data**: Live market sentiment, prices, and events from CoinGecko, Fear & Greed Index
+- **DeFi Integration**: Build protocol buildings (Uniswap, Aave, etc.) that generate yields
+- **Risk/Reward Gameplay**: High-yield buildings carry rug pull risks
+- **Multiplayer Co-op**: Build cities together with friends in real-time
+- **Blockchain Ready**: Plasma network integration for on-chain features
+
+---
+
+## 🎮 Features
+
+### Core City Building
+- **Isometric Grid System**: Classic 2:1 isometric projection with proper depth sorting
+- **Building System**: 100+ buildings across residential, commercial, industrial, and civic categories
+- **Zoning & Simulation**: R/C/I zoning with demand-based growth (SimCity-style)
+- **City Services**: Police, fire, health, education, power, water coverage systems
+- **Budget Management**: Tax rates, service funding, monthly financial cycles
+- **Transportation**: Roads, bridges, rail, subway with traffic simulation
+
+### Crypto Economy
+- **Protocol Buildings**: DeFi protocols (DEXs, lending, staking hubs) that generate yields
+- **Yield Management**: Harvest yields manually or auto-compound
+- **Market Sentiment**: Real Fear & Greed index affects building performance
+- **Rug Pull System**: High-risk buildings can fail, requiring insurance and auditors
+- **Trading System**: Invest in trade opportunities with risk/reward decisions
+- **TVL Tracking**: Total Value Locked leaderboard rankings
+
+### Social & Multiplayer
+- **Co-op Mode**: Real-time collaborative city building with friends
+- **Leaderboards**: Global rankings by TVL, population, and achievements
+- **Referral System**: Invite friends for bonus rewards
+- **Achievement Sharing**: Share milestones on social media
+- **Weekly Challenges**: Time-limited objectives with exclusive rewards
+
+### Advanced Systems
+- **NPC Simulation**: AI citizens with schedules, needs, and activities
+- **Event System**: Dynamic events (bull runs, bear markets, airdrops, hacks)
+- **Disaster Management**: Fires, crime waves, and crypto-specific disasters
+- **Prestige System**: Reset with permanent bonuses
+- **Story Missions**: Guided narrative objectives
+
+---
+
+## 🏗️ Architecture
+
+### System Overview
+
+```mermaid
+graph TB
+    subgraph "Frontend Layer"
+        A[Next.js 16 App Router]
+        B[React 19 Components]
+        C[Canvas Renderer]
+    end
+    
+    subgraph "Game Engine"
+        D[GameContext]
+        E[Simulation Engine]
+        F[Cryptoconomy Manager]
+        G[Event Manager]
+    end
+    
+    subgraph "State Management"
+        H[Zustand Stores]
+        I[Grid State]
+        J[Economy State]
+        K[Multiplayer Sync]
+    end
+    
+    subgraph "External APIs"
+        L[CoinGecko API]
+        M[Fear & Greed Index]
+        N[Twitter/X API]
+        O[Plasma Network]
+        P[Supabase Realtime]
+    end
+    
+    A --> B
+    B --> D
+    D --> E
+    D --> F
+    D --> G
+    E --> I
+    F --> J
+    G --> L
+    G --> M
+    G --> N
+    F --> O
+    K --> P
+    C --> I
+```
+
+### Data Flow
+
+```mermaid
+flowchart LR
+    subgraph "React Layer"
+        A[GameContext]
+        B[UI Components]
+        C[Hooks]
+    end
+    
+    subgraph "Canvas Layer"
+        D[CanvasIsometricGrid]
+        E[Input Handler]
+        F[Render Loop]
+    end
+    
+    subgraph "Simulation"
+        G[Tick Loop]
+        H[Economy Calc]
+        I[NPC AI]
+    end
+    
+    A <-->|State| B
+    A <-->|Props| D
+    D -->|Events| A
+    G -->|Updates| A
+    G --> H
+    G --> I
+    F -->|Renders| D
+```
+
+### Crypto Economy Architecture
+
+```mermaid
+graph TB
+    subgraph "Crypto Economy"
+        A[CryptoEconomyManager]
+        B[Yield Calculator]
+        C[Risk Engine]
+        D[Market Sentiment]
+    end
+    
+    subgraph "Buildings"
+        E[Protocol Buildings]
+        F[Protection Buildings]
+        G[Insurance Buildings]
+    end
+    
+    subgraph "External Data"
+        H[CoinGecko]
+        I[Fear & Greed API]
+        J[News API]
+    end
+    
+    subgraph "Events"
+        K[CryptoEventManager]
+        L[Bull Run]
+        M[Rug Pull]
+        N[Hacks]
+    end
+    
+    A --> B
+    A --> C
+    A --> D
+    B --> E
+    C --> E
+    D --> H
+    D --> I
+    K --> L
+    K --> M
+    K --> N
+    E --> F
+    E --> G
+    K --> A
+```
+
+---
+
+## 🛠️ Tech Stack
+
+### Core Framework
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| [Next.js](https://nextjs.org/) | 16.1.1 | React framework with App Router |
+| [React](https://react.dev/) | 19.2.1 | UI library |
+| [TypeScript](https://www.typescriptlang.org/) | 5.x | Type-safe development |
+| [Tailwind CSS](https://tailwindcss.com/) | 3.4.14 | Utility-first styling |
+
+### Game & UI
+| Technology | Purpose |
+|------------|---------|
+| [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) | Isometric rendering |
+| [Radix UI](https://www.radix-ui.com/) | Headless UI primitives |
+| [Zustand](https://github.com/pmndrs/zustand) | State management |
+| [SWR](https://swr.vercel.app/) | Data fetching & caching |
+
+### Crypto & Web3
+| Technology | Purpose |
+|------------|---------|
+| [Viem](https://viem.sh/) | Ethereum/EVM interactions |
+| [Privy](https://www.privy.io/) | Wallet authentication |
+| [Supabase](https://supabase.com/) | Realtime database |
+
+### Testing & DevOps
+| Technology | Purpose |
+|------------|---------|
+| [Playwright](https://playwright.dev/) | E2E testing |
+| [ESLint](https://eslint.org/) | Code linting |
+| [GitHub Actions](https://github.com/features/actions) | CI/CD |
+| [Docker](https://www.docker.com/) | Containerization |
+
+---
+
+## 📁 Project Structure
+
+```
+crypto-city/
+├── src/
+│   ├── app/                    # Next.js App Router
+│   │   ├── api/               # API routes (news, relay)
+│   │   ├── coop/[roomCode]/   # Multiplayer rooms
+│   │   ├── layout.tsx         # Root layout
+│   │   └── page.tsx           # Landing page
+│   ├── components/
+│   │   ├── game/              # Core game components
+│   │   │   ├── CanvasIsometricGrid.tsx  # Main renderer
+│   │   │   ├── panels/        # UI panels (budget, stats, etc.)
+│   │   │   └── canvas/        # Canvas subsystems
+│   │   ├── crypto/            # Crypto-specific UI
+│   │   ├── ui/                # shadcn/ui components
+│   │   ├── mobile/            # Mobile-optimized UI
+│   │   ├── wallet/            # Wallet integration
+│   │   └── multiplayer/       # Co-op features
+│   ├── context/               # React contexts
+│   │   ├── GameContext.tsx    # Main game state
+│   │   ├── EconomyContext.tsx # Economy state
+│   │   └── MultiplayerContext.tsx
+│   ├── games/isocity/         # Game engine types
+│   │   ├── crypto/            # Crypto economy system
+│   │   └── types/             # TypeScript definitions
+│   ├── hooks/                 # Custom React hooks
+│   ├── lib/                   # Utility libraries
+│   │   ├── crypto/            # Crypto API clients
+│   │   ├── npc/               # NPC AI systems
+│   │   └── simulation.ts      # Core simulation
+│   ├── core/                  # Core types (grid, rendering)
+│   └── types/                 # Shared TypeScript types
+├── public/                    # Static assets
+│   ├── Building/             # Building sprites
+│   ├── Tiles/                # Ground tiles
+│   └── Characters/           # NPC animations
+├── tests/                     # Playwright E2E tests
+├── docs/                      # Documentation
+├── scripts/                   # Build/deployment scripts
+└── specs/                     # Feature specifications
+```
+
+---
+
+## 🚀 Installation
+
+### Prerequisites
+- Node.js 20+
+- npm or pnpm
+- (Optional) Docker for containerized deployment
+
+### Local Development
 
 ```bash
+# Clone the repository
+git clone https://github.com/xkonjin/crypto-city.git
+cd crypto-city
+
 # Install dependencies
 npm install
 
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your API keys
+
 # Run development server
 npm run dev
-
-# Build for production
-npm run build
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to start building.
 
-## Tech Stack
+### Docker Deployment
 
-- **Framework:** Next.js 16 with React 19
-- **Game Engine:** Phaser 3.90
-- **Styling:** Tailwind CSS 4
-- **Language:** TypeScript 5
-- **GIF Support:** gifuct-js for character animations
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
 
-## Project Structure
-
-```
-app/
-├── components/
-│   ├── game/
-│   │   ├── phaser/           # Phaser game engine
-│   │   │   ├── MainScene.ts  # Core rendering & game logic
-│   │   │   └── PhaserGame.tsx# React wrapper
-│   │   ├── GameBoard.tsx     # Main React component
-│   │   ├── types.ts          # TypeScript types & enums
-│   │   └── roadUtils.ts      # Road connection logic
-│   └── ui/                   # React UI components
-├── data/
-│   └── buildings.ts          # Building registry
-└── utils/
-    └── sounds.ts             # Audio effects
-
-public/
-├── Building/                 # Building sprites by category
-├── Tiles/                    # Ground tiles
-├── Characters/               # Walking animations (GIFs)
-└── cars/                     # Vehicle sprites
+# Or build manually
+docker build -t crypto-city .
+docker run -p 3000:3000 crypto-city
 ```
 
 ---
 
-## How the Isometric System Works
+## ⚙️ Environment Variables
 
-### The Basics
+Create a `.env.local` file with the following variables:
 
-Isometric projection creates a 3D-like view from 2D sprites. This engine uses **2:1 isometric** (also called "true isometric" or "dimetric"), where:
+```env
+# Required
+NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id
 
-- Tiles are diamond-shaped, **44x22 pixels**
-- The X-axis goes down-right
-- The Y-axis goes down-left
-- Depth (what's in front) is determined by position
+# Crypto Data APIs
+NEXT_PUBLIC_COINGECKO_API_KEY=your_coingecko_api_key
+NEXT_PUBLIC_PERPLEXITY_API_KEY=your_perplexity_key
 
-### Coordinate Conversion
+# Blockchain (Plasma Network)
+NEXT_PUBLIC_PLASMA_RPC=https://rpc.plasma.to
+NEXT_PUBLIC_MERCHANT_ADDRESS=0xYourMerchantAddress
+PLASMA_RELAYER_CREDENTIAL=your_relayer_credential
 
-Converting between grid coordinates (x, y) and screen pixels:
-
-```typescript
-// Grid → Screen
-function gridToScreen(gridX: number, gridY: number) {
-  return {
-    screenX: (gridX - gridY) * (TILE_WIDTH / 2),
-    screenY: (gridX + gridY) * (TILE_HEIGHT / 2)
-  };
-}
-
-// Screen → Grid
-function screenToGrid(screenX: number, screenY: number) {
-  return {
-    gridX: Math.floor(screenX / TILE_WIDTH + screenY / TILE_HEIGHT),
-    gridY: Math.floor(screenY / TILE_HEIGHT - screenX / TILE_WIDTH)
-  };
-}
-```
-
-### Depth Sorting
-
-The key to isometric rendering is drawing things in the right order. Objects further "back" (higher up on screen) must be drawn first.
-
-```typescript
-// Basic depth formula
-depth = (gridX + gridY) * DEPTH_MULTIPLIER;
-
-// With layer offsets for different object types:
-// 0.00 - Ground tiles
-// 0.03 - Back fences
-// 0.05 - Buildings
-// 0.06 - Props/trees
-// 0.10 - Cars
-// 0.20 - Characters
-```
-
-### Multi-Tile Buildings
-
-Large buildings occupy multiple grid cells but are rendered as a single sprite anchored at their "origin" tile (typically the front corner).
-
-```typescript
-interface BuildingDefinition {
-  footprint: { width: number; height: number };
-  sprites: {
-    south: string;  // Default facing
-    north?: string;
-    east?: string;
-    west?: string;
-  };
-}
-```
-
-### Sprite Standards
-
-Building sprites follow these conventions:
-- **Canvas size:** Typically 512x512 or larger
-- **Anchor point:** Front corner at bottom-center of canvas
-- **Naming:** `{width}x{height}{name}_{direction}.png`
-  - Example: `4x4bookstore_south.png`
-
-### Vertical Slicing (Tall Buildings)
-
-Very tall buildings can cause depth sorting issues when characters walk "behind" them. The solution is to slice the sprite into horizontal strips and give each strip a different depth:
-
-```typescript
-// Slice a tall building into strips
-for (let slice = 0; slice < numSlices; slice++) {
-  const sliceDepth = baseDepth + (slice * 0.001);
-  // Render slice at sliceDepth
-}
+# Social (Optional)
+NEXT_PUBLIC_TWITTER_BEARER_TOKEN=your_twitter_token
+NANOBANANA_API_KEY=your_nanobanana_key
 ```
 
 ---
 
-## Build Your Own Game
+## 🧪 Usage Examples
 
-This engine is designed as a starting point. Here are some directions you could take it:
+### Basic Gameplay
 
-### City Builder (SimCity-style)
-- Add zoning (residential/commercial/industrial)
-- Implement population and demand simulation
-- Create budget and tax systems
-- Add city services (police, fire, hospitals)
+```typescript
+// Access game state
+const { state, setTool, placeBuilding } = useGame();
 
-### Tycoon Game
-- Add economy and resource management
-- Create customer/visitor AI
-- Implement business progression
-- Add scenarios and challenges
+// Place a building
+setTool('building');
+placeBuilding({ x: 10, y: 10, buildingId: 'uniswap-dex' });
 
-### RTS (Real-Time Strategy)
-- Add unit selection and control
-- Implement pathfinding for units
-- Create combat systems
-- Add fog of war
+// Access crypto economy
+const { treasury, dailyYield, marketSentiment } = useCryptoEconomy();
+```
 
-### 4X Strategy
-- Add turn-based mechanics
-- Implement tech trees
-- Create diplomacy systems
-- Add procedural map generation
+### Crypto Economy Integration
 
-### Colony Sim
-- Add needs-based AI for citizens
-- Implement job and task systems
-- Create survival mechanics
-- Add seasons and weather
+```typescript
+// Subscribe to economy updates
+const unsubscribe = cryptoEconomy.subscribe((state) => {
+  console.log('Treasury:', state.treasury);
+  console.log('Daily Yield:', state.dailyYield);
+  console.log('Market Sentiment:', state.marketSentiment);
+});
+
+// Harvest yields
+const harvested = cryptoEconomy.harvestYields();
+
+// Activate yield boost
+cryptoEconomy.activateYieldBoost(buildingId, boostConfig);
+```
+
+### Multiplayer Co-op
+
+```typescript
+// Join a room
+const { joinRoom, isHost, players } = useMultiplayerSync();
+
+await joinRoom('ABC123');
+
+// Broadcast building placement
+broadcastPlace({ x: 5, y: 5, buildingId: 'aave-lending' });
+```
 
 ---
 
-## Inspiration
+## 🧪 Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run with UI
+npm run test:ui
+
+# Run specific test
+npx playwright test tests/game.spec.ts
+
+# Type check
+npx tsc --noEmit
+
+# Lint
+npm run lint
+```
+
+---
+
+## 📊 Performance
+
+- **Target**: 60 FPS on modern devices
+- **Grid Size**: 48x48 tiles
+- **NPC Budget**: 100 real NPCs + 500 simulated
+- **Rendering**: Chunk-based with viewport culling
+- **State**: Optimized with Zustand selectors
+
+---
+
+## 🗺️ Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for detailed development plans.
+
+### Completed ✅
+- [x] Isometric rendering engine
+- [x] 100+ building types
+- [x] Zoning & RCI simulation
+- [x] Crypto economy system
+- [x] Real market data integration
+- [x] Multiplayer co-op
+- [x] NPC simulation
+- [x] Achievement system
+- [x] Leaderboards
+
+### In Progress 🚧
+- [ ] Mobile app (React Native)
+- [ ] Token rewards system
+- [ ] NFT building skins
+- [ ] DAO governance
+
+### Planned 📋
+- [ ] VR support
+- [ ] AI city advisors
+- [ ] Cross-chain bridges
+- [ ] Tournament mode
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) first.
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Code Style
+
+- **TypeScript**: Strict mode enabled
+- **Naming**: PascalCase for components, camelCase for functions
+- **Imports**: React → External → Internal → Relative → Types
+- **No**: `as any`, `@ts-ignore`, empty catch blocks
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
+
+**Exception**: Art assets in `/public` are NOT covered by this license. For released games, create or commission your own art assets.
+
+---
+
+## 🙏 Acknowledgments
 
 - **SimCity 3000/4** - The gold standard for city simulation
-- **RollerCoaster Tycoon 1 & 2** - Chris Sawyer's masterpiece, hand-coded in assembly
+- **RollerCoaster Tycoon** - Chris Sawyer's masterpiece
+- **Cities: Skylines** - Modern city builder reference
+- **Crypto Twitter** - For endless meme inspiration
 
 ---
 
-## Adding Buildings
+## 📞 Support
 
-Buildings are defined in `app/data/buildings.ts`:
-
-```typescript
-"my-building": {
-  id: "my-building",
-  name: "My Building",
-  category: "commercial",
-  footprint: { width: 2, height: 2 },
-  sprites: {
-    south: "/Building/commercial/2x2my_building_south.png",
-    north: "/Building/commercial/2x2my_building_north.png",
-    east: "/Building/commercial/2x2my_building_east.png",
-    west: "/Building/commercial/2x2my_building_west.png",
-  },
-  icon: "🏢",
-  supportsRotation: true,
-}
-```
+- 📧 Email: support@cryptocity.game
+- 💬 Discord: [Join our server](https://discord.gg/cryptocity)
+- 🐦 Twitter: [@CryptoCityGame](https://twitter.com/CryptoCityGame)
 
 ---
 
-## Creating Your Own Assets
-
-Want to make your own isometric buildings? Here's a modern AI-assisted pipeline:
-
-### 1. Generate Concept Art
-Use an image generation model to create your building concept. Look for models that handle architecture well.
-
-**Tools:** Midjourney, Stable Diffusion, or specialized models like [Nano Banana](https://replicate.com/fofr/nanobanana)
-
-**Tips:**
-- Prompt for "isometric view" or "3/4 view"
-- Specify architectural style (Victorian, modern, brutalist, etc.)
-- Include "game asset" or "video game building" for cleaner results
-
-### 2. Convert to 3D
-Turn your 2D concept into a 3D model. This gives you the ability to render from any angle consistently.
-
-**Tools:**
-- [Trellis](https://github.com/microsoft/TRELLIS) - Microsoft's image-to-3D
-- [Hunyuan3D](https://github.com/Tencent/Hunyuan3D-1) - Tencent's image-to-3D
-- Tripo, Meshy, or other image-to-3D services
-
-### 3. Render Isometric Sprites
-Set up your camera at the correct isometric angle and render out sprites for each direction.
-
-**Tools:**
-- [PixelOver](https://pixelover.io/) - Great for pixel art style renders
-- Blender - Free, full control over rendering
-- Any 3D software with orthographic camera support
-
-**Camera setup for 2:1 isometric:**
-- Orthographic projection
-- 30° rotation from top-down
-- 90° rotation for each cardinal direction (0°, 90°, 180°, 270°)
-
-### 4. Post-Processing
-Clean up your renders and ensure consistency:
-- Match the color palette of existing assets
-- Add shadows/ambient occlusion if needed
-- Ensure transparent backgrounds
-- Check that the anchor point aligns with the grid
-
-### Sprite Specifications
-
-| Property | Value |
-|----------|-------|
-| Tile size | 44x22 pixels |
-| Canvas size | 512x512 (or larger for big buildings) |
-| Anchor point | Bottom-center (front corner of building) |
-| Format | PNG with transparency |
-| Directions | South (required), North/East/West (optional) |
-
----
-
-## Asset Usage
-
-### Code
-The source code is MIT licensed - use it however you like.
-
-### Art Assets (Buildings, Props, Tiles)
-The art assets in this repository are provided for **learning, demos, and prototyping**. Some assets were created for this project, others are from commercial asset packs with varying licenses.
-
-**If you're releasing a game**, you should create or commission your own art assets to avoid any licensing issues.
-
-### Characters
-The character sprites (walking GIFs in `/public/Characters/`) are **NOT included in the open source license**. These are proprietary characters.
-
-**You may:**
-- Use them for demos, prototypes, and learning
-- Use them in non-commercial projects
-- Reference them for creating your own characters
-
-**You may NOT:**
-- Include them in published/released games
-- Redistribute them separately
-- Use them in commercial products
-
-If you're building a game for release, please create or commission your own character sprites.
-
----
-
-## Contributing
-
-Contributions are welcome! Some areas that could use help:
-
-- **More buildings** - Different architectural styles, eras, themes
-- **Performance** - Optimization for larger maps
-- **Documentation** - Tutorials, examples, better docs
-
----
-
-## License
-
-This project is licensed under the MIT License - see below.
-
-**Exception:** Character sprites in `/public/Characters/` are proprietary and not included in this license. See "Asset Usage" above.
-
-```
-MIT License
-
-Copyright (c) 2025
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
----
-
-## Acknowledgments
-
-Built with love for isometric games and the communities that keep them alive.
+<p align="center">
+  Built with ❤️ and ☕ by the CryptoCity team
+</p>
