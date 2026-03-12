@@ -32,11 +32,11 @@ export function useMobile(): UseMobileReturn {
     };
 
     const checkTouch = () => {
+      const nav = navigator as Navigator & { msMaxTouchPoints?: number };
       setIsTouchDevice(
         'ontouchstart' in window ||
         navigator.maxTouchPoints > 0 ||
-        // @ts-expect-error - msMaxTouchPoints is a legacy property
-        navigator.msMaxTouchPoints > 0
+        (typeof nav.msMaxTouchPoints === 'number' && nav.msMaxTouchPoints > 0)
       );
     };
 
